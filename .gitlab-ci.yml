@@ -69,6 +69,7 @@ build_all:
     - docker
   when: manual
   script:
+    - export http_proxy=proxy-ss.patsnap.info:8118 https_proxy=proxy-ss.patsnap.info:8118
     - export MANAGER="${PRIVATE_DTR_URL}/${TEAM}/${PROJECT_TYPE}-${TEAM}-piam-manager:${CI_COMMIT_REF_NAME}-${CI_PIPELINE_ID}"
     - export S3PROXY="${PRIVATE_DTR_URL}/${TEAM}/${PROJECT_TYPE}-${TEAM}-piam-s3-proxy:${CI_COMMIT_REF_NAME}-${CI_PIPELINE_ID}"
     - docker build -t ${MANAGER} --target piam-manager .
