@@ -1,0 +1,21 @@
+[package]
+name = "piam-manager"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+piam-core = { path = "../piam-core", features = ["all-policy"] }
+piam-tracing = { path = "../piam-tracing" }
+#axum = "0.6.0-rc.2"
+#axum-core = "0.3.0-rc.1"
+axum = "0.5.16"
+axum-core = "0.2.8"
+axum-client-ip = "0.2"
+hyper = { version = "0.14", features = ["full"] }
+tokio = { version = "1", features = ["full"] }
+log = "0.4.17"
+redis = "0.21.6"
+arc-swap = "1.5.1"
+once_cell = "1.15.0"

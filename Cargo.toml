@@ -1,0 +1,9 @@
+[workspace]
+
+members = [
+    "crates/piam-manager",
+    "crates/piam-s3-proxy",
+    "crates/piam-core",
+    "crates/piam-tracing",
+    "crates/piam-test",
+]
