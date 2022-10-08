@@ -98,7 +98,7 @@ deploy_manager_aws_cn_qa:
 
 ############################### Deploy s3 proxy ###############################
 deploy_s3_proxy_aws_us_prod:
-  stage: s3-proxy
+  stage: s3proxy
   tags:
     - aws
     - docker
