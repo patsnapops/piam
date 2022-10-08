@@ -1,5 +1,5 @@
 # builder images
-FROM rust:alpine3.16 AS builder
+FROM 955466075186.dkr.ecr.cn-northwest-1.amazonaws.com.cn/ops-basic/base:rust-alpine3.16 AS builder
 
 COPY . .
 RUN apk add  \
@@ -15,7 +15,7 @@ FROM builder AS builder-s3-proxy
 RUN cargo build --release -p piam-s3-proxy
 
 # piam-manager image
-FROM alpine:3.16 as piam-manager
+FROM 955466075186.dkr.ecr.cn-northwest-1.amazonaws.com.cn/ops-basic/base:alpine3.16 as piam-manager
 
 COPY --from=builder-manager ./target/release/piam-manager piam-manager
 
