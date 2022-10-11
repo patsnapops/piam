@@ -1,22 +1,12 @@
+use std::{env, sync::Arc};
+
 use arc_swap::ArcSwap;
-use log::info;
 use once_cell::sync::Lazy;
+use piam_proxy_core::config::{dev_mode, get_resource_string, CoreConfig, REGION};
 use serde::{Deserialize, Serialize};
-use std::env;
-use std::sync::Arc;
-
-use piam_core::config::{CoreConfig, get_resource_string};
-
-pub fn proxy_port() -> u16 {
-    if let Some(arg1) = env::args().nth(1) {
-        if arg1 == "dev" {
-            return 3000;
-        }
-    }
-    8080
-}
 
 pub const DEV_PROXY_HOST: &str = "piam-s3-proxy.dev:3000";
+pub const SERVICE: &str = "s3";
 
 pub static S3_CONFIG: Lazy<ArcSwap<S3Config>> =
     Lazy::new(|| ArcSwap::from_pointee(S3Config::default()));
@@ -29,16 +19,13 @@ pub struct S3Config {
 
 impl S3Config {
     pub async fn get_new() -> Self {
-        if let Some(arg1) = env::args().nth(1) {
-            if arg1 == "dev" {
-                return S3Config {
-                    proxy_host: DEV_PROXY_HOST.into(),
-                    actual_host: "s3.cn-northwest-1.amazonaws.com.cn".into(),
-                };
-            }
+        let key = format!("config/{}/{}", SERVICE, REGION.load());
+        let string = get_resource_string(&key).await;
+        let mut config: S3Config = serde_yaml::from_str(&string).unwrap();
+        if dev_mode() {
+            config.proxy_host = DEV_PROXY_HOST.to_string();
         }
-        let string = get_resource_string("config/s3").await;
-        serde_yaml::from_str(&string).unwrap()
+        config
     }
 
     pub async fn update() {
@@ -46,7 +33,7 @@ impl S3Config {
     }
 
     pub async fn update_all() {
-        CoreConfig::update("s3").await;
+        CoreConfig::update(SERVICE).await;
         Self::update().await;
     }
 }

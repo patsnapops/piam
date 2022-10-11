@@ -1,13 +1,10 @@
-use std::sync::Arc;
 use anyhow::{anyhow, Result};
-use arc_swap::Guard;
 use http::{header::HOST, Method};
 use log::error;
-use piam_core::{input::Input, type_alias::HttpRequest};
+use piam_proxy_core::{input::Input, type_alias::HttpRequest};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 use crate::config::S3_CONFIG;
-use crate::S3Config;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub enum S3IoKind {

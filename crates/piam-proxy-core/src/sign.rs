@@ -7,9 +7,9 @@ use hyper::{body, Body};
 
 use crate::{
     amz_canonical_request::header::{X_AMZ_CONTENT_SHA_256, X_AMZ_DATE, X_AMZ_SECURITY_TOKEN},
+    config::CORE_CONFIG,
     type_alias::HttpRequest,
 };
-use crate::config::CORE_CONFIG;
 
 pub trait AmzExt {
     fn extract_access_key(&self) -> &str;
@@ -34,6 +34,9 @@ pub async fn sign_with_amz_params(mut req: HttpRequest) -> Result<HttpRequest> {
     req.headers_mut().remove(X_AMZ_CONTENT_SHA_256);
     req.headers_mut().remove(X_AMZ_SECURITY_TOKEN);
     req.headers_mut().remove(AUTHORIZATION);
+    // x-forwarded-for causes SignatureDoesNotMatch(from aws),
+    // it is usually added by gateways like kong, which used by patsnap
+    req.headers_mut().remove("x-forwarded-for");
 
     // convert body to bytes for signing
     let (p, b) = req.into_parts();

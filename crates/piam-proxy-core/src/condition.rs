@@ -1,9 +1,5 @@
 use std::{net::IpAddr, time::Instant};
 
-#[allow(unused_imports)]
-use cidr::IpCidr;
-use serde::{Deserialize, Serialize};
-
 use crate::type_alias::HttpRequest;
 
 pub struct Condition {

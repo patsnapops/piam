@@ -1,3 +1,5 @@
+#![allow(unused)]
+
 use std::net::SocketAddr;
 
 use axum::{routing::get, Router};
@@ -19,10 +21,10 @@ async fn main() {
         .route("/principals", get(handler::get_principals))
         .route("/policies/:kind", get(handler::get_policies))
         .route(
-            "/amz_sign_params/:service",
+            "/amz_sign_params/:service/:region",
             get(handler::get_amz_sign_params),
         )
-        .route("/config/:proxy", get(handler::get_config));
+        .route("/config/:service/:region", get(handler::get_config));
 
     let addr = SocketAddr::from(([0, 0, 0, 0], 8080));
     info!("piam-manager listening on {}", addr);

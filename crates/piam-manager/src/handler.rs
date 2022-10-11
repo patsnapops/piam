@@ -1,51 +1,53 @@
-use axum::extract::Path;
-use axum_client_ip::ClientIp;
-use axum_core::response::IntoResponse;
-use log::info;
-use std::net::IpAddr;
+use axum::{
+    extract::Path,
+    http::StatusCode,
+    response::{IntoResponse, Response},
+};
+use log::{error, info};
 
 use crate::store::get_resource_string;
 
+type StringResult = Result<String, AppError>;
+
 pub async fn health() -> impl IntoResponse {
-    info!("health");
     "OK"
 }
 
-pub async fn get_principals() -> impl IntoResponse {
+pub async fn get_principals() -> StringResult {
     info!("get_principals");
-    get_resource_string("principals").await
+    Ok(get_resource_string("principals").await)
 }
 
-pub async fn get_policies(Path(kind): Path<String>) -> impl IntoResponse {
+pub async fn get_policies(Path(kind): Path<String>) -> StringResult {
     info!("get_policies: {}", kind);
-    get_resource_string(format!("policies:{}", kind).as_str()).await
+    Ok(get_resource_string(format!("policies:{}", kind).as_str()).await)
 }
 
-pub async fn get_amz_sign_params(
-    Path(service): Path<String>,
-    ClientIp(ip): ClientIp,
-) -> impl IntoResponse {
-    info!("get_amz_sign_params: {} from: {}", service, ip);
-    let region = get_region(ClientIp(ip));
-    get_resource_string(format!("amz_sign_params:{}:{}", service, region).as_str()).await
+pub async fn get_amz_sign_params(Path((service, region)): Path<(String, String)>) -> StringResult {
+    info!("get_amz_sign_params:{}:{}", service, region);
+    Ok(get_resource_string(format!("amz_sign_params:{}:{}", service, region).as_str()).await)
 }
 
-pub async fn get_config(Path(proxy): Path<String>, ClientIp(ip): ClientIp) -> impl IntoResponse {
-    info!("get_config: {} from: {}", proxy, ip);
-    let region = get_region(ClientIp(ip));
-    get_resource_string(format!("config:{}:{}", proxy, region).as_str()).await
+pub async fn get_config(Path((service, region)): Path<(String, String)>) -> StringResult {
+    info!("get_config:{}:{}", service, region);
+    Ok(get_resource_string(format!("config:{}:{}", service, region).as_str()).await)
 }
 
-fn get_region<'a>(ClientIp(ip): ClientIp) -> &'a str {
-    match ip {
-        IpAddr::V4(v4) => {
-            if v4.is_loopback() {
-                // for dev
-                "cn-northwest-1"
-            } else {
-                panic!("{} not yet supported", ip)
-            }
-        }
-        IpAddr::V6(_) => panic!("IPV6 not yet supported"),
+pub enum AppError {
+    GetRegionErr(String),
+    Panic(String),
+}
+
+impl IntoResponse for AppError {
+    fn into_response(self) -> Response {
+        let body = match self {
+            AppError::GetRegionErr(e) => e,
+            AppError::Panic(e) => e,
+        };
+        error!("AppError: {}", body);
+        (StatusCode::INTERNAL_SERVER_ERROR, body).into_response()
     }
 }
+
+#[cfg(test)]
+mod tests {}

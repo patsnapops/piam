@@ -15,13 +15,14 @@ variables:
   #健康检查路径
   HC_HTTP_REQUEST_PATH: "/health"
   #服务发布与更新后的健康检查延迟检测时间
-  HC_PER_SEC: "10"
+  HC_PER_SEC: "60"
+  #新增发到生产跳过审批
+  PRIVILEGE: "yes"
 
 stages:
   - init
   - build
-  - manager
-  - s3proxy
+  - deploy
 
 #################################### Init ####################################
 init:
@@ -62,29 +63,37 @@ init_s3proxy:
     - ops_deploy init
 
 #################################### Build ####################################
-build_all:
+build_manager:
   stage: build
   tags:
     - aws
     - docker
-  when: manual
+  #  when: manual
   script:
     - export MANAGER="${PRIVATE_DTR_URL}/${TEAM}/${PROJECT_TYPE}-${TEAM}-piam-manager:${CI_COMMIT_REF_NAME}-${CI_PIPELINE_ID}"
-    - export S3PROXY="${PRIVATE_DTR_URL}/${TEAM}/${PROJECT_TYPE}-${TEAM}-piam-s3-proxy:${CI_COMMIT_REF_NAME}-${CI_PIPELINE_ID}"
-    - docker build -t ${MANAGER} --target piam-manager .
-    - docker build -t ${S3PROXY} --target piam-s3-proxy .
+    - docker build --build-arg package=piam-manager -t ${MANAGER} --target runtime .
     - docker push ${MANAGER}
-    - docker push ${S3PROXY}
     - echo ${MANAGER}
+
+build_s3_proxy:
+  stage: build
+  tags:
+    - aws
+    - docker
+#  when: manual
+  script:
+    - export S3PROXY="${PRIVATE_DTR_URL}/${TEAM}/${PROJECT_TYPE}-${TEAM}-piam-s3-proxy:${CI_COMMIT_REF_NAME}-${CI_PIPELINE_ID}"
+    - docker build --build-arg package=piam-s3-proxy -t ${S3PROXY} --target runtime .
+    - docker push ${S3PROXY}
     - echo ${S3PROXY}
 
 ############################### Deploy manager ###############################
 deploy_manager_aws_cn_qa:
-  stage: manager
+  stage: deploy
   tags:
     - aws
     - docker
-  when: manual
+#  when: manual
   variables:
     ENV: qa
     PROJECT_NAME: "piam-manager"
@@ -98,11 +107,11 @@ deploy_manager_aws_cn_qa:
 
 ############################### Deploy s3 proxy ###############################
 deploy_s3_proxy_aws_us_prod:
-  stage: s3proxy
+  stage: deploy
   tags:
     - aws
     - docker
-  when: manual
+#  when: manual
   variables:
     ENV: prod
     PROJECT_NAME: "piam-s3-proxy"

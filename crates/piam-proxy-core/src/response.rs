@@ -3,6 +3,14 @@ use hyper::Body;
 
 use crate::type_alias::HttpResponse;
 
+pub fn user_not_found() -> HttpResponse {
+    forbidden("User(AccessKey)NotFound")
+}
+
+pub fn group_not_found() -> HttpResponse {
+    forbidden("GroupNotFound")
+}
+
 pub fn policy_not_found() -> HttpResponse {
     forbidden("PolicyNotFound")
 }

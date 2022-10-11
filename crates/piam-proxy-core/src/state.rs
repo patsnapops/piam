@@ -1,6 +1,5 @@
 use std::{fmt::Debug, sync::Arc};
 
-use arc_swap::access::Access;
 use serde::de::DeserializeOwned;
 use tokio::sync::RwLock;
 
@@ -13,21 +12,12 @@ use crate::{
 pub type SharedState<S> = Arc<RwLock<ProxyState<S>>>;
 
 #[derive(Debug, Default)]
-pub struct ProxyState<S> {
+pub struct ProxyState<S: Debug> {
     pub principal_container: PrincipalContainer,
     pub policy_container: PolicyContainer<S>,
 }
 
-impl<S: DeserializeOwned + Debug> ProxyState<S> {
-    pub async fn load(kind: &str) -> Self {
-        ProxyState {
-            principal_container: get_principals().await,
-            policy_container: get_policies(kind).await,
-        }
-    }
-}
-
-pub struct StateUpdater<S> {
+pub struct StateUpdater<S: Debug> {
     kind: String,
     pub state: SharedState<S>,
 }

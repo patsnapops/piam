@@ -4,10 +4,7 @@
  * Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
  * SPDX-License-Identifier: Apache-2.0
  */
-use std::{
-    borrow::Cow, cmp::Ordering, convert::TryFrom, fmt, fmt::Formatter, str::FromStr,
-    time::SystemTime,
-};
+use std::{convert::TryFrom, str::FromStr};
 
 pub mod header {
     pub const X_AMZ_CONTENT_SHA_256: &str = "x-amz-content-sha256";

@@ -1,6 +1,4 @@
-use piam_core::policy::s3_policy::Key;
-use piam_core::policy::Name;
-use piam_core::{
+use piam_proxy_core::{
     effect::Effect,
     policy::{
         s3_policy::{S3InputPolicyStatement, S3PolicyStatement},
@@ -112,7 +110,7 @@ impl Matches for S3InputPolicyStatement {
 
 #[cfg(test)]
 mod tests {
-    use piam_core::{
+    use piam_proxy_core::{
         effect::{Effect, Modify},
         policy::{
             s3_policy::{Key, S3InputPolicyStatement},
@@ -298,9 +296,6 @@ mod tests {
         );
 
         policy.bucket.keys = Some(vec![]);
-        assert_eq!(
-            policy.find_object_effect(&get_object_1),
-            None
-        );
+        assert_eq!(policy.find_object_effect(&get_object_1), None);
     }
 }

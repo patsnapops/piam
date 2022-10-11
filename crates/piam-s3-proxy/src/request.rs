@@ -1,5 +1,5 @@
 use http::{header::HOST, uri::PathAndQuery, HeaderValue, Uri};
-use piam_core::type_alias::HttpRequest;
+use piam_proxy_core::type_alias::HttpRequest;
 
 use crate::config::S3_CONFIG;
 

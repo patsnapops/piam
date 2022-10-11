@@ -1,12 +1,10 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, fmt::Debug};
 
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::{
-    condition::Conditions,
     effect::Effect,
-    input::Input,
     principal::{Group, Role, User},
 };
 
@@ -17,19 +15,19 @@ pub type GroupByUser = HashMap<User, Group>;
 pub type Policies<S> = Vec<Policy<S>>;
 
 #[derive(Debug, Default, Serialize, Deserialize)]
-pub struct PolicyContainer<S> {
+pub struct PolicyContainer<S: Debug> {
     pub policy_by_user: HashMap<User, Policies<S>>,
     pub policy_by_group: HashMap<Group, Policies<S>>,
     pub policy_by_role: HashMap<Role, Policies<S>>,
 }
 
-impl<S: Statement> PolicyContainer<S> {
+impl<S: Statement + Debug> PolicyContainer<S> {
     pub fn find_policies_by_group(&self, group: &Group) -> Option<&Policies<S>> {
         self.policy_by_group.get(group)
     }
 }
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
-pub struct Policy<S> {
+pub struct Policy<S: Debug> {
     pub kind: String,
     pub version: i32,
     pub id: Uuid,
@@ -81,10 +79,10 @@ impl Name {
 
 #[cfg(feature = "s3-policy")]
 pub mod s3_policy {
-    use serde::{Deserialize, Deserializer, Serialize, Serializer};
+    use serde::{Deserialize, Serialize};
     use uuid::Uuid;
 
-    use crate::{effect::Effect, input::Input, policy::Name, type_alias::HttpRequest};
+    use crate::{effect::Effect, policy::Name};
 
     #[derive(Debug, Default, Serialize, Deserialize)]
     pub struct S3PolicyStatement {
@@ -122,7 +120,7 @@ pub mod s3_policy {
         #[serde(skip_serializing_if = "Option::is_none")]
         pub tag: Option<Tag>,
         #[serde(flatten)]
-        // #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(skip_serializing_if = "Option::is_none")]
         pub effect: Option<Effect>,
         #[serde(skip_serializing_if = "Option::is_none")]
         pub keys: Option<Vec<Key>>,

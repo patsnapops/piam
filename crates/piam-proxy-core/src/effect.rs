@@ -22,7 +22,7 @@ impl Effect {
         Self::Allow {
             emit_event: None,
             rate_limit: None,
-            modify: None
+            modify: None,
         }
     }
 

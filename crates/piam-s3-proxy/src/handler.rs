@@ -4,16 +4,13 @@ use axum::extract::{Path, Query, State};
 use axum_core::response::IntoResponse;
 use http::{HeaderValue, Response, StatusCode};
 use hyper::Body;
-use log::{debug, info};
-use piam_core::config::CORE_CONFIG;
-use piam_core::type_alias::HttpResponse;
-use piam_core::{
-    input::Input,
-    principal::{Group, PrincipalContainer},
+use log::debug;
+use piam_proxy_core::{
+    config::CORE_CONFIG,
     request::HttpRequestExt,
     sign::sign_with_amz_params,
     state::SharedState,
-    type_alias::{ApplyResult, HttpRequest},
+    type_alias::{ApplyResult, HttpRequest, HttpResponse},
 };
 use piam_tracing::logger::change_debug;
 use uuid::Uuid;
@@ -23,7 +20,6 @@ use crate::{policy::S3PolicyStatementImpl, request::S3RequestTransform};
 pub type S3ProxyState = SharedState<S3PolicyStatementImpl>;
 
 pub async fn health() -> impl IntoResponse {
-    info!("health");
     "OK"
 }
 
@@ -64,7 +60,7 @@ pub async fn handle_path(
 }
 
 pub async fn handle(State(state): State<S3ProxyState>, req: HttpRequest) -> HttpResponse {
-    // TODO: add id in 4XX res body as well
+    debug!("handle req{:#?}", req);
     let id = Uuid::new_v4().to_string();
 
     let lock = state.read().await;
@@ -72,8 +68,12 @@ pub async fn handle(State(state): State<S3ProxyState>, req: HttpRequest) -> Http
     let mut res = match result {
         ApplyResult::Forward(mut new_req) => {
             new_req.set_actual_host();
+            // TODO now: 2 support multi cloud sign
+            // 1. find bucket belong to which cloud
+            // 2. sign_with_xxx_params
             new_req = sign_with_amz_params(new_req).await.unwrap();
             let client = &CORE_CONFIG.load().client;
+            debug!("new_req {:#?}", new_req);
             client.request(new_req).await.unwrap()
         }
         ApplyResult::Reject(response) => response,
@@ -94,6 +94,7 @@ fn add_piam_headers(res: &mut Response<Body>, id: String) {
 }
 
 #[cfg(test)]
+#[cfg(feature = "integration-test")]
 mod tests {
     use arc_swap::access::Access;
     use aws_config::{from_env, provider_config::ProviderConfig};
@@ -108,8 +109,10 @@ mod tests {
     use futures::future;
     use uuid::Uuid;
 
-    use crate::config::{DEV_PROXY_HOST, S3_CONFIG};
-    use crate::S3Config;
+    use crate::{
+        config::{DEV_PROXY_HOST, S3_CONFIG},
+        S3Config,
+    };
 
     const REAL_ACCESS_KEY_ID: &str = "";
     const REAL_SECRET_ACCESS_KEY: &str = "";
@@ -398,10 +401,7 @@ mod tests {
         key.to_string()
     }
 
-    async fn do_put_object(
-        bucket: impl Into<std::string::String>,
-        key: impl Into<std::string::String>,
-    ) {
+    async fn do_put_object(bucket: impl Into<String>, key: impl Into<String>) {
         let client = build_client().await;
         let content = "dummy";
         let output = client
@@ -418,55 +418,79 @@ mod tests {
         let args: Vec<String> = std::env::args().collect();
         if let Some(real) = args.last() {
             if let "real" = real.as_str() {
-                return build_real_key_real_endpoint_client().await;
+                return build_real_key_to_cn_northwest_client().await;
             }
         }
-        build_fake_key_proxy_endpoint_client().await
+        build_fake_key_to_cn_northwest_client_dev().await
     }
 
-    async fn build_real_key_real_endpoint_client() -> Client {
+    async fn build_real_key_to_cn_northwest_client() -> Client {
         let env = Env::from_slice(&[
             ("AWS_MAX_ATTEMPTS", "1"),
             ("AWS_REGION", "cn-northwest-1"),
             ("AWS_ACCESS_KEY_ID", REAL_ACCESS_KEY_ID),
             ("AWS_SECRET_ACCESS_KEY", REAL_SECRET_ACCESS_KEY),
         ]);
+        build_client_with_params(env, "http://s3.cn-northwest-1.amazonaws.com.cn").await
+    }
+
+    async fn build_fake_key_to_us_east_client_dev() -> Client {
+        let env = Env::from_slice(&[
+            ("AWS_MAX_ATTEMPTS", "1"),
+            ("AWS_REGION", "us-east-1"),
+            ("AWS_ACCESS_KEY_ID", "AKPSSVCSDATALAKE"),
+            ("AWS_SECRET_ACCESS_KEY", "dummy_sk"),
+        ]);
+        build_client_with_params(env, &format!("http://{}", DEV_PROXY_HOST)).await
+    }
+
+    async fn build_fake_key_to_cn_northwest_client_dev() -> Client {
+        let env = Env::from_slice(&[
+            ("AWS_MAX_ATTEMPTS", "1"),
+            ("AWS_REGION", "cn-northwest-1"),
+            ("AWS_ACCESS_KEY_ID", "AKPSSVCSPROXYDEV"),
+            ("AWS_SECRET_ACCESS_KEY", "dummy_sk"),
+        ]);
+        build_client_with_params(env, &format!("http://{}", DEV_PROXY_HOST)).await
+    }
+
+    async fn build_client_with_params(env: Env, endpoint: &str) -> Client {
         let conf = from_env()
             .configure(
                 ProviderConfig::empty()
                     .with_env(env)
                     .with_http_connector(DynConnector::new(NeverConnector::new())),
             )
-            .endpoint_resolver(Endpoint::immutable(
-                "http://s3.cn-northwest-1.amazonaws.com.cn"
-                    .parse()
-                    .expect("invalid URI"),
-            ))
+            .endpoint_resolver(Endpoint::immutable(endpoint.parse().expect("invalid URI")))
             .load()
             .await;
         aws_sdk_s3::Client::new(&conf)
     }
 
-    async fn build_fake_key_proxy_endpoint_client() -> Client {
+    async fn build_dt_us_east_client() -> Client {
         let env = Env::from_slice(&[
             ("AWS_MAX_ATTEMPTS", "1"),
-            ("AWS_REGION", "cn-northwest-1"),
-            ("AWS_ACCESS_KEY_ID", "dummy_ak_id"),
+            ("AWS_REGION", "us-east-1"),
+            ("AWS_ACCESS_KEY_ID", "AKPSSVCSDATALAKE"),
             ("AWS_SECRET_ACCESS_KEY", "dummy_sk"),
         ]);
-        let conf = from_env()
-            .configure(
-                ProviderConfig::empty()
-                    .with_env(env)
-                    .with_http_connector(DynConnector::new(NeverConnector::new())),
-            )
-            .endpoint_resolver(Endpoint::immutable(
-                format!("http://{}", DEV_PROXY_HOST)
-                    .parse()
-                    .expect("invalid URI"),
-            ))
-            .load()
-            .await;
-        aws_sdk_s3::Client::new(&conf)
+        build_client_with_params(
+            env,
+            &format!("http://{}", "s-ops-s3-proxy-us-aws.patsnap.info"),
+        )
+        .await
+    }
+
+    #[tokio::test]
+    async fn dt_us_east_get_object() {
+        let output = build_dt_us_east_client()
+            .await
+            .get_object()
+            .bucket("datalake-internal.patsnap.com")
+            .key("dependencies.zip")
+            .send()
+            .await
+            .unwrap();
+        assert!(output.content_length() > 100)
     }
 }

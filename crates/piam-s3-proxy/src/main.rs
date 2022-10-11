@@ -1,20 +1,16 @@
-// #![allow(dead_code)]
 #![allow(unused)]
 
 use std::net::SocketAddr;
 
 use axum::{
-    routing::{any, put},
+    routing::{any, get, put},
     Router,
 };
-use axum::routing::get;
 use log::info;
-use piam_core::config::{CoreConfig, PIAM_MANAGER_ADDRESS};
-use piam_core::state::StateUpdater;
+use piam_proxy_core::{config::proxy_port, state::StateUpdater};
 use piam_tracing::logger::init_logger;
-use crate::config::{proxy_port, S3Config};
 
-use crate::handler::S3ProxyState;
+use crate::{config::S3Config, handler::S3ProxyState};
 
 mod config;
 mod handler;

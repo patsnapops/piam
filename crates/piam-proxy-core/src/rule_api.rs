@@ -1,19 +1,15 @@
-use std::collections::HashMap;
+use std::fmt::Debug;
 
 use serde::de::DeserializeOwned;
 
-use crate::{
-    config::get_resource_string,
-    policy::{Policies, Policy, PolicyContainer},
-    principal::{Group, PrincipalContainer},
-};
+use crate::{config::get_resource_string, policy::PolicyContainer, principal::PrincipalContainer};
 
 pub async fn get_principals() -> PrincipalContainer {
     let res = get_resource_string("principals").await;
     serde_yaml::from_str(&res).unwrap()
 }
 
-pub async fn get_policies<S: DeserializeOwned>(kind: &str) -> PolicyContainer<S> {
+pub async fn get_policies<S: DeserializeOwned + Debug>(kind: &str) -> PolicyContainer<S> {
     let res = get_resource_string(&format!("policies/{}", kind)).await;
     serde_yaml::from_str(&res).unwrap()
 }
@@ -26,14 +22,12 @@ mod test {
 
     use crate::{
         policy::{
-            s3_policy::{tests::make_one_policy, S3PolicyStatement},
-            Policies, Policy, PolicyContainer,
+            s3_policy::{tests::make_data_team_policy, S3PolicyStatement},
+            PolicyContainer,
         },
         principal::{Group, PrincipalContainer, User, UserKind},
-        rule_api,
         rule_api::get_policies,
     };
-    use crate::policy::s3_policy::tests::make_data_team_policy;
 
     pub fn make_one_s3_policy_container() -> PolicyContainer<S3PolicyStatement> {
         let policy_by_group = HashMap::from([(Group::default(), vec![make_data_team_policy()])]);

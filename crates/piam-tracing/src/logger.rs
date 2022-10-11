@@ -1,7 +1,7 @@
 #![allow(unused)]
 
-use std::env;
-use std::path::PathBuf;
+use std::{env, path::PathBuf};
+
 use log::{debug, info};
 use time::UtcOffset;
 use tracing_appender::non_blocking::WorkerGuard;
@@ -63,7 +63,8 @@ pub fn init_logger(bin_name: &str, debug: bool) -> (Option<WorkerGuard>, Option<
     let reg = tracing_subscriber::registry();
     let base_filter = filter::Targets::new()
         .with_target(bin_name, filter::LevelFilter::DEBUG)
-        .with_target("piam_core", filter::LevelFilter::DEBUG);
+        // TODO: do not hardcode piam_proxy_core
+        .with_target("piam_proxy_core", filter::LevelFilter::DEBUG);
     let (filter, reload_handle) = reload::Layer::new(base_filter.clone());
 
     if debug {
@@ -95,10 +96,12 @@ pub fn change_debug(handle: &LogHandle, debug: &str) -> bool {
 }
 
 fn log_path() -> PathBuf {
-    if let Some(arg1) = env::args().nth(1) {
-        if arg1 == "dev" {
-            return std::env::current_dir().unwrap();
-        }
+    if dev_mode() {
+        return std::env::current_dir().unwrap();
     }
     PathBuf::from(r"/opt/logs/apps/")
+}
+
+fn dev_mode() -> bool {
+    env::args().nth(1) == Some("dev".into())
 }

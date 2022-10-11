@@ -1,6 +1,7 @@
-use std::{any::Any, collections::HashMap};
+use std::fmt::Debug;
 
 use anyhow::Result;
+use log::debug;
 use thiserror::Error;
 
 use crate::{
@@ -8,7 +9,7 @@ use crate::{
     effect::Effect,
     input::Input,
     policy::{PolicyContainer, Statement},
-    principal::PrincipalContainer,
+    principal::{Group, PrincipalContainer, User},
     response,
     sign::AmzExt,
     type_alias::{ApplyResult, HttpRequest},
@@ -37,7 +38,7 @@ pub trait HttpRequestExt {
         policy_container: &PolicyContainer<S>,
     ) -> ApplyResult
     where
-        S: Statement<Input = I>,
+        S: Statement<Input = I> + Debug,
         I: Input;
 
     fn apply_effect(self, maybe_effect: Option<&Effect>) -> ApplyResult;
@@ -50,22 +51,28 @@ impl HttpRequestExt for HttpRequest {
         policy_container: &PolicyContainer<S>,
     ) -> ApplyResult
     where
-        S: Statement<Input = I>,
+        S: Statement<Input = I> + Debug,
         I: Input,
     {
-        // return ApplyResult::Forward(self);
-        let policies = match principal_container
-            .find_user_by_access_key(self.extract_access_key())
-            .and_then(|u| principal_container.find_group_by_user(u))
-            .and_then(|g| policy_container.find_policies_by_group(g))
-        {
+        let user = match principal_container.find_user_by_access_key(self.extract_access_key()) {
+            None => return ApplyResult::Reject(response::user_not_found()),
+            Some(u) => u,
+        };
+        debug!("{:#?}", user);
+        let group = match principal_container.find_group_by_user(user) {
+            None => return ApplyResult::Reject(response::group_not_found()),
+            Some(g) => g,
+        };
+        debug!("{:#?}", group);
+        let policies = match policy_container.find_policies_by_group(group) {
             None => return ApplyResult::Reject(response::policy_not_found()),
-            Some(polices) => polices,
+            Some(p) => p,
         };
 
         let input = Input::from_http(&self).unwrap();
 
         let maybe_effect = policies.iter().find_map(|policy| {
+            debug!("{:#?}", policy);
             // TODO: find condition
             let _condition = self.condition();
             // let _condition_policy = &policy.conditions;
@@ -77,7 +84,6 @@ impl HttpRequestExt for HttpRequest {
     }
 
     fn apply_effect(self, maybe_effect: Option<&Effect>) -> ApplyResult {
-        // return ApplyResult::Forward(self);
         match maybe_effect {
             Some(effect) => match effect {
                 Effect::Allow { .. } => {
