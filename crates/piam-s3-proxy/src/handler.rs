@@ -1,7 +1,9 @@
 use std::collections::HashMap;
 
-use axum::extract::{Path, Query, State};
-use axum_core::response::IntoResponse;
+use axum::{
+    extract::{Path, Query, State},
+    response::IntoResponse,
+};
 use http::{HeaderValue, Response, StatusCode};
 use hyper::Body;
 use log::debug;

@@ -368,43 +368,12 @@ dependencies = [
 
 [[package]]
 name = "axum"
-version = "0.5.16"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c9e3356844c4d6a6d6467b8da2cffb4a2820be256f50a3a386c9d152bab31043"
-dependencies = [
- "async-trait",
- "axum-core 0.2.8",
- "bitflags",
- "bytes",
- "futures-util",
- "http",
- "http-body",
- "hyper",
- "itoa",
- "matchit 0.5.0",
- "memchr",
- "mime",
- "percent-encoding",
- "pin-project-lite",
- "serde",
- "serde_json",
- "serde_urlencoded",
- "sync_wrapper",
- "tokio",
- "tower",
- "tower-http",
- "tower-layer",
- "tower-service",
-]
-
-[[package]]
-name = "axum"
 version = "0.6.0-rc.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d2628a243073c55aef15a1c1fe45c87f21b84f9e89ca9e7b262a180d3d03543d"
 dependencies = [
  "async-trait",
- "axum-core 0.3.0-rc.2",
+ "axum-core",
  "bitflags",
  "bytes",
  "futures-util",
@@ -412,7 +381,7 @@ dependencies = [
  "http-body",
  "hyper",
  "itoa",
- "matchit 0.6.0",
+ "matchit",
  "memchr",
  "mime",
  "percent-encoding",
@@ -424,22 +393,6 @@ dependencies = [
  "tokio",
  "tower",
  "tower-http",
- "tower-layer",
- "tower-service",
-]
-
-[[package]]
-name = "axum-core"
-version = "0.2.8"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d9f0c0a60006f2a293d82d571f635042a72edf927539b7685bd62d361963839b"
-dependencies = [
- "async-trait",
- "bytes",
- "futures-util",
- "http",
- "http-body",
- "mime",
  "tower-layer",
  "tower-service",
 ]
@@ -988,12 +941,6 @@ dependencies = [
 
 [[package]]
 name = "matchit"
-version = "0.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "73cbba799671b762df5a175adf59ce145165747bb891505c43d09aefbbf38beb"
-
-[[package]]
-name = "matchit"
 version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3dfc802da7b1cf80aefffa0c7b2f77247c8b32206cc83c270b61264f5b360a80"
@@ -1131,7 +1078,7 @@ name = "piam-manager"
 version = "0.1.0"
 dependencies = [
  "arc-swap",
- "axum 0.5.16",
+ "axum",
  "hyper",
  "log",
  "once_cell",
@@ -1171,8 +1118,7 @@ dependencies = [
  "aws-sdk-s3",
  "aws-smithy-client",
  "aws-types",
- "axum 0.6.0-rc.2",
- "axum-core 0.3.0-rc.2",
+ "axum",
  "futures",
  "http",
  "hyper",
