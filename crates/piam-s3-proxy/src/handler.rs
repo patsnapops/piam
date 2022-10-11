@@ -111,8 +111,8 @@ mod tests {
     use crate::config::{DEV_PROXY_HOST, S3_CONFIG};
     use crate::S3Config;
 
-    const REAL_ACCESS_KEY_ID: &str = "AKIA545RXJQZN5UDTZZZ";
-    const REAL_SECRET_ACCESS_KEY: &str = "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";
+    const REAL_ACCESS_KEY_ID: &str = "";
+    const REAL_SECRET_ACCESS_KEY: &str = "";
 
     // only ListBuckets does not have bucket name in url or host
     #[tokio::test]
