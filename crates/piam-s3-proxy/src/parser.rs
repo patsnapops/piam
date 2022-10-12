@@ -185,6 +185,7 @@ impl Input for S3Input {
                     Ok(S3Input::ListBuckets)
                 } else {
                     match *method {
+                        Method::GET => Ok(S3Input::ListObjects { bucket }),
                         Method::PUT => Ok(S3Input::CreateBucket { bucket }),
                         Method::HEAD => Ok(S3Input::HeadBucket { bucket }),
                         Method::DELETE => Ok(S3Input::DeleteBucket { bucket }),
