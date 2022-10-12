@@ -480,7 +480,7 @@ mod tests {
             env,
             &format!("http://{}", "s-ops-s3-proxy-us-aws.patsnap.info"),
         )
-            .await
+        .await
     }
 
     async fn build_liych_us_east_client() -> Client {
@@ -494,7 +494,7 @@ mod tests {
             env,
             &format!("http://{}", "s-ops-s3-proxy-us-aws.patsnap.info"),
         )
-            .await
+        .await
     }
 
     #[tokio::test]

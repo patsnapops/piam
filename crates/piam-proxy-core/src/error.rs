@@ -1,6 +1,6 @@
 pub type ProxyResult<T> = Result<T, ProxyError>;
 
-#[derive(Debug, Eq, Hash, PartialEq)]
+#[derive(Debug)]
 pub enum ProxyError {
-    InvalidRequest(String),
+    Forbidden(String),
 }

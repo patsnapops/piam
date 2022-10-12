@@ -7,6 +7,7 @@ use thiserror::Error;
 use crate::{
     condition::ConditionExt,
     effect::Effect,
+    error::ProxyResult,
     input::Input,
     policy::{PolicyContainer, Statement},
     principal::{Group, PrincipalContainer, User},
@@ -14,7 +15,6 @@ use crate::{
     sign::AmzExt,
     type_alias::{ApplyResult, HttpRequest},
 };
-use crate::error::ProxyResult;
 
 #[derive(Error, Debug)]
 pub enum ParserError {
@@ -56,8 +56,8 @@ impl HttpRequestExt for HttpRequest {
         I: Input,
     {
         let ak = match self.extract_access_key() {
-            Err(e) => return ApplyResult::Reject(response::invalid_access_key()),
-            Ok(ak) => ak
+            Err(e) => return ApplyResult::Reject(response::forbidden(&format!("{:?}", e))),
+            Ok(ak) => ak,
         };
         let user = match principal_container.find_user_by_access_key(ak) {
             None => return ApplyResult::Reject(response::user_not_found()),

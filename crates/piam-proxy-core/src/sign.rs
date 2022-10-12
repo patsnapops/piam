@@ -8,9 +8,9 @@ use hyper::{body, Body};
 use crate::{
     amz_canonical_request::header::{X_AMZ_CONTENT_SHA_256, X_AMZ_DATE, X_AMZ_SECURITY_TOKEN},
     config::CORE_CONFIG,
+    error::{ProxyError, ProxyResult},
     type_alias::HttpRequest,
 };
-use crate::error::{ProxyError, ProxyResult};
 
 pub trait AmzExt {
     fn extract_access_key(&self) -> ProxyResult<&str>;
@@ -18,14 +18,30 @@ pub trait AmzExt {
 
 impl AmzExt for HttpRequest {
     fn extract_access_key(&self) -> ProxyResult<&str> {
-        let auth = match self.headers().get(AUTHORIZATION) {
-            None => Err(ProxyError::InvalidRequest("missing authorization header".into())),
-            Some(auth) => Ok(auth)
-        }?;
-        let split = auth.to_str().unwrap();
-        let split = split.split('/').next().unwrap();
-        let split = split.split_once('=').unwrap().1;
-        Ok(split)
+        let auth = self
+            .headers()
+            .get(AUTHORIZATION)
+            .ok_or_else(|| ProxyError::Forbidden("Missing authorization header".into()))?;
+        let auth_str = auth.to_str().map_err(|e| {
+            ProxyError::Forbidden(format!(
+                "Malformed authorization header, only visible ASCII chars allowed. \
+                The authorization header: {:#?}",
+                auth
+            ))
+        })?;
+        // example auth_str: "AWS4-HMAC-SHA256 Credential=AKPSSVCSPROXYDEV/20221012/cn-northwest-1/s3/aws4_request ..."
+        let credential_and_ak = auth_str
+            .split('/')
+            .next()
+            .and_then(|s| s.split_once('='))
+            .ok_or_else(|| {
+                ProxyError::Forbidden(format!(
+                    "Malformed authorization header\
+                    (not a valid AMZ sigV4 authorization header): {}",
+                    auth_str
+                ))
+            })?;
+        Ok(credential_and_ak.1)
     }
 }
 
