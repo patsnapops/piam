@@ -3,6 +3,10 @@ use hyper::Body;
 
 use crate::type_alias::HttpResponse;
 
+pub fn invalid_access_key() -> HttpResponse {
+    forbidden("InvalidAccessKeyId")
+}
+
 pub fn user_not_found() -> HttpResponse {
     forbidden("User(AccessKey)NotFound")
 }

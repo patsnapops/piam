@@ -14,6 +14,7 @@ use crate::{
     sign::AmzExt,
     type_alias::{ApplyResult, HttpRequest},
 };
+use crate::error::ProxyResult;
 
 #[derive(Error, Debug)]
 pub enum ParserError {
@@ -54,7 +55,11 @@ impl HttpRequestExt for HttpRequest {
         S: Statement<Input = I> + Debug,
         I: Input,
     {
-        let user = match principal_container.find_user_by_access_key(self.extract_access_key()) {
+        let ak = match self.extract_access_key() {
+            Err(e) => return ApplyResult::Reject(response::invalid_access_key()),
+            Ok(ak) => ak
+        };
+        let user = match principal_container.find_user_by_access_key(ak) {
             None => return ApplyResult::Reject(response::user_not_found()),
             Some(u) => u,
         };

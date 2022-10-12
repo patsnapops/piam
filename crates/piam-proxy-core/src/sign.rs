@@ -2,7 +2,7 @@ use std::time::SystemTime;
 
 use anyhow::Result;
 use aws_sigv4::http_request::{sign, SignableRequest, SigningParams, SigningSettings};
-use http::{header::AUTHORIZATION, Request};
+use http::{header::AUTHORIZATION, HeaderValue, Request};
 use hyper::{body, Body};
 
 use crate::{
@@ -10,18 +10,22 @@ use crate::{
     config::CORE_CONFIG,
     type_alias::HttpRequest,
 };
+use crate::error::{ProxyError, ProxyResult};
 
 pub trait AmzExt {
-    fn extract_access_key(&self) -> &str;
+    fn extract_access_key(&self) -> ProxyResult<&str>;
 }
 
 impl AmzExt for HttpRequest {
-    fn extract_access_key(&self) -> &str {
-        let auth = self.headers().get(AUTHORIZATION).unwrap();
+    fn extract_access_key(&self) -> ProxyResult<&str> {
+        let auth = match self.headers().get(AUTHORIZATION) {
+            None => Err(ProxyError::InvalidRequest("missing authorization header".into())),
+            Some(auth) => Ok(auth)
+        }?;
         let split = auth.to_str().unwrap();
         let split = split.split('/').next().unwrap();
         let split = split.split_once('=').unwrap().1;
-        split
+        Ok(split)
     }
 }
 

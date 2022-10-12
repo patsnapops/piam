@@ -13,3 +13,4 @@ pub mod rule_api;
 pub mod sign;
 pub mod state;
 pub mod type_alias;
+pub mod error;
