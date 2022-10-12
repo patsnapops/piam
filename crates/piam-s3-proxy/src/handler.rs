@@ -161,6 +161,18 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn list_objects_v1() {
+        let output = build_client()
+            .await
+            .list_objects()
+            .bucket("anniversary")
+            .send()
+            .await
+            .unwrap();
+        assert!(output.contents().unwrap().len() > 2);
+    }
+
+    #[tokio::test]
     async fn list_objects_v2() {
         let output = build_client()
             .await
@@ -169,8 +181,7 @@ mod tests {
             .send()
             .await
             .unwrap();
-        let size = output.key_count();
-        assert!(size > 10);
+        assert!(output.key_count() > 10);
     }
 
     #[tokio::test]
@@ -498,7 +509,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn dt_us_east_get_object() {
+    async fn dt_us_east() {
         let output = build_dt_us_east_client()
             .await
             .get_object()
@@ -507,7 +518,15 @@ mod tests {
             .send()
             .await
             .unwrap();
-        assert!(output.content_length() > 100)
+        assert!(output.content_length() > 100);
+        let output = build_dt_us_east_client()
+            .await
+            .list_objects()
+            .bucket("datalake-internal.patsnap.com")
+            .send()
+            .await
+            .unwrap();
+        assert!(output.contents().unwrap().len() > 2);
     }
 
     #[tokio::test]
