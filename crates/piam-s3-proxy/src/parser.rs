@@ -35,6 +35,9 @@ pub enum S3Input {
     DeleteBucketTagging {
         bucket: String,
     },
+    // GetBucketNotification {
+    //     bucket: String,
+    // },
     ListObjects {
         bucket: String,
     },
@@ -185,6 +188,7 @@ impl Input for S3Input {
                     Ok(S3Input::ListBuckets)
                 } else {
                     match *method {
+                        // This is a special case for ListObjectsV1, which is not recommended by AWS
                         Method::GET => Ok(S3Input::ListObjects { bucket }),
                         Method::PUT => Ok(S3Input::CreateBucket { bucket }),
                         Method::HEAD => Ok(S3Input::HeadBucket { bucket }),
