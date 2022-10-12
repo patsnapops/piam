@@ -122,3 +122,7 @@ deploy_s3_proxy_aws_us_prod:
     - echo $image
   script:
     - ops_deploy deploy
+
+# deploy 9554 aws cn dev
+# deploy cn tx dev
+# deploy us tx dataprod
