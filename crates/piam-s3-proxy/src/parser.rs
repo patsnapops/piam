@@ -6,7 +6,6 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use strum_macros::Display;
 
 use crate::config::S3_CONFIG;
-use crate::error::InputOperationError;
 
 #[derive(Debug)]
 pub enum S3IoKind {
@@ -104,70 +103,77 @@ impl S3Input {
     }
 
     pub fn action_kind(&self) -> ActionKind {
+        use ActionKind::*;
         match self {
-            S3Input::ListBuckets => ActionKind::ListBuckets,
-            S3Input::CreateBucket { .. } => ActionKind::Bucket,
-            S3Input::HeadBucket { .. } => ActionKind::Bucket,
-            S3Input::DeleteBucket { .. } => ActionKind::Bucket,
-            S3Input::GetBucketTagging { .. } => ActionKind::Bucket,
-            S3Input::PutBucketTagging { .. } => ActionKind::Bucket,
-            S3Input::DeleteBucketTagging { .. } => ActionKind::Bucket,
-            S3Input::GetBucketNotificationConfiguration { .. } => ActionKind::Bucket,
-            S3Input::PutBucketNotificationConfiguration { .. } => ActionKind::Bucket,
-            S3Input::ListObjects { .. } => ActionKind::Bucket,
-            S3Input::ListMultiPartUploads { .. } => ActionKind::Bucket,
-            S3Input::GetObject { .. } => ActionKind::Object,
-            S3Input::PutObject { .. } => ActionKind::Object,
-            S3Input::HeadObject { .. } => ActionKind::Object,
-            S3Input::DeleteObject { .. } => ActionKind::Object,
-            S3Input::CopyObject { .. } => ActionKind::Object,
-            S3Input::CreateMultipartUpload { .. } => ActionKind::Object,
-            S3Input::UploadPart { .. } => ActionKind::Object,
-            S3Input::CompleteMultipartUpload { .. } => ActionKind::Object,
-            S3Input::ListParts { .. } => ActionKind::Object,
-            S3Input::AbortMultipartUpload { .. } => ActionKind::Object,
+            Self::ListBuckets => ListBuckets,
+            Self::CreateBucket { .. } => Bucket,
+            Self::HeadBucket { .. } => Bucket,
+            Self::DeleteBucket { .. } => Bucket,
+            Self::GetBucketTagging { .. } => Bucket,
+            Self::PutBucketTagging { .. } => Bucket,
+            Self::DeleteBucketTagging { .. } => Bucket,
+            Self::GetBucketNotificationConfiguration { .. } => Bucket,
+            Self::PutBucketNotificationConfiguration { .. } => Bucket,
+            Self::ListObjects { .. } => Bucket,
+            Self::ListMultiPartUploads { .. } => Bucket,
+            Self::GetObject { .. } => Object,
+            Self::PutObject { .. } => Object,
+            Self::HeadObject { .. } => Object,
+            Self::DeleteObject { .. } => Object,
+            Self::CopyObject { .. } => Object,
+            Self::CreateMultipartUpload { .. } => Object,
+            Self::UploadPart { .. } => Object,
+            Self::CompleteMultipartUpload { .. } => Object,
+            Self::ListParts { .. } => Object,
+            Self::AbortMultipartUpload { .. } => Object,
         }
     }
 
-    pub fn bucket(&self) -> Result<&String, InputOperationError> {
+    /// # Panics
+    ///
+    /// If call this method on input that does not contains `bucket` field
+    pub fn bucket(&self) -> &String {
         match self {
-            S3Input::CreateBucket { bucket } => Ok(bucket),
-            S3Input::HeadBucket { bucket } => Ok(bucket),
-            S3Input::DeleteBucket { bucket } => Ok(bucket),
-            S3Input::GetBucketTagging { bucket } => Ok(bucket),
-            S3Input::PutBucketTagging { bucket } => Ok(bucket),
-            S3Input::DeleteBucketTagging { bucket } => Ok(bucket),
-            S3Input::ListObjects { bucket } => Ok(bucket),
-            S3Input::ListMultiPartUploads { bucket } => Ok(bucket),
-            S3Input::GetBucketNotificationConfiguration { bucket, .. } => Ok(bucket),
-            S3Input::PutBucketNotificationConfiguration { bucket, .. } => Ok(bucket),
-            S3Input::GetObject { bucket, .. } => Ok(bucket),
-            S3Input::PutObject { bucket, .. } => Ok(bucket),
-            S3Input::HeadObject { bucket, .. } => Ok(bucket),
-            S3Input::DeleteObject { bucket, .. } => Ok(bucket),
-            S3Input::CopyObject { bucket, .. } => Ok(bucket),
-            S3Input::CreateMultipartUpload { bucket, .. } => Ok(bucket),
-            S3Input::UploadPart { bucket, .. } => Ok(bucket),
-            S3Input::CompleteMultipartUpload { bucket, .. } => Ok(bucket),
-            S3Input::ListParts { bucket, .. } => Ok(bucket),
-            S3Input::AbortMultipartUpload { bucket, .. } => Ok(bucket),
-            _ => Err(InputOperationError::InvalidBucketOp(self.action())),
+            Self::CreateBucket { bucket } => bucket,
+            Self::HeadBucket { bucket } => bucket,
+            Self::DeleteBucket { bucket } => bucket,
+            Self::GetBucketTagging { bucket } => bucket,
+            Self::PutBucketTagging { bucket } => bucket,
+            Self::DeleteBucketTagging { bucket } => bucket,
+            Self::ListObjects { bucket } => bucket,
+            Self::ListMultiPartUploads { bucket } => bucket,
+            Self::GetBucketNotificationConfiguration { bucket, .. } => bucket,
+            Self::PutBucketNotificationConfiguration { bucket, .. } => bucket,
+            Self::GetObject { bucket, .. } => bucket,
+            Self::PutObject { bucket, .. } => bucket,
+            Self::HeadObject { bucket, .. } => bucket,
+            Self::DeleteObject { bucket, .. } => bucket,
+            Self::CopyObject { bucket, .. } => bucket,
+            Self::CreateMultipartUpload { bucket, .. } => bucket,
+            Self::UploadPart { bucket, .. } => bucket,
+            Self::CompleteMultipartUpload { bucket, .. } => bucket,
+            Self::ListParts { bucket, .. } => bucket,
+            Self::AbortMultipartUpload { bucket, .. } => bucket,
+            _ => panic!("{} has no bucket", self.action()),
         }
     }
 
-    pub fn key(&self) -> Result<&String, InputOperationError> {
+    /// # Panics
+    ///
+    /// If call this method on input that does not contains `key` field
+    pub fn key(&self) -> &String {
         match self {
-            S3Input::GetObject { key, .. } => Ok(key),
-            S3Input::PutObject { key, .. } => Ok(key),
-            S3Input::HeadObject { key, .. } => Ok(key),
-            S3Input::DeleteObject { key, .. } => Ok(key),
-            S3Input::CopyObject { key, .. } => Ok(key),
-            S3Input::CreateMultipartUpload { key, .. } => Ok(key),
-            S3Input::UploadPart { key, .. } => Ok(key),
-            S3Input::CompleteMultipartUpload { key, .. } => Ok(key),
-            S3Input::ListParts { key, .. } => Ok(key),
-            S3Input::AbortMultipartUpload { key, .. } => Ok(key),
-            _ => Err(InputOperationError::InvalidObjectOp(self.action())),
+            Self::GetObject { key, .. } => key,
+            Self::PutObject { key, .. } => key,
+            Self::HeadObject { key, .. } => key,
+            Self::DeleteObject { key, .. } => key,
+            Self::CopyObject { key, .. } => key,
+            Self::CreateMultipartUpload { key, .. } => key,
+            Self::UploadPart { key, .. } => key,
+            Self::CompleteMultipartUpload { key, .. } => key,
+            Self::ListParts { key, .. } => key,
+            Self::AbortMultipartUpload { key, .. } => key,
+            _ => panic!("{} has no object", self.action()),
         }
     }
 }

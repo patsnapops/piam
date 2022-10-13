@@ -56,8 +56,7 @@ impl Matches for S3InputPolicyStatement {
         match &bucket.name {
             None => bucket.effect.as_ref(),
             Some(name) => {
-                let input_bucket = input.bucket().unwrap();
-                match name.matches(input_bucket) {
+                match name.matches(input.bucket()) {
                     true => bucket.effect.as_ref(),
                     false => None,
                 }
@@ -77,13 +76,11 @@ impl Matches for S3InputPolicyStatement {
                 for key in keys {
                     match &key.name {
                         Some(name) => {
-                            let input_key = input.key().unwrap();
-                            if name.matches(input_key) {
+                            if name.matches(input.key()) {
                                 return key.effect.as_ref();
                             }
                         }
                         None => {
-                            input.key().unwrap();
                             // TODO: static analyze, this condition can occur at most once at runtime
                             default_for_all_name = key.effect.as_ref();
                         }
