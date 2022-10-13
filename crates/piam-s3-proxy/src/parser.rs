@@ -3,19 +3,19 @@ use http::{header::HOST, Method};
 use log::error;
 use piam_proxy_core::{input::Input, type_alias::HttpRequest};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use strum_macros::Display;
 
 use crate::config::S3_CONFIG;
+use crate::error::InputOperationError;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug)]
 pub enum S3IoKind {
     Input(S3Input),
     Output(S3Output),
 }
 
-#[derive(Clone, Debug, Default, Eq, Hash, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, Display)]
 pub enum S3Input {
-    #[default]
-    Any,
     ListBuckets,
     CreateBucket {
         bucket: String,
@@ -35,9 +35,12 @@ pub enum S3Input {
     DeleteBucketTagging {
         bucket: String,
     },
-    // GetBucketNotification {
-    //     bucket: String,
-    // },
+    GetBucketNotificationConfiguration {
+        bucket: String,
+    },
+    PutBucketNotificationConfiguration {
+        bucket: String,
+    },
     ListObjects {
         bucket: String,
     },
@@ -87,69 +90,84 @@ pub enum S3Input {
     },
 }
 
+#[derive(Debug)]
+pub enum ActionKind {
+    ListBuckets,
+    Bucket,
+    Object,
+}
+
 impl S3Input {
     pub fn action(&self) -> String {
+        // generate codes like `S3Input::ListBuckets => "ListBuckets".into()` by strum_macros::Display
+        self.to_string()
+    }
+
+    pub fn action_kind(&self) -> ActionKind {
         match self {
-            S3Input::Any => "Any".into(),
-            S3Input::ListBuckets => "ListBuckets".into(),
-            S3Input::CreateBucket { .. } => "CreateBucket".into(),
-            S3Input::HeadBucket { .. } => "HeadBucket".into(),
-            S3Input::DeleteBucket { .. } => "DeleteBucket".into(),
-            S3Input::GetBucketTagging { .. } => "GetBucketTagging".into(),
-            S3Input::PutBucketTagging { .. } => "PutBucketTagging".into(),
-            S3Input::DeleteBucketTagging { .. } => "DeleteBucketTagging".into(),
-            S3Input::ListObjects { .. } => "ListObjects".into(),
-            S3Input::ListMultiPartUploads { .. } => "ListMultiPartUploads".into(),
-            S3Input::GetObject { .. } => "GetObject".into(),
-            S3Input::PutObject { .. } => "PutObject".into(),
-            S3Input::HeadObject { .. } => "HeadObject".into(),
-            S3Input::DeleteObject { .. } => "DeleteObject".into(),
-            S3Input::CopyObject { .. } => "CopyObject".into(),
-            S3Input::CreateMultipartUpload { .. } => "CreateMultipartUpload".into(),
-            S3Input::UploadPart { .. } => "UploadPart".into(),
-            S3Input::CompleteMultipartUpload { .. } => "CompleteMultipartUpload".into(),
-            S3Input::ListParts { .. } => "ListParts".into(),
-            S3Input::AbortMultipartUpload { .. } => "AbortMultipartUpload".into(),
+            S3Input::ListBuckets => ActionKind::ListBuckets,
+            S3Input::CreateBucket { .. } => ActionKind::Bucket,
+            S3Input::HeadBucket { .. } => ActionKind::Bucket,
+            S3Input::DeleteBucket { .. } => ActionKind::Bucket,
+            S3Input::GetBucketTagging { .. } => ActionKind::Bucket,
+            S3Input::PutBucketTagging { .. } => ActionKind::Bucket,
+            S3Input::DeleteBucketTagging { .. } => ActionKind::Bucket,
+            S3Input::GetBucketNotificationConfiguration { .. } => ActionKind::Bucket,
+            S3Input::PutBucketNotificationConfiguration { .. } => ActionKind::Bucket,
+            S3Input::ListObjects { .. } => ActionKind::Bucket,
+            S3Input::ListMultiPartUploads { .. } => ActionKind::Bucket,
+            S3Input::GetObject { .. } => ActionKind::Object,
+            S3Input::PutObject { .. } => ActionKind::Object,
+            S3Input::HeadObject { .. } => ActionKind::Object,
+            S3Input::DeleteObject { .. } => ActionKind::Object,
+            S3Input::CopyObject { .. } => ActionKind::Object,
+            S3Input::CreateMultipartUpload { .. } => ActionKind::Object,
+            S3Input::UploadPart { .. } => ActionKind::Object,
+            S3Input::CompleteMultipartUpload { .. } => ActionKind::Object,
+            S3Input::ListParts { .. } => ActionKind::Object,
+            S3Input::AbortMultipartUpload { .. } => ActionKind::Object,
         }
     }
 
-    pub fn bucket(&self) -> &String {
+    pub fn bucket(&self) -> Result<&String, InputOperationError> {
         match self {
-            S3Input::CreateBucket { bucket } => bucket,
-            S3Input::HeadBucket { bucket } => bucket,
-            S3Input::DeleteBucket { bucket } => bucket,
-            S3Input::GetBucketTagging { bucket } => bucket,
-            S3Input::PutBucketTagging { bucket } => bucket,
-            S3Input::DeleteBucketTagging { bucket } => bucket,
-            S3Input::ListObjects { bucket } => bucket,
-            S3Input::ListMultiPartUploads { bucket } => bucket,
-            S3Input::GetObject { bucket, .. } => bucket,
-            S3Input::PutObject { bucket, .. } => bucket,
-            S3Input::HeadObject { bucket, .. } => bucket,
-            S3Input::DeleteObject { bucket, .. } => bucket,
-            S3Input::CopyObject { bucket, .. } => bucket,
-            S3Input::CreateMultipartUpload { bucket, .. } => bucket,
-            S3Input::UploadPart { bucket, .. } => bucket,
-            S3Input::CompleteMultipartUpload { bucket, .. } => bucket,
-            S3Input::ListParts { bucket, .. } => bucket,
-            S3Input::AbortMultipartUpload { bucket, .. } => bucket,
-            _ => panic!("Unexpected S3InputType"),
+            S3Input::CreateBucket { bucket } => Ok(bucket),
+            S3Input::HeadBucket { bucket } => Ok(bucket),
+            S3Input::DeleteBucket { bucket } => Ok(bucket),
+            S3Input::GetBucketTagging { bucket } => Ok(bucket),
+            S3Input::PutBucketTagging { bucket } => Ok(bucket),
+            S3Input::DeleteBucketTagging { bucket } => Ok(bucket),
+            S3Input::ListObjects { bucket } => Ok(bucket),
+            S3Input::ListMultiPartUploads { bucket } => Ok(bucket),
+            S3Input::GetBucketNotificationConfiguration { bucket, .. } => Ok(bucket),
+            S3Input::PutBucketNotificationConfiguration { bucket, .. } => Ok(bucket),
+            S3Input::GetObject { bucket, .. } => Ok(bucket),
+            S3Input::PutObject { bucket, .. } => Ok(bucket),
+            S3Input::HeadObject { bucket, .. } => Ok(bucket),
+            S3Input::DeleteObject { bucket, .. } => Ok(bucket),
+            S3Input::CopyObject { bucket, .. } => Ok(bucket),
+            S3Input::CreateMultipartUpload { bucket, .. } => Ok(bucket),
+            S3Input::UploadPart { bucket, .. } => Ok(bucket),
+            S3Input::CompleteMultipartUpload { bucket, .. } => Ok(bucket),
+            S3Input::ListParts { bucket, .. } => Ok(bucket),
+            S3Input::AbortMultipartUpload { bucket, .. } => Ok(bucket),
+            _ => Err(InputOperationError::InvalidBucketOp(self.action())),
         }
     }
 
-    pub fn key(&self) -> &String {
+    pub fn key(&self) -> Result<&String, InputOperationError> {
         match self {
-            S3Input::GetObject { key, .. } => key,
-            S3Input::PutObject { key, .. } => key,
-            S3Input::HeadObject { key, .. } => key,
-            S3Input::DeleteObject { key, .. } => key,
-            S3Input::CopyObject { key, .. } => key,
-            S3Input::CreateMultipartUpload { key, .. } => key,
-            S3Input::UploadPart { key, .. } => key,
-            S3Input::CompleteMultipartUpload { key, .. } => key,
-            S3Input::ListParts { key, .. } => key,
-            S3Input::AbortMultipartUpload { key, .. } => key,
-            _ => panic!("Unexpected S3InputType"),
+            S3Input::GetObject { key, .. } => Ok(key),
+            S3Input::PutObject { key, .. } => Ok(key),
+            S3Input::HeadObject { key, .. } => Ok(key),
+            S3Input::DeleteObject { key, .. } => Ok(key),
+            S3Input::CopyObject { key, .. } => Ok(key),
+            S3Input::CreateMultipartUpload { key, .. } => Ok(key),
+            S3Input::UploadPart { key, .. } => Ok(key),
+            S3Input::CompleteMultipartUpload { key, .. } => Ok(key),
+            S3Input::ListParts { key, .. } => Ok(key),
+            S3Input::AbortMultipartUpload { key, .. } => Ok(key),
+            _ => Err(InputOperationError::InvalidObjectOp(self.action())),
         }
     }
 }
@@ -159,6 +177,7 @@ struct Form {
     #[serde(rename = "list-type")]
     list_type: Option<i32>,
     tagging: Option<String>,
+    notification: Option<String>,
     uploads: Option<String>,
     #[serde(rename = "uploadId")]
     upload_id: Option<String>,
@@ -179,6 +198,7 @@ impl Input for S3Input {
         let has_tagging = form.tagging.is_some();
         let has_uploads = form.uploads.is_some();
         let has_upload_id = form.upload_id.is_some();
+        let has_notification = form.notification.is_some();
         let empty_query = query.is_empty();
 
         if path == "/" {
@@ -209,6 +229,12 @@ impl Input for S3Input {
                 match *method {
                     Method::GET => Ok(S3Input::ListMultiPartUploads { bucket }),
                     _ => parse_error("unknown bucket uploads operation", req),
+                }
+            } else if has_notification {
+                match *method {
+                    Method::GET => Ok(S3Input::GetBucketNotificationConfiguration { bucket }),
+                    Method::PUT => Ok(S3Input::PutBucketNotificationConfiguration { bucket }),
+                    _ => parse_error("unknown bucket notification operation", req),
                 }
             } else {
                 parse_error("bucket operation not yet supported", req)
@@ -257,114 +283,6 @@ impl Input for S3Input {
 fn parse_error(msg: &str, req: &HttpRequest) -> Result<S3Input> {
     error!("{}: {:#?}", msg, req);
     Err(anyhow!(""))
-}
-
-impl Serialize for S3Input {
-    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        match self {
-            Self::Any => serializer.serialize_str("*"),
-            Self::ListBuckets => serializer.serialize_str("ListBuckets"),
-            Self::CreateBucket { .. } => serializer.serialize_str("CreateBucket"),
-            Self::HeadBucket { .. } => serializer.serialize_str("HeadBucket"),
-            Self::DeleteBucket { .. } => serializer.serialize_str("DeleteBucket"),
-            Self::GetBucketTagging { .. } => serializer.serialize_str("GetBucketTagging"),
-            Self::PutBucketTagging { .. } => serializer.serialize_str("PutBucketTagging"),
-            Self::DeleteBucketTagging { .. } => serializer.serialize_str("DeleteBucketTagging"),
-            Self::ListObjects { .. } => serializer.serialize_str("ListObjects"),
-            Self::ListMultiPartUploads { .. } => serializer.serialize_str("ListMultiPartUploads"),
-            Self::GetObject { .. } => serializer.serialize_str("GetObject"),
-            Self::PutObject { .. } => serializer.serialize_str("PutObject"),
-            Self::HeadObject { .. } => serializer.serialize_str("HeadObject"),
-            Self::DeleteObject { .. } => serializer.serialize_str("DeleteObject"),
-            Self::CopyObject { .. } => serializer.serialize_str("CopyObject"),
-            Self::CreateMultipartUpload { .. } => serializer.serialize_str("CreateMultipartUpload"),
-            Self::UploadPart { .. } => serializer.serialize_str("UploadPart"),
-            Self::CompleteMultipartUpload { .. } => {
-                serializer.serialize_str("CompleteMultipartUpload")
-            }
-            Self::ListParts { .. } => serializer.serialize_str("ListParts"),
-            Self::AbortMultipartUpload { .. } => serializer.serialize_str("AbortMultipartUpload"),
-        }
-    }
-}
-
-impl<'de> Deserialize<'de> for S3Input {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        let s = String::deserialize(deserializer)?;
-        match s.as_str() {
-            "*" => Ok(Self::Any),
-            "ListBuckets" => Ok(Self::ListBuckets),
-            "CreateBucket" => Ok(Self::CreateBucket {
-                bucket: String::new(),
-            }),
-            "HeadBucket" => Ok(Self::HeadBucket {
-                bucket: String::new(),
-            }),
-            "DeleteBucket" => Ok(Self::DeleteBucket {
-                bucket: String::new(),
-            }),
-            "GetBucketTagging" => Ok(Self::GetBucketTagging {
-                bucket: String::new(),
-            }),
-            "PutBucketTagging" => Ok(Self::PutBucketTagging {
-                bucket: String::new(),
-            }),
-            "DeleteBucketTagging" => Ok(Self::DeleteBucketTagging {
-                bucket: String::new(),
-            }),
-            "ListObjects" => Ok(Self::ListObjects {
-                bucket: String::new(),
-            }),
-            "ListMultiPartUploads" => Ok(Self::ListMultiPartUploads {
-                bucket: String::new(),
-            }),
-            "GetObject" => Ok(Self::GetObject {
-                bucket: String::new(),
-                key: String::new(),
-            }),
-            "PutObject" => Ok(Self::PutObject {
-                bucket: String::new(),
-                key: String::new(),
-            }),
-            "HeadObject" => Ok(Self::HeadObject {
-                bucket: String::new(),
-                key: String::new(),
-            }),
-            "DeleteObject" => Ok(Self::DeleteObject {
-                bucket: String::new(),
-                key: String::new(),
-            }),
-            "CopyObject" => Ok(Self::CopyObject {
-                bucket: String::new(),
-                key: String::new(),
-                copy_source: String::new(),
-            }),
-            "CreateMultipartUpload" => Ok(Self::CreateMultipartUpload {
-                bucket: String::new(),
-                key: String::new(),
-            }),
-            "UploadPart" => Ok(Self::UploadPart {
-                bucket: String::new(),
-                key: String::new(),
-            }),
-            "CompleteMultipartUpload" => Ok(Self::CompleteMultipartUpload {
-                bucket: String::new(),
-                key: String::new(),
-            }),
-            "ListParts" => Ok(Self::ListParts {
-                bucket: String::new(),
-                key: String::new(),
-            }),
-            "AbortMultipartUpload" => Ok(Self::AbortMultipartUpload {
-                bucket: String::new(),
-                key: String::new(),
-            }),
-            _ => panic!("Unknown S3InputType: {}", s),
-        }
-    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]

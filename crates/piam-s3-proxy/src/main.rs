@@ -17,6 +17,7 @@ mod handler;
 mod parser;
 mod policy;
 mod request;
+mod error;
 
 #[tokio::main]
 async fn main() {

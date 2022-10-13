@@ -161,6 +161,19 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn get_bucket_notification_configuration() {
+        let output = build_client()
+            .await
+            .get_bucket_notification_configuration()
+            .bucket("api.patsnap.info")
+            .send()
+            .await
+            .unwrap();
+        let topic_configurations = output.topic_configurations().unwrap();
+        assert!(topic_configurations.len() > 1);
+    }
+
+    #[tokio::test]
     async fn list_objects_v1() {
         let output = build_client()
             .await
@@ -490,6 +503,7 @@ mod tests {
         build_client_with_params(
             env,
             &format!("http://{}", "s-ops-s3-proxy-us-aws.patsnap.info"),
+            // &format!("http://{}", DEV_PROXY_HOST),
         )
         .await
     }

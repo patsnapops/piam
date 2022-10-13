@@ -7,7 +7,7 @@ use piam_proxy_core::{
 };
 use serde::{Deserialize, Serialize};
 
-use crate::parser::S3Input;
+use crate::parser::{ActionKind, S3Input};
 
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct S3PolicyStatementImpl(S3PolicyStatement);
@@ -28,27 +28,9 @@ impl Statement for S3PolicyStatementImpl {
         if !input_policy.match_action(input) {
             return None;
         }
-        match input {
-            S3Input::ListBuckets
-            | S3Input::CreateBucket { .. }
-            | S3Input::HeadBucket { .. }
-            | S3Input::DeleteBucket { .. }
-            | S3Input::GetBucketTagging { .. }
-            | S3Input::PutBucketTagging { .. }
-            | S3Input::DeleteBucketTagging { .. }
-            | S3Input::ListObjects { .. }
-            | S3Input::ListMultiPartUploads { .. } => input_policy.find_bucket_effect(input),
-            S3Input::GetObject { .. }
-            | S3Input::PutObject { .. }
-            | S3Input::HeadObject { .. }
-            | S3Input::DeleteObject { .. }
-            | S3Input::CopyObject { .. }
-            | S3Input::CreateMultipartUpload { .. }
-            | S3Input::UploadPart { .. }
-            | S3Input::CompleteMultipartUpload { .. }
-            | S3Input::ListParts { .. }
-            | S3Input::AbortMultipartUpload { .. } => input_policy.find_object_effect(input),
-            _ => panic!("Unknown S3InputType: {:?}", input),
+        match input.action_kind() {
+            ActionKind::ListBuckets | ActionKind::Bucket => input_policy.find_bucket_effect(input),
+            ActionKind::Object => input_policy.find_object_effect(input),
         }
     }
 }
@@ -73,9 +55,12 @@ impl Matches for S3InputPolicyStatement {
         let bucket = &self.bucket;
         match &bucket.name {
             None => bucket.effect.as_ref(),
-            Some(name) => match name.matches(input.bucket()) {
-                true => bucket.effect.as_ref(),
-                false => None,
+            Some(name) => {
+                let input_bucket = input.bucket().unwrap();
+                match name.matches(input_bucket) {
+                    true => bucket.effect.as_ref(),
+                    false => None,
+                }
             },
         }
     }
@@ -92,11 +77,13 @@ impl Matches for S3InputPolicyStatement {
                 for key in keys {
                     match &key.name {
                         Some(name) => {
-                            if name.matches(input.key()) {
+                            let input_key = input.key().unwrap();
+                            if name.matches(input_key) {
                                 return key.effect.as_ref();
                             }
                         }
                         None => {
+                            input.key().unwrap();
                             // TODO: static analyze, this condition can occur at most once at runtime
                             default_for_all_name = key.effect.as_ref();
                         }
