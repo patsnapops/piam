@@ -5,7 +5,7 @@ use hyper::{client::HttpConnector, Body};
 use log::info;
 use once_cell::sync::Lazy;
 use piam_tracing::logger::LogHandle;
-use reqwest::Client;
+use reqwest::{Client, Error, Response};
 use serde::{Deserialize, Serialize};
 
 pub fn dev_mode() -> bool {
@@ -58,7 +58,8 @@ impl CoreConfig {
     pub async fn get_new(service: &str) -> Self {
         let key = format!("amz_sign_params/{}/{}", service, REGION.load());
         let string = get_resource_string(&key).await;
-        let amz_sign_params: AmzSignParams = serde_yaml::from_str(&string).unwrap();
+        let amz_sign_params: AmzSignParams = serde_yaml::from_str(&string)
+            .expect("AmzSignParams deser error in CoreConfig::get_new");
         CoreConfig {
             log_handle: None,
             client: Default::default(),
@@ -84,7 +85,21 @@ pub async fn get_resource_string(key: &str) -> String {
     // A native-tls/rust-tls related issue: Should set default-features = false, features = ["rustls-tls"]
     // for reqwest in Cargo.toml, otherwise Segmentation fault (core dumped) will happen when Client::new().
     let client = Client::new();
-    client.get(url).send().await.unwrap().text().await.unwrap()
+    match client.get(&url).send().await {
+        Ok(r) => r.text().await.expect("get_resource_string text error"),
+        Err(_) => {
+            dbg!("retry one more time to get resource string");
+            tokio::time::sleep(std::time::Duration::from_millis(500)).await;
+            client
+                .get(&url)
+                .send()
+                .await
+                .expect("get_resource_string send error")
+                .text()
+                .await
+                .expect("get_resource_string text error")
+        }
+    }
 }
 
 #[cfg(test)]

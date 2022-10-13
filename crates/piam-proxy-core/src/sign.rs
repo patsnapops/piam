@@ -47,7 +47,11 @@ impl AmzExt for HttpRequest {
 
 pub async fn sign_with_amz_params(mut req: HttpRequest) -> Result<HttpRequest> {
     // save checksum before signing
-    let checksum = req.headers().get(X_AMZ_CONTENT_SHA_256).unwrap().clone();
+    let checksum = req
+        .headers()
+        .get(X_AMZ_CONTENT_SHA_256)
+        .expect("X_AMZ_CONTENT_SHA_256 not found while sign_with_amz_params")
+        .clone();
 
     // see `aws_sigv4::http_request::sign::calculate_signing_headers`
     req.headers_mut().remove(X_AMZ_DATE);
@@ -76,7 +80,7 @@ pub async fn sign_with_amz_params(mut req: HttpRequest) -> Result<HttpRequest> {
         .build()?;
     let signable_request = SignableRequest::from(&byte_req);
     let (signing_instructions, _signature) = sign(signable_request, &signing_params)
-        .unwrap()
+        .expect("Failed to sign request with AMZ sigV4")
         .into_parts();
     signing_instructions.apply_to_request(&mut byte_req);
 

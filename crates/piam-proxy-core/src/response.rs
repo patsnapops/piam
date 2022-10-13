@@ -31,5 +31,5 @@ pub fn forbidden(body: &str) -> HttpResponse {
     Response::builder()
         .status(StatusCode::FORBIDDEN)
         .body(Body::from(body.to_string()))
-        .unwrap()
+        .expect("build forbidden response error")
 }

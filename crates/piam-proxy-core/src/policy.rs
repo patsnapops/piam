@@ -279,5 +279,156 @@ pub mod s3_policy {
             let statement: Policy<S3PolicyStatement> = serde_yaml::from_str(&do_ser_one()).unwrap();
             dbg!(statement);
         }
+
+        pub fn make_dev_policy() -> Policy<S3PolicyStatement> {
+            let actions = Some(vec!["Any".into()]);
+            let key = Key {
+                name: None,
+                tag: None,
+                effect: Some(Effect::allow()),
+            };
+            let bucket = Bucket {
+                name: None,
+                tag: None,
+                effect: Some(Effect::allow()),
+                keys: Some(vec![key]),
+            };
+            let statement = S3PolicyStatement {
+                version: 0,
+                id: Default::default(),
+                input_policy: S3InputPolicyStatement {
+                    actions,
+                    bucket,
+                    ..Default::default()
+                },
+                output_policy: None,
+            };
+            Policy {
+                kind: "ObjectStorage".to_string(),
+                version: 0,
+                id: Default::default(),
+                statement,
+            }
+        }
+
+        pub fn make_lyc_policy() -> Policy<S3PolicyStatement> {
+            let actions = Some(vec!["ListObjects".into(), "GetObject".into()]);
+            let key = Key {
+                name: Some(Name {
+                    eq: None,
+                    start_with: Some(vec!["liych".into()]),
+                }),
+                tag: None,
+                effect: Some(Effect::allow()),
+            };
+            let bucket = Bucket {
+                name: Some(Name {
+                    eq: Some(vec!["testpatsnapus".into()]),
+                    start_with: None,
+                }),
+                tag: None,
+                effect: Some(Effect::allow()),
+                keys: Some(vec![key]),
+            };
+            let statement = S3PolicyStatement {
+                version: 0,
+                id: Default::default(),
+                input_policy: S3InputPolicyStatement {
+                    actions,
+                    bucket,
+                    ..Default::default()
+                },
+                output_policy: None,
+            };
+            Policy {
+                kind: "ObjectStorage".to_string(),
+                version: 0,
+                id: Default::default(),
+                statement,
+            }
+        }
+
+        pub fn make_dt_policy() -> Policy<S3PolicyStatement> {
+            let actions = Some(vec![
+                "ListObjects".into(),
+                "GetObject".into(),
+                "PutObject".into(),
+            ]);
+            let key = Key {
+                name: None,
+                tag: None,
+                effect: Some(Effect::allow()),
+            };
+            let bucket = Bucket {
+                name: Some(Name {
+                    eq: Some(vec!["datalake-internal.patsnap.com".into()]),
+                    start_with: None,
+                }),
+                tag: None,
+                effect: Some(Effect::allow()),
+                keys: Some(vec![key]),
+            };
+            let statement = S3PolicyStatement {
+                version: 0,
+                id: Default::default(),
+                input_policy: S3InputPolicyStatement {
+                    actions,
+                    bucket,
+                    ..Default::default()
+                },
+                output_policy: None,
+            };
+            Policy {
+                kind: "ObjectStorage".to_string(),
+                version: 0,
+                id: Default::default(),
+                statement,
+            }
+        }
+
+        // noinspection SpellCheckingInspection
+        pub fn make_opst_policy() -> Policy<S3PolicyStatement> {
+            let actions = Some(vec![
+                "ListObjects".into(),
+                "GetObject".into(),
+                "PutObject".into(),
+            ]);
+            let key = Key {
+                name: None,
+                tag: None,
+                effect: Some(Effect::allow()),
+            };
+            let bucket = Bucket {
+                name: Some(Name {
+                    eq: Some(vec!["datalake-internal.patsnap.com".into()]),
+                    start_with: None,
+                }),
+                tag: None,
+                effect: Some(Effect::allow()),
+                keys: Some(vec![key]),
+            };
+            let statement = S3PolicyStatement {
+                version: 0,
+                id: Default::default(),
+                input_policy: S3InputPolicyStatement {
+                    actions,
+                    bucket,
+                    ..Default::default()
+                },
+                output_policy: None,
+            };
+            Policy {
+                kind: "ObjectStorage".to_string(),
+                version: 0,
+                id: Default::default(),
+                statement,
+            }
+        }
+
+        #[test]
+        fn ser_lyc_policy() {
+            let string = serde_yaml::to_string(&make_lyc_policy()).unwrap();
+            println!("{}", string);
+        }
     }
 }
