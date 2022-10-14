@@ -169,8 +169,6 @@ mod tests {
             .send()
             .await
             .unwrap();
-        let topic_configurations = output.topic_configurations().unwrap();
-        assert!(topic_configurations.len() > 1);
     }
 
     #[tokio::test]
@@ -179,6 +177,7 @@ mod tests {
             .await
             .list_objects()
             .bucket("anniversary")
+            .prefix("image")
             .send()
             .await
             .unwrap();

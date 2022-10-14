@@ -191,6 +191,7 @@ struct Form {
 
 impl Input for S3Input {
     fn from_http(req: &HttpRequest) -> Result<Self> {
+        use S3Input::*;
         let proxy_host = &S3_CONFIG.load().proxy_host;
         let path = req.uri().path();
         let method = req.method();
@@ -205,82 +206,75 @@ impl Input for S3Input {
         let has_uploads = form.uploads.is_some();
         let has_upload_id = form.upload_id.is_some();
         let has_notification = form.notification.is_some();
-        let empty_query = query.is_empty();
 
         if path == "/" {
             // bucket operations
-            if empty_query {
-                if host == proxy_host && *method == Method::GET {
-                    Ok(S3Input::ListBuckets)
-                } else {
-                    match *method {
-                        // This is a special case for ListObjectsV1, which is not recommended by AWS
-                        Method::GET => Ok(S3Input::ListObjects { bucket }),
-                        Method::PUT => Ok(S3Input::CreateBucket { bucket }),
-                        Method::HEAD => Ok(S3Input::HeadBucket { bucket }),
-                        Method::DELETE => Ok(S3Input::DeleteBucket { bucket }),
-                        _ => parse_error("unknown bucket operation", req),
-                    }
-                }
-            } else if has_list_type && *method == Method::GET {
-                Ok(S3Input::ListObjects { bucket })
+            if has_list_type && *method == Method::GET {
+                Ok(ListObjects { bucket })
             } else if has_tagging {
                 match *method {
-                    Method::GET => Ok(S3Input::GetBucketTagging { bucket }),
-                    Method::PUT => Ok(S3Input::PutBucketTagging { bucket }),
-                    Method::DELETE => Ok(S3Input::DeleteBucketTagging { bucket }),
+                    Method::GET => Ok(GetBucketTagging { bucket }),
+                    Method::PUT => Ok(PutBucketTagging { bucket }),
+                    Method::DELETE => Ok(DeleteBucketTagging { bucket }),
                     _ => parse_error("unknown bucket tagging operation", req),
                 }
             } else if has_uploads {
                 match *method {
-                    Method::GET => Ok(S3Input::ListMultiPartUploads { bucket }),
+                    Method::GET => Ok(ListMultiPartUploads { bucket }),
                     _ => parse_error("unknown bucket uploads operation", req),
                 }
             } else if has_notification {
                 match *method {
-                    Method::GET => Ok(S3Input::GetBucketNotificationConfiguration { bucket }),
-                    Method::PUT => Ok(S3Input::PutBucketNotificationConfiguration { bucket }),
+                    Method::GET => Ok(GetBucketNotificationConfiguration { bucket }),
+                    Method::PUT => Ok(PutBucketNotificationConfiguration { bucket }),
                     _ => parse_error("unknown bucket notification operation", req),
                 }
+            } else if host == proxy_host && *method == Method::GET {
+                Ok(ListBuckets)
             } else {
-                parse_error("bucket operation not yet supported", req)
+                match *method {
+                    // This is a special case for ListObjectsV1, which is not recommended by AWS
+                    Method::GET => Ok(ListObjects { bucket }),
+                    Method::PUT => Ok(CreateBucket { bucket }),
+                    Method::HEAD => Ok(HeadBucket { bucket }),
+                    Method::DELETE => Ok(DeleteBucket { bucket }),
+                    _ => parse_error("unknown bucket operation", req),
+                }
             }
         } else {
             // object operations
             let key = path[1..].to_string();
-            if empty_query || (!has_tagging && !has_uploads && !has_upload_id) {
+            if has_uploads {
                 match *method {
-                    Method::GET => Ok(S3Input::GetObject { bucket, key }),
+                    Method::POST => Ok(CreateMultipartUpload { bucket, key }),
+                    _ => parse_error("unknown object upload operation", req),
+                }
+            } else if has_upload_id {
+                match *method {
+                    Method::GET => Ok(ListParts { bucket, key }),
+                    Method::PUT => Ok(UploadPart { bucket, key }),
+                    Method::POST => Ok(CompleteMultipartUpload { bucket, key }),
+                    Method::DELETE => Ok(AbortMultipartUpload { bucket, key }),
+                    _ => parse_error("unknown object upload operation", req),
+                }
+            } else {
+                match *method {
+                    Method::GET => Ok(GetObject { bucket, key }),
                     Method::PUT => match headers.get("x-amz-copy-source") {
                         Some(value) => {
                             let copy_source = value.to_str().unwrap().to_string();
-                            Ok(S3Input::CopyObject {
+                            Ok(CopyObject {
                                 bucket,
                                 key,
                                 copy_source,
                             })
                         }
-                        None => Ok(S3Input::PutObject { bucket, key }),
+                        None => Ok(PutObject { bucket, key }),
                     },
-                    Method::HEAD => Ok(S3Input::HeadObject { bucket, key }),
-                    Method::DELETE => Ok(S3Input::DeleteObject { bucket, key }),
+                    Method::HEAD => Ok(HeadObject { bucket, key }),
+                    Method::DELETE => Ok(DeleteObject { bucket, key }),
                     _ => parse_error("unknown object operation", req),
                 }
-            } else if has_uploads {
-                match *method {
-                    Method::POST => Ok(S3Input::CreateMultipartUpload { bucket, key }),
-                    _ => parse_error("unknown object upload operation", req),
-                }
-            } else if has_upload_id {
-                match *method {
-                    Method::GET => Ok(S3Input::ListParts { bucket, key }),
-                    Method::PUT => Ok(S3Input::UploadPart { bucket, key }),
-                    Method::POST => Ok(S3Input::CompleteMultipartUpload { bucket, key }),
-                    Method::DELETE => Ok(S3Input::AbortMultipartUpload { bucket, key }),
-                    _ => parse_error("unknown object upload operation", req),
-                }
-            } else {
-                parse_error("object operation not yet supported", req)
             }
         }
     }

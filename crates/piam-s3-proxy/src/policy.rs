@@ -55,11 +55,9 @@ impl Matches for S3InputPolicyStatement {
         let bucket = &self.bucket;
         match &bucket.name {
             None => bucket.effect.as_ref(),
-            Some(name) => {
-                match name.matches(input.bucket()) {
-                    true => bucket.effect.as_ref(),
-                    false => None,
-                }
+            Some(name) => match name.matches(input.bucket()) {
+                true => bucket.effect.as_ref(),
+                false => None,
             },
         }
     }

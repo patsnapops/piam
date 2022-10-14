@@ -13,11 +13,11 @@ use piam_tracing::logger::init_logger;
 use crate::{config::S3Config, handler::S3ProxyState};
 
 mod config;
+mod error;
 mod handler;
 mod parser;
 mod policy;
 mod request;
-mod error;
 
 #[tokio::main]
 async fn main() {
