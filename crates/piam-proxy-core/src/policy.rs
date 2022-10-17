@@ -16,14 +16,14 @@ pub type Policies<S> = Vec<Policy<S>>;
 
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct PolicyContainer<S: Debug> {
-    pub policy_by_user: HashMap<User, Policies<S>>,
-    pub policy_by_group: HashMap<Group, Policies<S>>,
-    pub policy_by_role: HashMap<Role, Policies<S>>,
+    pub policy_by_user: HashMap<Uuid, Policies<S>>,
+    pub policy_by_group: HashMap<Uuid, Policies<S>>,
+    pub policy_by_role: HashMap<Uuid, Policies<S>>,
 }
 
 impl<S: Statement + Debug> PolicyContainer<S> {
     pub fn find_policies_by_group(&self, group: &Group) -> Option<&Policies<S>> {
-        self.policy_by_group.get(group)
+        self.policy_by_group.get(&group.id)
     }
 }
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
@@ -146,6 +146,7 @@ pub mod s3_policy {
 
     #[cfg(test)]
     pub mod tests {
+        use std::collections::HashMap;
         use std::time::Duration;
 
         use crate::{
@@ -155,6 +156,7 @@ pub mod s3_policy {
                 Name, Policy,
             },
         };
+        use crate::policy::{Policies, PolicyContainer};
 
         pub fn make_one_policy() -> Policy<S3PolicyStatement> {
             let actions = Some(vec![
@@ -280,7 +282,7 @@ pub mod s3_policy {
             dbg!(statement);
         }
 
-        pub fn make_dev_policy() -> Policy<S3PolicyStatement> {
+        pub fn make_dev_policies() -> Policies<S3PolicyStatement> {
             let actions = Some(vec!["Any".into()]);
             let key = Key {
                 name: None,
@@ -303,15 +305,16 @@ pub mod s3_policy {
                 },
                 output_policy: None,
             };
-            Policy {
+            let policy = Policy {
                 kind: "ObjectStorage".to_string(),
                 version: 0,
                 id: Default::default(),
                 statement,
-            }
+            };
+            vec![policy]
         }
 
-        pub fn make_lyc_policy() -> Policy<S3PolicyStatement> {
+        pub fn make_lyc_policies() -> Policies<S3PolicyStatement> {
             let actions = Some(vec!["ListObjects".into(), "GetObject".into()]);
             let key = Key {
                 name: Some(Name {
@@ -340,15 +343,16 @@ pub mod s3_policy {
                 },
                 output_policy: None,
             };
-            Policy {
+            let policy = Policy {
                 kind: "ObjectStorage".to_string(),
                 version: 0,
                 id: Default::default(),
                 statement,
-            }
+            };
+            vec![policy]
         }
 
-        pub fn make_dt_policy() -> Policy<S3PolicyStatement> {
+        pub fn make_data_team_svcs_policies() -> Policies<S3PolicyStatement> {
             let actions = Some(vec![
                 "ListObjects".into(),
                 "GetObject".into(),
@@ -378,20 +382,23 @@ pub mod s3_policy {
                 },
                 output_policy: None,
             };
-            Policy {
+            let policy = Policy {
                 kind: "ObjectStorage".to_string(),
                 version: 0,
                 id: Default::default(),
                 statement,
-            }
+            };
+            vec![policy]
         }
 
         // noinspection SpellCheckingInspection
-        pub fn make_opst_policy() -> Policy<S3PolicyStatement> {
+        pub fn make_opst_policies() -> Policies<S3PolicyStatement> {
             let actions = Some(vec![
                 "ListObjects".into(),
                 "GetObject".into(),
                 "PutObject".into(),
+                "GetBucketNotificationConfiguration".into(),
+                "PutBucketNotificationConfiguration".into(),
             ]);
             let key = Key {
                 name: None,
@@ -399,10 +406,7 @@ pub mod s3_policy {
                 effect: Some(Effect::allow()),
             };
             let bucket = Bucket {
-                name: Some(Name {
-                    eq: Some(vec!["datalake-internal.patsnap.com".into()]),
-                    start_with: None,
-                }),
+                name: None,
                 tag: None,
                 effect: Some(Effect::allow()),
                 keys: Some(vec![key]),
@@ -417,17 +421,39 @@ pub mod s3_policy {
                 },
                 output_policy: None,
             };
-            Policy {
+            let policy = Policy {
                 kind: "ObjectStorage".to_string(),
                 version: 0,
                 id: Default::default(),
                 statement,
-            }
+            };
+            vec![policy]
         }
 
         #[test]
         fn ser_lyc_policy() {
-            let string = serde_yaml::to_string(&make_lyc_policy()).unwrap();
+            let string = serde_yaml::to_string(&make_lyc_policies()).unwrap();
+            println!("{}", string);
+        }
+
+        pub fn make_s3_policies() -> PolicyContainer<S3PolicyStatement> {
+            use crate::principal::test::*;
+            let policy_by_group = HashMap::from([
+                (make_dev_group().id, make_dev_policies()),
+                (make_lyc_group().id, make_lyc_policies()),
+                (make_data_team_svcs_group().id, make_data_team_svcs_policies()),
+                (make_opst_group().id, make_opst_policies())
+            ]);
+            PolicyContainer {
+                policy_by_user: Default::default(),
+                policy_by_group,
+                policy_by_role: Default::default()
+            }
+        }
+
+        #[test]
+        fn ser_s3_policies() {
+            let string = serde_yaml::to_string(&make_s3_policies()).unwrap();
             println!("{}", string);
         }
     }

@@ -30,7 +30,7 @@ mod test {
     };
 
     pub fn make_one_s3_policy_container() -> PolicyContainer<S3PolicyStatement> {
-        let policy_by_group = HashMap::from([(Group::default(), vec![make_data_team_policy()])]);
+        let policy_by_group = HashMap::from([(Uuid::default(), vec![make_data_team_policy()])]);
 
         PolicyContainer {
             policy_by_user: Default::default(),
@@ -59,29 +59,5 @@ mod test {
     async fn _show_get_policies() {
         let container: PolicyContainer<S3PolicyStatement> = get_policies("ObjectStorage").await;
         dbg!(container);
-    }
-
-    pub fn make_one_principal_container() -> PrincipalContainer {
-        let ak = "AKPSSVCSDATAPOC".to_string();
-        let user = User {
-            id: Uuid::new_v4(),
-            name: "SVCSDATAPOC".to_string(),
-            access_key: ak.clone(),
-            secret_key: "".to_string(),
-            kind: UserKind::Service,
-        };
-        PrincipalContainer {
-            user_by_access_key: HashMap::from([(ak, user.clone())]),
-            group_by_user: HashMap::from([(user, Group::default())]),
-        }
-    }
-
-    fn do_ser_one_principal_container() -> String {
-        serde_yaml::to_string(&make_one_principal_container()).unwrap()
-    }
-
-    #[test]
-    fn ser_one_principal_container() {
-        println!("{}", do_ser_one_principal_container());
     }
 }

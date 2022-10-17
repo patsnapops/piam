@@ -6,7 +6,7 @@ use uuid::Uuid;
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct PrincipalContainer {
     pub user_by_access_key: HashMap<String, User>,
-    pub group_by_user: HashMap<User, Group>,
+    pub group_by_user: HashMap<Uuid, Group>,
 }
 
 impl PrincipalContainer {
@@ -15,7 +15,7 @@ impl PrincipalContainer {
     }
 
     pub fn find_group_by_user(&self, user: &User) -> Option<&Group> {
-        self.group_by_user.get(user)
+        self.group_by_user.get(&user.id)
     }
 }
 
@@ -63,6 +63,34 @@ pub mod test {
 
     use crate::principal::{Group, PrincipalContainer, User, UserKind};
 
+    pub fn make_dev_group() -> Group {
+        Group {
+            id: Uuid::parse_str("7b3bb7e0-e267-47f1-a689-ec85f25031d5").unwrap(),
+            name: "Proxy DEV Group".into(),
+        }
+    }
+
+    pub fn make_lyc_group() -> Group {
+        Group {
+            id: Uuid::parse_str("dad8fea0-e29b-41ba-95e8-7d72b185604e").unwrap(),
+            name: "李元铖 Group".into(),
+        }
+    }
+
+    pub fn make_data_team_svcs_group() -> Group {
+        Group {
+            id: Uuid::parse_str("d8bf9122-1252-49f1-a834-081b18675b2a").unwrap(),
+            name: "Data team Service Group".into(),
+        }
+    }
+
+    pub fn make_opst_group() -> Group {
+        Group {
+            id: Uuid::parse_str("2f0e4efc-911f-48ea-8f90-1483537d422b").unwrap(),
+            name: "OPST Group".into(),
+        }
+    }
+
     // noinspection SpellCheckingInspection
     pub fn make_principals() -> PrincipalContainer {
         let user_proxy_dev = User {
@@ -101,34 +129,10 @@ pub mod test {
                 ("AKPSSVCSOPST".to_string(), user_opst.clone()),
             ]),
             group_by_user: HashMap::from([
-                (
-                    user_proxy_dev,
-                    Group {
-                        id: Uuid::parse_str("7b3bb7e0-e267-47f1-a689-ec85f25031d5").unwrap(),
-                        name: "Proxy DEV Group".into(),
-                    },
-                ),
-                (
-                    user_lyc,
-                    Group {
-                        id: Uuid::parse_str("dad8fea0-e29b-41ba-95e8-7d72b185604e").unwrap(),
-                        name: "李元铖 Group".into(),
-                    },
-                ),
-                (
-                    user_dt_svc,
-                    Group {
-                        id: Uuid::parse_str("d8bf9122-1252-49f1-a834-081b18675b2a").unwrap(),
-                        name: "Data team Group".into(),
-                    },
-                ),
-                (
-                    user_opst,
-                    Group {
-                        id: Uuid::parse_str("2f0e4efc-911f-48ea-8f90-1483537d422b").unwrap(),
-                        name: "OPST Group".into(),
-                    },
-                ),
+                (user_proxy_dev.id, make_dev_group()),
+                (user_lyc.id, make_lyc_group()),
+                (user_dt_svc.id, make_data_team_svcs_group()),
+                (user_opst.id, make_opst_group()),
             ]),
         }
     }
