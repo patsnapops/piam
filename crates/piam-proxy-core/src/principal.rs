@@ -131,7 +131,7 @@ pub mod test {
         let user_cjj = User {
             id: Uuid::parse_str("f035fb73-e8db-4b4f-b80b-6244868c223e").unwrap(),
             name: "曹金娟".into(),
-            access_key: "AKPSPERSCJJ".into(),
+            access_key: "caojinjuan".into(),
             secret_key: "".into(),
             kind: UserKind::Person,
         };

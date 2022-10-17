@@ -353,11 +353,16 @@ pub mod s3_policy {
         }
 
         pub fn make_cjj_policies() -> Policies<S3PolicyStatement> {
-            let actions = Some(vec!["ListObjects".into(), "GetObject".into()]);
+            let actions = Some(vec![
+                "ListObjects".into(),
+                "GetObject".into(),
+                "PutObject".into(),
+                "DeleteObject".into(),
+            ]);
             let key = Key {
                 name: Some(Name {
                     eq: None,
-                    start_with: Some(vec!["bigdata".into()]),
+                    start_with: Some(vec!["bigdata/caojinjuan".into()]),
                 }),
                 tag: None,
                 effect: Some(Effect::allow()),

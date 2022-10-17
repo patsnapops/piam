@@ -525,12 +525,13 @@ mod tests {
         let env = Env::from_slice(&[
             ("AWS_MAX_ATTEMPTS", "1"),
             ("AWS_REGION", "us-east-1"),
-            ("AWS_ACCESS_KEY_ID", "AKPSPERSCJJ"),
+            ("AWS_ACCESS_KEY_ID", "caojinjuan"),
             ("AWS_SECRET_ACCESS_KEY", "dummy_sk"),
         ]);
         build_client_with_params(
             env,
             &format!("http://{}", "s-ops-s3-proxy-us-aws.patsnap.info"),
+            // &format!("http://{}", DEV_PROXY_HOST),
         )
             .await
     }
@@ -574,8 +575,8 @@ mod tests {
         let output = build_cjj_us_east_client()
             .await
             .get_object()
-            .bucket("1data-processing-data")
-            .key("bigdata/qwe")
+            .bucket("data-processing-data")
+            .key("bigdata/caojinjuan/10k_x_patent_id.csv")
             .send()
             .await
             .unwrap();
