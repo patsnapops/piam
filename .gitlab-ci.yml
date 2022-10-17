@@ -88,7 +88,7 @@ build_s3_proxy:
     - echo ${S3PROXY}
 
 ############################### Deploy manager ###############################
-deploy_manager_aws_cn_qa:
+deploy_manager_cn_aws_qa:
   stage: deploy
   tags:
     - aws
@@ -106,7 +106,7 @@ deploy_manager_aws_cn_qa:
     - ops_deploy deploy
 
 ############################### Deploy s3 proxy ###############################
-deploy_s3_proxy_aws_us_prod:
+deploy_s3_proxy_us_aws_prod:
   stage: deploy
   tags:
     - aws
@@ -123,6 +123,54 @@ deploy_s3_proxy_aws_us_prod:
   script:
     - ops_deploy deploy
 
-# deploy 9554 aws cn dev
-# deploy cn tx dev
-# deploy us tx dataprod
+deploy_s3_proxy_cn_aws_qa:
+  stage: deploy
+  tags:
+    - aws
+    - docker
+  #  when: manual
+  variables:
+    ENV: qa
+    PROJECT_NAME: "piam-s3-proxy"
+    REGION: cn-northwest-1
+    K8STYPE: eks
+    GIT_STRATEGY: none
+  before_script:
+    - echo $image
+  script:
+    - ops_deploy deploy
+
+
+deploy_s3_proxy_cn_tencent_qa:
+  stage: deploy
+  tags:
+    - aws
+    - docker
+  #  when: manual
+  variables:
+    ENV: qa
+    PROJECT_NAME: "piam-s3-proxy"
+    REGION: ap-shanghai
+    K8STYPE: eks
+    GIT_STRATEGY: none
+  before_script:
+    - echo $image
+  script:
+    - ops_deploy deploy
+
+deploy_s3_proxy_us_tencent_data-prod:
+  stage: deploy
+  tags:
+    - aws
+    - docker
+  #  when: manual
+  variables:
+    ENV: prod
+    PROJECT_NAME: "piam-s3-proxy"
+    REGION: na-ashburn
+    K8STYPE: eks
+    GIT_STRATEGY: none
+  before_script:
+    - echo $image
+  script:
+    - ops_deploy deploy
