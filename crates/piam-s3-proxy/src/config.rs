@@ -13,7 +13,7 @@ pub static S3_CONFIG: Lazy<ArcSwap<S3Config>> =
 
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct S3Config {
-    pub proxy_host: String,
+    pub proxy_hosts: Vec<String>,
     pub actual_host: String,
 }
 
@@ -23,7 +23,7 @@ impl S3Config {
         let string = get_resource_string(&key).await;
         let mut config: S3Config = serde_yaml::from_str(&string).unwrap();
         if dev_mode() {
-            config.proxy_host = DEV_PROXY_HOST.to_string();
+            config.proxy_hosts.push(DEV_PROXY_HOST.to_string());
         }
         config
     }
@@ -35,5 +35,12 @@ impl S3Config {
     pub async fn update_all() {
         CoreConfig::update(SERVICE).await;
         Self::update().await;
+    }
+
+    pub fn find_proxy_host(&self, host: &str) -> &String {
+        self.proxy_hosts
+            .iter()
+            .find(|v| host.contains(v.as_str()))
+            .expect("host should contains one of proxy_hosts")
     }
 }

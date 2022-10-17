@@ -62,7 +62,7 @@ pub async fn handle_path(
 }
 
 pub async fn handle(State(state): State<S3ProxyState>, req: HttpRequest) -> HttpResponse {
-    debug!("handle req{:#?}", req);
+    debug!("handle {:#?}", req);
     let id = Uuid::new_v4().to_string();
 
     let lock = state.read().await;

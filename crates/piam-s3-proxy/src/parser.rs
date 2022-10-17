@@ -192,11 +192,12 @@ struct Form {
 impl Input for S3Input {
     fn from_http(req: &HttpRequest) -> Result<Self> {
         use S3Input::*;
-        let proxy_host = &S3_CONFIG.load().proxy_host;
         let path = req.uri().path();
         let method = req.method();
         let headers = req.headers();
         let host = headers.get(HOST).unwrap().to_str().unwrap();
+        let config = S3_CONFIG.load();
+        let proxy_host = config.find_proxy_host(host);
         let bucket = host.replace(format!(".{}", proxy_host).as_str(), "");
         let query = req.uri().query().unwrap_or_default();
         let form: Form = serde_urlencoded::from_str(query).unwrap();

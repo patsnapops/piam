@@ -13,8 +13,15 @@ pub trait S3RequestTransform {
 
 impl S3RequestTransform for HttpRequest {
     fn adapt_path_style(&mut self, path: String) {
-        let proxy_host = &S3_CONFIG.load().proxy_host;
-        if self.headers().get(HOST).unwrap().to_str().unwrap() == proxy_host {
+        let host = self
+            .headers()
+            .get(HOST)
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_string();
+
+        if S3_CONFIG.load().proxy_hosts.contains(&host) {
             // get content of path before first '/'
             let bucket = path.split('/').next().unwrap();
 
@@ -36,22 +43,18 @@ impl S3RequestTransform for HttpRequest {
             // add bucket to host
             self.headers_mut().insert(
                 HOST,
-                HeaderValue::from_str(format!("{}.{}", bucket, proxy_host).as_str()).unwrap(),
+                HeaderValue::from_str(format!("{}.{}", bucket, host).as_str()).unwrap(),
             );
         }
     }
 
     fn set_actual_host(&mut self) {
+        let host = self.headers().get(HOST).unwrap().to_str().unwrap();
         let config = S3_CONFIG.load();
-        let host = self
-            .headers()
-            .get(HOST)
-            .unwrap()
-            .to_str()
-            .unwrap()
-            .replace(&config.proxy_host, &config.actual_host);
+        let proxy_host = config.find_proxy_host(host);
+        let host = host.replace(proxy_host, &config.actual_host);
         self.headers_mut()
-            .insert(HOST, HeaderValue::from_str(host.as_str()).unwrap());
+            .insert(HOST, HeaderValue::from_str(&host).unwrap());
 
         let uri = format!("http://{}{}", config.actual_host, self.uri());
         *self.uri_mut() = Uri::try_from(uri).unwrap();
