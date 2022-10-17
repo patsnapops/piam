@@ -501,8 +501,7 @@ mod tests {
         ]);
         build_client_with_params(
             env,
-            &format!("http://{}", "s-ops-s3-proxy-us-aws.patsnap.info"),
-            // &format!("http://{}", DEV_PROXY_HOST),
+            &format!("http://{}", "us-east-1.s3-proxy.patsnap.info"),
         )
         .await
     }
@@ -516,7 +515,7 @@ mod tests {
         ]);
         build_client_with_params(
             env,
-            &format!("http://{}", "s-ops-s3-proxy-us-aws.patsnap.info"),
+            &format!("http://{}", "us-east-1.s3-proxy.patsnap.info"),
         )
             .await
     }

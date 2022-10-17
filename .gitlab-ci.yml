@@ -140,7 +140,6 @@ deploy_s3_proxy_cn_aws_qa:
   script:
     - ops_deploy deploy
 
-
 deploy_s3_proxy_cn_tencent_qa:
   stage: deploy
   tags:
