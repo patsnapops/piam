@@ -149,6 +149,7 @@ pub mod s3_policy {
         use std::collections::HashMap;
         use std::time::Duration;
 
+        use crate::policy::{Policies, PolicyContainer};
         use crate::{
             effect::{Effect, EmitEvent, Log, Metric, RateLimit},
             policy::{
@@ -156,7 +157,6 @@ pub mod s3_policy {
                 Name, Policy,
             },
         };
-        use crate::policy::{Policies, PolicyContainer};
 
         pub fn make_one_policy() -> Policy<S3PolicyStatement> {
             let actions = Some(vec![
@@ -352,6 +352,44 @@ pub mod s3_policy {
             vec![policy]
         }
 
+        pub fn make_cjj_policies() -> Policies<S3PolicyStatement> {
+            let actions = Some(vec!["ListObjects".into(), "GetObject".into()]);
+            let key = Key {
+                name: Some(Name {
+                    eq: None,
+                    start_with: Some(vec!["bigdata".into()]),
+                }),
+                tag: None,
+                effect: Some(Effect::allow()),
+            };
+            let bucket = Bucket {
+                name: Some(Name {
+                    eq: Some(vec!["data-processing-data".into()]),
+                    start_with: None,
+                }),
+                tag: None,
+                effect: Some(Effect::allow()),
+                keys: Some(vec![key]),
+            };
+            let statement = S3PolicyStatement {
+                version: 0,
+                id: Default::default(),
+                input_policy: S3InputPolicyStatement {
+                    actions,
+                    bucket,
+                    ..Default::default()
+                },
+                output_policy: None,
+            };
+            let policy = Policy {
+                kind: "ObjectStorage".to_string(),
+                version: 0,
+                id: Default::default(),
+                statement,
+            };
+            vec![policy]
+        }
+
         pub fn make_data_team_svcs_policies() -> Policies<S3PolicyStatement> {
             let actions = Some(vec![
                 "ListObjects".into(),
@@ -365,7 +403,10 @@ pub mod s3_policy {
             };
             let bucket = Bucket {
                 name: Some(Name {
-                    eq: Some(vec!["datalake-internal.patsnap.com".into()]),
+                    eq: Some(vec![
+                        "datalake-internal.patsnap.com".into(),
+                        "patsnap-general-source".into(),
+                    ]),
                     start_with: None,
                 }),
                 tag: None,
@@ -441,13 +482,17 @@ pub mod s3_policy {
             let policy_by_group = HashMap::from([
                 (make_dev_group().id, make_dev_policies()),
                 (make_lyc_group().id, make_lyc_policies()),
-                (make_data_team_svcs_group().id, make_data_team_svcs_policies()),
-                (make_opst_group().id, make_opst_policies())
+                (make_cjj_group().id, make_cjj_policies()),
+                (
+                    make_data_team_svcs_group().id,
+                    make_data_team_svcs_policies(),
+                ),
+                (make_opst_group().id, make_opst_policies()),
             ]);
             PolicyContainer {
                 policy_by_user: Default::default(),
                 policy_by_group,
-                policy_by_role: Default::default()
+                policy_by_role: Default::default(),
             }
         }
 

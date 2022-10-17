@@ -518,7 +518,21 @@ mod tests {
             env,
             &format!("http://{}", "s-ops-s3-proxy-us-aws.patsnap.info"),
         )
-        .await
+            .await
+    }
+
+    async fn build_cjj_us_east_client() -> Client {
+        let env = Env::from_slice(&[
+            ("AWS_MAX_ATTEMPTS", "1"),
+            ("AWS_REGION", "us-east-1"),
+            ("AWS_ACCESS_KEY_ID", "AKPSPERSCJJ"),
+            ("AWS_SECRET_ACCESS_KEY", "dummy_sk"),
+        ]);
+        build_client_with_params(
+            env,
+            &format!("http://{}", "s-ops-s3-proxy-us-aws.patsnap.info"),
+        )
+            .await
     }
 
     #[tokio::test]
@@ -543,12 +557,25 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn lyc_us_east_get_object() {
+    async fn lyc_us_east() {
         let output = build_liych_us_east_client()
             .await
             .get_object()
             .bucket("testpatsnapus")
             .key("liych/tmp/tidb_backup/2022-10-10--03/part-0-0")
+            .send()
+            .await
+            .unwrap();
+        assert!(output.content_length() > 10)
+    }
+
+    #[tokio::test]
+    async fn cjj_us_east() {
+        let output = build_cjj_us_east_client()
+            .await
+            .get_object()
+            .bucket("1data-processing-data")
+            .key("bigdata/qwe")
             .send()
             .await
             .unwrap();

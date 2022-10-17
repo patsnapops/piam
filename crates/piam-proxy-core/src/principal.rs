@@ -77,6 +77,13 @@ pub mod test {
         }
     }
 
+    pub fn make_cjj_group() -> Group {
+        Group {
+            id: Uuid::parse_str("af6b1160-86f4-4d6f-bcf0-e8179571c6ed").unwrap(),
+            name: "曹金娟 Group".into(),
+        }
+    }
+
     pub fn make_data_team_svcs_group() -> Group {
         Group {
             id: Uuid::parse_str("d8bf9122-1252-49f1-a834-081b18675b2a").unwrap(),
@@ -121,16 +128,25 @@ pub mod test {
             secret_key: "".into(),
             kind: UserKind::Service,
         };
+        let user_cjj = User {
+            id: Uuid::parse_str("f035fb73-e8db-4b4f-b80b-6244868c223e").unwrap(),
+            name: "曹金娟".into(),
+            access_key: "AKPSPERSCJJ".into(),
+            secret_key: "".into(),
+            kind: UserKind::Person,
+        };
         PrincipalContainer {
             user_by_access_key: HashMap::from([
                 ("AKPSSVCSPROXYDEV".to_string(), user_proxy_dev.clone()),
                 ("AKPSPERSLIYCH".to_string(), user_lyc.clone()),
+                ("AKPSPERSCJJ".to_string(), user_cjj.clone()),
                 ("AKPSSVCSDATALAKE".to_string(), user_dt_svc.clone()),
                 ("AKPSSVCSOPST".to_string(), user_opst.clone()),
             ]),
             group_by_user: HashMap::from([
                 (user_proxy_dev.id, make_dev_group()),
                 (user_lyc.id, make_lyc_group()),
+                (user_cjj.id, make_cjj_group()),
                 (user_dt_svc.id, make_data_team_svcs_group()),
                 (user_opst.id, make_opst_group()),
             ]),
