@@ -184,9 +184,8 @@ deploy_s3_proxy_local:
     ENV: qa
     PROJECT_NAME: "piam-s3-proxy"
     REGION: local
-    K8STYPE: eks
     GIT_STRATEGY: none
   before_script:
     - echo $image
   script:
-    - ops_deploy deploy
+    - opsjarvis deploy
