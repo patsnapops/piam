@@ -75,6 +75,7 @@ impl HttpRequestExt for HttpRequest {
         };
 
         let input = Input::from_http(&self).expect("parse input error");
+        debug!("{:#?}", input);
 
         let maybe_effect = policies.iter().find_map(|policy| {
             debug!("{:#?}", policy);
