@@ -5,7 +5,7 @@ use once_cell::sync::Lazy;
 use piam_proxy_core::config::{dev_mode, get_resource_string, CoreConfig, REGION};
 use serde::{Deserialize, Serialize};
 
-pub const DEV_PROXY_HOST: &str = "piam-s3-proxy.dev:3000";
+pub const DEV_PROXY_HOST: &str = "piam-s3-proxy.dev";
 pub const SERVICE: &str = "s3";
 
 pub static S3_CONFIG: Lazy<ArcSwap<S3Config>> =
@@ -40,7 +40,8 @@ impl S3Config {
     pub fn find_proxy_host(&self, host: &str) -> &String {
         self.proxy_hosts
             .iter()
-            .find(|v| host.contains(v.as_str()))
+            .filter(|v| host.contains(v.as_str()))
+            .max_by(|a, b| a.len().cmp(&b.len()))
             .expect("host should contains one of proxy_hosts")
     }
 }
