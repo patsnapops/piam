@@ -59,6 +59,8 @@ impl HttpRequestExt for HttpRequest {
             Err(e) => return ApplyResult::Reject(response::forbidden(&format!("{:?}", e))),
             Ok(ak) => ak,
         };
+        debug!("{:#?}", ak);
+        debug!("{:#?}", principal_container);
         let user = match principal_container.find_user_by_access_key(ak) {
             None => return ApplyResult::Reject(response::user_not_found()),
             Some(u) => u,
