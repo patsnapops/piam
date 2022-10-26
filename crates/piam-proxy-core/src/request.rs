@@ -28,10 +28,6 @@ pub enum ParserError {
     Unknown,
 }
 
-pub trait Parser<I: Input> {
-    fn parse(&self, req: &HttpRequest) -> Result<I>;
-}
-
 pub trait HttpRequestExt {
     fn apply_policies<S, I>(
         self,
@@ -56,7 +52,9 @@ impl HttpRequestExt for HttpRequest {
         I: Input,
     {
         let ak = match self.extract_access_key() {
-            Err(e) => return ApplyResult::Reject(response::forbidden(&format!("{:?}", e))),
+            Err(e) => {
+                return ApplyResult::Reject(response::extract_access_key_error(&format!("{:?}", e)))
+            }
             Ok(ak) => ak,
         };
         debug!("{:#?}", ak);

@@ -18,12 +18,11 @@ pub trait AmzExt {
 
 impl AmzExt for HttpRequest {
     fn extract_access_key(&self) -> ProxyResult<&str> {
-        let auth = self
-            .headers()
-            .get(AUTHORIZATION)
-            .ok_or_else(|| ProxyError::Forbidden("Missing authorization header".into()))?;
+        let auth = self.headers().get(AUTHORIZATION).ok_or_else(|| {
+            ProxyError::InvalidAuthorizationHeader("Missing authorization header".into())
+        })?;
         let auth_str = auth.to_str().map_err(|e| {
-            ProxyError::Forbidden(format!(
+            ProxyError::InvalidAuthorizationHeader(format!(
                 "Malformed authorization header, only visible ASCII chars allowed. \
                 The authorization header: {:#?}",
                 auth
@@ -35,7 +34,7 @@ impl AmzExt for HttpRequest {
             .next()
             .and_then(|s| s.split_once('='))
             .ok_or_else(|| {
-                ProxyError::Forbidden(format!(
+                ProxyError::InvalidAuthorizationHeader(format!(
                     "Malformed authorization header\
                     (not a valid AMZ sigV4 authorization header): {}",
                     auth_str
