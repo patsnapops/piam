@@ -14,9 +14,9 @@ pub fn dev_mode() -> bool {
 
 pub fn proxy_port() -> u16 {
     if dev_mode() {
-        return 3000;
+        return 80;
     }
-    8080
+    80
 }
 
 pub static PIAM_MANAGER_ADDRESS: Lazy<ArcSwap<String>> =
