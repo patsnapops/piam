@@ -12,3 +12,14 @@ pub static REDIS_ADDRESS: Lazy<ArcSwap<String>> = Lazy::new(|| {
     info!("REDIS_ADDRESS: {}", addr);
     ArcSwap::from_pointee(addr)
 });
+
+pub fn dev_mode() -> bool {
+    env::args().nth(1) == Some("dev".into())
+}
+
+pub fn port() -> u16 {
+    if dev_mode() {
+        return 8080;
+    }
+    80
+}
