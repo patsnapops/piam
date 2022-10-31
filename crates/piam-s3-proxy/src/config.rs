@@ -40,8 +40,7 @@ impl S3Config {
     pub fn find_proxy_host(&self, host: &str) -> &String {
         self.proxy_hosts
             .iter()
-            .filter(|v| host.contains(v.as_str()))
-            .max_by(|a, b| a.len().cmp(&b.len()))
-            .expect("host should contains one of proxy_hosts")
+            .find(|&v| host.ends_with(v))
+            .expect("host should ends with one of proxy_hosts")
     }
 }
