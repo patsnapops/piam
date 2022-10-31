@@ -198,7 +198,10 @@ impl Input for S3Input {
         let host = headers.get(HOST).unwrap().to_str().unwrap();
         let config = S3_CONFIG.load();
         let proxy_host = config.find_proxy_host(host);
-        let bucket = host.replace(format!(".{}", proxy_host).as_str(), "");
+        let bucket = host
+            .strip_suffix(&format!(".{}", proxy_host))
+            .expect("host should end with .{proxy_host}")
+            .to_string();
         let query = req.uri().query().unwrap_or_default();
         let form: Form = serde_urlencoded::from_str(query).unwrap();
 

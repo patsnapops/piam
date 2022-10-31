@@ -23,7 +23,7 @@ impl S3RequestTransform for HttpRequest {
 
         if S3_CONFIG.load().proxy_hosts.contains(&host) {
             // get content of path before first '/'
-            let bucket = path.split('/').next().unwrap();
+            let bucket = path.split('/').next().expect("path should start with /");
 
             // remove bucket from uri
             let mut uri_without_bucket = self
@@ -31,9 +31,10 @@ impl S3RequestTransform for HttpRequest {
                 .path_and_query()
                 .unwrap()
                 .as_str()
-                .replace(format!("/{}", bucket).as_str(), "");
+                .strip_prefix(&format!("/{}", bucket))
+                .expect("uri should start with /{bucket}");
             if uri_without_bucket.is_empty() {
-                uri_without_bucket = "/".to_string();
+                uri_without_bucket = "/";
             }
             *self.uri_mut() = Uri::builder()
                 .path_and_query(PathAndQuery::try_from(uri_without_bucket).unwrap())
@@ -52,7 +53,10 @@ impl S3RequestTransform for HttpRequest {
         let host = self.headers().get(HOST).unwrap().to_str().unwrap();
         let config = S3_CONFIG.load();
         let proxy_host = config.find_proxy_host(host);
-        let host = host.replace(proxy_host, &config.actual_host);
+        let bucket_dot = host
+            .strip_suffix(proxy_host)
+            .expect("host should end with proxy_host");
+        let host = format!("{}{}", bucket_dot, config.actual_host);
         self.headers_mut()
             .insert(HOST, HeaderValue::from_str(&host).unwrap());
 
