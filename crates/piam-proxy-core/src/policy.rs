@@ -5,7 +5,7 @@ use uuid::Uuid;
 
 use crate::{
     effect::Effect,
-    principal::{Group, Role, User},
+    principal::{Group, User},
 };
 
 pub type UserByAccessKey = HashMap<String, User>;

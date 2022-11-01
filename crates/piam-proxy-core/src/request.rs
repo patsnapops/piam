@@ -1,16 +1,14 @@
 use std::fmt::Debug;
 
-use anyhow::Result;
 use log::debug;
 use thiserror::Error;
 
 use crate::{
     condition::ConditionExt,
     effect::Effect,
-    error::ProxyResult,
     input::Input,
     policy::{PolicyContainer, Statement},
-    principal::{Group, PrincipalContainer, User},
+    principal::PrincipalContainer,
     response,
     sign::AmzExt,
     type_alias::{ApplyResult, HttpRequest},
@@ -104,8 +102,4 @@ impl HttpRequestExt for HttpRequest {
             None => ApplyResult::Reject(response::effect_not_found()),
         }
     }
-}
-
-pub trait ParserExt<I: Input> {
-    fn parpar(&self) -> Result<I>;
 }

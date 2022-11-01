@@ -2,16 +2,10 @@ use anyhow::{anyhow, Result};
 use http::{header::HOST, Method};
 use log::error;
 use piam_proxy_core::{input::Input, type_alias::HttpRequest};
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use serde::{Deserialize, Serialize};
 use strum_macros::Display;
 
 use crate::config::S3_CONFIG;
-
-#[derive(Debug)]
-pub enum S3IoKind {
-    Input(S3Input),
-    Output(S3Output),
-}
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq, Display)]
 pub enum S3Input {

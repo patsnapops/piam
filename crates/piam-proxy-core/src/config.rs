@@ -5,7 +5,7 @@ use hyper::{client::HttpConnector, Body};
 use log::info;
 use once_cell::sync::Lazy;
 use piam_tracing::logger::LogHandle;
-use reqwest::{Client, Error, Response};
+use reqwest::Client;
 use serde::{Deserialize, Serialize};
 
 pub fn dev_mode() -> bool {

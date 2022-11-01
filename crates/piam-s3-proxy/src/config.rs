@@ -1,4 +1,4 @@
-use std::{env, sync::Arc};
+use std::sync::Arc;
 
 use arc_swap::ArcSwap;
 use once_cell::sync::Lazy;

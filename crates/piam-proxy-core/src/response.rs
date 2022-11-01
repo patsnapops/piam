@@ -1,8 +1,6 @@
-use http::{Response, StatusCode};
-use http::header::CONTENT_TYPE;
+use http::{header::CONTENT_TYPE, Response, StatusCode};
 use hyper::Body;
 use serde::{Deserialize, Serialize};
-use serde_xml_rs::{from_str, to_string};
 
 use crate::type_alias::HttpResponse;
 
@@ -27,7 +25,10 @@ pub fn rejected_by_policy() -> HttpResponse {
 }
 
 pub fn effect_not_found() -> HttpResponse {
-    forbidden("EffectNotFound", "Effect not found, rejected by default policy")
+    forbidden(
+        "EffectNotFound",
+        "Effect not found, rejected by default policy",
+    )
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -67,7 +68,7 @@ fn aws_xml_error_payload(code: &str, message: &str) -> String {
         code: format!("Piam{}", code),
         message: format!("[PIAM] {}", message),
         aws_access_key_id: "".into(),
-        host_id: "".into()
+        host_id: "".into(),
     };
     serde_xml_rs::to_string(&error).expect("ser_xml should not fail")
 }

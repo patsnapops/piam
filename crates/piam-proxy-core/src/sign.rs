@@ -2,7 +2,7 @@ use std::time::SystemTime;
 
 use anyhow::Result;
 use aws_sigv4::http_request::{sign, SignableRequest, SigningParams, SigningSettings};
-use http::{header::AUTHORIZATION, HeaderValue, Request};
+use http::{header::AUTHORIZATION, Request};
 use hyper::{body, Body};
 
 use crate::{
@@ -21,7 +21,7 @@ impl AmzExt for HttpRequest {
         let auth = self.headers().get(AUTHORIZATION).ok_or_else(|| {
             ProxyError::InvalidAuthorizationHeader("Missing authorization header".into())
         })?;
-        let auth_str = auth.to_str().map_err(|e| {
+        let auth_str = auth.to_str().map_err(|_| {
             ProxyError::InvalidAuthorizationHeader(format!(
                 "Malformed authorization header, only visible ASCII chars allowed. \
                 The authorization header: {:#?}",
