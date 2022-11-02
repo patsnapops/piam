@@ -74,7 +74,7 @@ where
     Ok(policies)
 }
 
-pub fn find_effect<S, I>(policies: &Policies<S>, input: I) -> ProxyResult<&Effect>
+pub fn find_effect<'a, S, I>(policies: &'a Policies<S>, input: &I) -> ProxyResult<&'a Effect>
 where
     S: Statement<Input = I> + Debug,
     I: Input,
@@ -86,7 +86,7 @@ where
             // TODO: find condition
             // let _condition = self.condition();
             // let _condition_policy = &policy.conditions;
-            policy.statement.find_effect_for_input(&input)
+            policy.statement.find_effect_for_input(input)
         })
         .ok_or_else(|| {
             ProxyError::EffectNotFound(format!("Effect not found for input: {:?}", input))

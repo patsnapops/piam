@@ -76,7 +76,7 @@ pub async fn handle(
         &lock.policy_container,
     )?;
     let input = S3Input::from_http(&req).expect("parse input should not fail");
-    let effect = find_effect(policies, input)?;
+    let effect = find_effect(policies, &input)?;
     let apply_result = req.apply_effect(effect);
 
     let res: HttpResponse = match apply_result {
