@@ -26,6 +26,7 @@ impl<S: Statement + Debug> PolicyContainer<S> {
         self.policy_by_group.get(&group.id)
     }
 }
+
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct Policy<S: Debug> {
     pub kind: String,

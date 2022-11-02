@@ -1103,6 +1103,7 @@ dependencies = [
  "anyhow",
  "arc-swap",
  "aws-sigv4",
+ "axum",
  "cidr",
  "http",
  "hyper",

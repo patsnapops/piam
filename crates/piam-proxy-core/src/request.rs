@@ -4,13 +4,12 @@ use log::debug;
 use thiserror::Error;
 
 use crate::{
-    condition::ConditionExt,
     effect::Effect,
+    error::{ProxyError, ProxyResult},
     input::Input,
-    policy::{PolicyContainer, Statement},
+    policy::{Policies, PolicyContainer, Statement},
     principal::PrincipalContainer,
     response,
-    sign::AmzExt,
     type_alias::{ApplyResult, HttpRequest},
 };
 
@@ -27,79 +26,69 @@ pub enum ParserError {
 }
 
 pub trait HttpRequestExt {
-    fn apply_policies<S, I>(
-        self,
-        principal_container: &PrincipalContainer,
-        policy_container: &PolicyContainer<S>,
-    ) -> ApplyResult
-    where
-        S: Statement<Input = I> + Debug,
-        I: Input;
-
-    fn apply_effect(self, maybe_effect: Option<&Effect>) -> ApplyResult;
+    fn apply_effect(self, effect: &Effect) -> ApplyResult;
 }
 
 impl HttpRequestExt for HttpRequest {
-    fn apply_policies<S, I>(
-        self,
-        principal_container: &PrincipalContainer,
-        policy_container: &PolicyContainer<S>,
-    ) -> ApplyResult
-    where
-        S: Statement<Input = I> + Debug,
-        I: Input,
-    {
-        let ak = match self.extract_access_key() {
-            Err(e) => {
-                return ApplyResult::Reject(response::extract_access_key_error(&format!("{:?}", e)))
+    fn apply_effect(self, effect: &Effect) -> ApplyResult {
+        match effect {
+            Effect::Allow { .. } => {
+                // TODO: impl Allow stuff
+                ApplyResult::Forward(self)
             }
-            Ok(ak) => ak,
-        };
-        debug!("{:#?}", ak);
-        debug!("{:#?}", principal_container);
-        let user = match principal_container.find_user_by_access_key(ak) {
-            None => return ApplyResult::Reject(response::user_not_found()),
-            Some(u) => u,
-        };
-        debug!("{:#?}", user);
-        let group = match principal_container.find_group_by_user(user) {
-            None => return ApplyResult::Reject(response::group_not_found()),
-            Some(g) => g,
-        };
-        debug!("{:#?}", group);
-        let policies = match policy_container.find_policies_by_group(group) {
-            None => return ApplyResult::Reject(response::policy_not_found()),
-            Some(p) => p,
-        };
-
-        let input = Input::from_http(&self).expect("parse input error");
-        debug!("{:#?}", input);
-
-        let maybe_effect = policies.iter().find_map(|policy| {
-            debug!("{:#?}", policy);
-            // TODO: find condition
-            let _condition = self.condition();
-            // let _condition_policy = &policy.conditions;
-
-            policy.statement.find_effect_for_input(&input)
-        });
-
-        self.apply_effect(maybe_effect)
-    }
-
-    fn apply_effect(self, maybe_effect: Option<&Effect>) -> ApplyResult {
-        match maybe_effect {
-            Some(effect) => match effect {
-                Effect::Allow { .. } => {
-                    // TODO: impl Allow stuff
-                    ApplyResult::Forward(self)
-                }
-                Effect::Deny(_maybe_emit) => {
-                    // TODO: impl Deny stuff
-                    ApplyResult::Reject(response::rejected_by_policy())
-                }
-            },
-            None => ApplyResult::Reject(response::effect_not_found()),
+            Effect::Deny(_maybe_emit) => {
+                // TODO: impl Deny stuff
+                ApplyResult::Reject(response::rejected_by_policy())
+            }
         }
     }
+}
+
+pub fn find_policies_by_access_key<'a, S, I>(
+    access_key: &str,
+    principal_container: &PrincipalContainer,
+    policy_container: &'a PolicyContainer<S>,
+) -> ProxyResult<&'a Policies<S>>
+where
+    S: Statement<Input = I> + Debug,
+    I: Input,
+{
+    debug!("{:#?}", principal_container);
+    let user = principal_container
+        .find_user_by_access_key(access_key)
+        .ok_or_else(|| {
+            ProxyError::UserNotFound(format!("User not found for access key: {}", access_key))
+        })?;
+    debug!("{:#?}", user);
+    let group = principal_container
+        .find_group_by_user(user)
+        .ok_or_else(|| {
+            ProxyError::GroupNotFound(format!("Group not found for user: {}", user.id))
+        })?;
+    debug!("{:#?}", group);
+    let policies = policy_container
+        .find_policies_by_group(group)
+        .ok_or_else(|| {
+            ProxyError::PolicyNotFound(format!("Policy not found for group: {}", group.id))
+        })?;
+    Ok(policies)
+}
+
+pub fn find_effect<S, I>(policies: &Policies<S>, input: I) -> ProxyResult<&Effect>
+where
+    S: Statement<Input = I> + Debug,
+    I: Input,
+{
+    policies
+        .iter()
+        .find_map(|policy| {
+            debug!("{:#?}", policy);
+            // TODO: find condition
+            // let _condition = self.condition();
+            // let _condition_policy = &policy.conditions;
+            policy.statement.find_effect_for_input(&input)
+        })
+        .ok_or_else(|| {
+            ProxyError::EffectNotFound(format!("Effect not found for input: {:?}", input))
+        })
 }

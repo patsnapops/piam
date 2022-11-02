@@ -4,20 +4,22 @@ use axum::{
     extract::{Path, Query, State},
     response::IntoResponse,
 };
-use http::{HeaderValue, Response, StatusCode};
+use http::{Response, StatusCode};
 use hyper::Body;
 use log::debug;
 use piam_proxy_core::{
     config::CORE_CONFIG,
-    request::HttpRequestExt,
-    sign::sign_with_amz_params,
+    error::ProxyResult,
+    input::Input,
+    request::{find_effect, find_policies_by_access_key, HttpRequestExt},
+    response::HttpResponseExt,
+    sign::{sign_with_amz_params, AmzExt},
     state::SharedState,
     type_alias::{ApplyResult, HttpRequest, HttpResponse},
 };
 use piam_tracing::logger::change_debug;
-use uuid::Uuid;
 
-use crate::{policy::S3PolicyStatementImpl, request::S3RequestTransform};
+use crate::{parser::S3Input, policy::S3PolicyStatementImpl, request::S3RequestTransform};
 
 pub type S3ProxyState = SharedState<S3PolicyStatementImpl>;
 
@@ -56,41 +58,45 @@ pub async fn handle_path(
     State(state): State<S3ProxyState>,
     Path(path): Path<String>,
     mut req: HttpRequest,
-) -> HttpResponse {
+) -> ProxyResult<HttpResponse> {
     req.adapt_path_style(path);
     handle(State(state), req).await
 }
 
-pub async fn handle(State(state): State<S3ProxyState>, req: HttpRequest) -> HttpResponse {
+pub async fn handle(
+    State(state): State<S3ProxyState>,
+    req: HttpRequest,
+) -> ProxyResult<HttpResponse> {
     debug!("handle {:#?}", req);
-    let id = Uuid::new_v4().to_string();
-
+    let access_key = req.extract_access_key()?;
     let lock = state.read().await;
-    let result = req.apply_policies(&lock.principal_container, &lock.policy_container);
-    let mut res = match result {
+    let policies = find_policies_by_access_key(
+        access_key,
+        &lock.principal_container,
+        &lock.policy_container,
+    )?;
+    let input = S3Input::from_http(&req).expect("parse input should not fail");
+    let effect = find_effect(policies, input)?;
+    let apply_result = req.apply_effect(effect);
+
+    let res: HttpResponse = match apply_result {
         ApplyResult::Forward(mut new_req) => {
             new_req.set_actual_host();
             // TODO now: 2 support multi cloud sign
             // 1. find bucket belong to which cloud
             // 2. sign_with_xxx_params
-            new_req = sign_with_amz_params(new_req).await.unwrap();
+            new_req = sign_with_amz_params(new_req)
+                .await
+                .expect("sign should not fail");
             let client = &CORE_CONFIG.load().client;
             debug!("new_req {:#?}", new_req);
-            client.request(new_req).await.unwrap()
+            client
+                .request(new_req)
+                .await
+                .expect("request to s3 service should not fail")
         }
         ApplyResult::Reject(response) => response,
     };
-
     // add tracing info
-    add_piam_headers(&mut res, id);
-    res
-}
-
-fn add_piam_headers(res: &mut Response<Body>, id: String) {
-    let headers = res.headers_mut();
-    headers.append(
-        "x-patsnap-proxy-type",
-        HeaderValue::from_static("Patsnap S3 Proxy"),
-    );
-    headers.append("x-patsnap-request-id", HeaderValue::from_str(&id).unwrap());
+    Ok(res.add_piam_headers_with_random_id())
 }
