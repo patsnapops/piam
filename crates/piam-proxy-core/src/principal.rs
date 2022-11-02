@@ -3,6 +3,8 @@ use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
+use crate::error::{ProxyError, ProxyResult};
+
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct PrincipalContainer {
     pub user_by_access_key: HashMap<String, User>,
@@ -10,12 +12,16 @@ pub struct PrincipalContainer {
 }
 
 impl PrincipalContainer {
-    pub fn find_user_by_access_key(&self, access_key: &str) -> Option<&User> {
-        self.user_by_access_key.get(access_key)
+    pub fn find_user_by_access_key(&self, access_key: &str) -> ProxyResult<&User> {
+        self.user_by_access_key.get(access_key).ok_or_else(|| {
+            ProxyError::UserNotFound(format!("User not found for access key: {}", access_key))
+        })
     }
 
-    pub fn find_group_by_user(&self, user: &User) -> Option<&Group> {
-        self.group_by_user.get(&user.id)
+    pub fn find_group_by_user(&self, user: &User) -> ProxyResult<&Group> {
+        self.group_by_user.get(&user.id).ok_or_else(|| {
+            ProxyError::GroupNotFound(format!("Group not found for user: {}", user.id))
+        })
     }
 }
 

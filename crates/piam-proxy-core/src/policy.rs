@@ -1,15 +1,15 @@
 use std::{collections::HashMap, fmt::Debug};
 
+use log::debug;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::{
     effect::Effect,
-    principal::{Group, User},
+    error::{ProxyError, ProxyResult},
+    input::Input,
+    principal::Group,
 };
-
-pub type UserByAccessKey = HashMap<String, User>;
-pub type GroupByUser = HashMap<User, Group>;
 
 /// There can only be one policy takes effect for each request
 pub type Policies<S> = Vec<Policy<S>>;
@@ -21,9 +21,11 @@ pub struct PolicyContainer<S: Debug> {
     pub policy_by_role: HashMap<Uuid, Policies<S>>,
 }
 
-impl<S: Statement + Debug> PolicyContainer<S> {
-    pub fn find_policies_by_group(&self, group: &Group) -> Option<&Policies<S>> {
-        self.policy_by_group.get(&group.id)
+impl<S: Debug> PolicyContainer<S> {
+    pub fn find_policies_by_group(&self, group: &Group) -> ProxyResult<&Policies<S>> {
+        self.policy_by_group.get(&group.id).ok_or_else(|| {
+            ProxyError::PolicyNotFound(format!("Policy not found for group: {}", group.id))
+        })
     }
 }
 
@@ -45,6 +47,34 @@ pub trait Statement {
     fn id(&self) -> String;
 
     fn find_effect_for_input(&self, input: &Self::Input) -> Option<&Effect>;
+}
+
+pub trait FindEffect<S, I>
+where
+    S: Statement<Input = I> + Debug,
+    I: Input,
+{
+    fn find_effect(&self, input: &I) -> ProxyResult<&Effect>;
+}
+
+impl<S, I> FindEffect<S, I> for Policies<S>
+where
+    S: Statement<Input = I> + Debug,
+    I: Input,
+{
+    fn find_effect(&self, input: &I) -> ProxyResult<&Effect> {
+        self.iter()
+            .find_map(|policy| {
+                debug!("{:#?}", policy);
+                // TODO: find condition
+                // let _condition = self.condition();
+                // let _condition_policy = &policy.conditions;
+                policy.statement.find_effect_for_input(input)
+            })
+            .ok_or_else(|| {
+                ProxyError::EffectNotFound(format!("Effect not found for input: {:?}", input))
+            })
+    }
 }
 
 /// Default logical operator would be `or`. Any name matching `eq`,

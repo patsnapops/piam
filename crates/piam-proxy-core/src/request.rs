@@ -1,14 +1,9 @@
 use std::fmt::Debug;
 
-use log::debug;
 use thiserror::Error;
 
 use crate::{
     effect::Effect,
-    error::{ProxyError, ProxyResult},
-    input::Input,
-    policy::{Policies, PolicyContainer, Statement},
-    principal::PrincipalContainer,
     response,
     type_alias::{ApplyResult, HttpRequest},
 };
@@ -42,53 +37,4 @@ impl HttpRequestExt for HttpRequest {
             }
         }
     }
-}
-
-pub fn find_policies_by_access_key<'a, S, I>(
-    access_key: &str,
-    principal_container: &PrincipalContainer,
-    policy_container: &'a PolicyContainer<S>,
-) -> ProxyResult<&'a Policies<S>>
-where
-    S: Statement<Input = I> + Debug,
-    I: Input,
-{
-    debug!("{:#?}", principal_container);
-    let user = principal_container
-        .find_user_by_access_key(access_key)
-        .ok_or_else(|| {
-            ProxyError::UserNotFound(format!("User not found for access key: {}", access_key))
-        })?;
-    debug!("{:#?}", user);
-    let group = principal_container
-        .find_group_by_user(user)
-        .ok_or_else(|| {
-            ProxyError::GroupNotFound(format!("Group not found for user: {}", user.id))
-        })?;
-    debug!("{:#?}", group);
-    let policies = policy_container
-        .find_policies_by_group(group)
-        .ok_or_else(|| {
-            ProxyError::PolicyNotFound(format!("Policy not found for group: {}", group.id))
-        })?;
-    Ok(policies)
-}
-
-pub fn find_effect<'a, S, I>(policies: &'a Policies<S>, input: &I) -> ProxyResult<&'a Effect>
-where
-    S: Statement<Input = I> + Debug,
-    I: Input,
-{
-    policies
-        .iter()
-        .find_map(|policy| {
-            debug!("{:#?}", policy);
-            // TODO: find condition
-            // let _condition = self.condition();
-            // let _condition_policy = &policy.conditions;
-            policy.statement.find_effect_for_input(input)
-        })
-        .ok_or_else(|| {
-            ProxyError::EffectNotFound(format!("Effect not found for input: {:?}", input))
-        })
 }

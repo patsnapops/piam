@@ -11,7 +11,8 @@ use piam_proxy_core::{
     config::CORE_CONFIG,
     error::ProxyResult,
     input::Input,
-    request::{find_effect, find_policies_by_access_key, HttpRequestExt},
+    policy::FindEffect,
+    request::HttpRequestExt,
     response::HttpResponseExt,
     sign::{sign_with_amz_params, AmzExt},
     state::SharedState,
@@ -70,13 +71,15 @@ pub async fn handle(
     debug!("handle {:#?}", req);
     let access_key = req.extract_access_key()?;
     let lock = state.read().await;
-    let policies = find_policies_by_access_key(
-        access_key,
-        &lock.principal_container,
-        &lock.policy_container,
-    )?;
+    let principal_container = &lock.principal_container;
+    let policy_container = &lock.policy_container;
+    let user = principal_container.find_user_by_access_key(access_key)?;
+    debug!("{:#?}", user);
+    let group = principal_container.find_group_by_user(user)?;
+    debug!("{:#?}", group);
+    let policies = policy_container.find_policies_by_group(group)?;
     let input = S3Input::from_http(&req).expect("parse input should not fail");
-    let effect = find_effect(policies, &input)?;
+    let effect = policies.find_effect(&input)?;
     let apply_result = req.apply_effect(effect);
 
     let res: HttpResponse = match apply_result {
