@@ -68,7 +68,7 @@ pub async fn handle(
     State(state): State<S3ProxyState>,
     req: HttpRequest,
 ) -> ProxyResult<HttpResponse> {
-    debug!("handle {:#?}", req);
+    debug!("handle req.headers {:#?}", req.headers());
     let access_key = req.extract_access_key()?;
     let lock = state.read().await;
     let principal_container = &lock.principal_container;
@@ -92,7 +92,7 @@ pub async fn handle(
                 .await
                 .expect("sign should not fail");
             let client = &CORE_CONFIG.load().client;
-            debug!("new_req {:#?}", new_req);
+            debug!("new_req headers {:#?}", new_req.headers());
             client
                 .request(new_req)
                 .await
