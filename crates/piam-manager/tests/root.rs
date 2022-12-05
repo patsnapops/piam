@@ -1,0 +1,463 @@
+use piam_proxy_core::{
+    account::aws::AwsAccount,
+    effect::Effect,
+    group::Group,
+    policy::{
+        object_storage_policy::{Bucket, Key, ObjectStorageInputStatement, ObjectStorageStatement},
+        Name, Policy,
+    },
+    principal::{User, UserKind},
+    relation_model::{PolicyRelationship, UserGroupRelationship},
+};
+use redis::Commands;
+use serde::{ser, Deserialize, Serialize};
+
+pub fn make_accounts() -> Vec<AwsAccount> {
+    let account_cn_aws_dev_9554 = AwsAccount {
+        id: "cn_aws_dev_9554".into(),
+        code: "9554".into(),
+        ak_id: "AKIA545RXJQZN5UDTZZZ".into(),
+        secret_key: "".into(),
+        comment: "".to_string(),
+    };
+    let account_cn_aws_prod_3977 = AwsAccount {
+        id: "cn_aws_prod_3977".into(),
+        code: "3977".into(),
+        ak_id: "AKIAVZG6PPVKGB77FSFI".into(),
+        secret_key: "".into(),
+        comment: "".to_string(),
+    };
+    let account_us_aws_prod_7478 = AwsAccount {
+        id: "us_aws_prod_7478".into(),
+        code: "7478".into(),
+        ak_id: "AKIA24IGUMII4I3EGYOU".into(),
+        secret_key: "".into(),
+        comment: "".to_string(),
+    };
+    let account_us_aws_data_0066 = AwsAccount {
+        id: "us_aws_data_0066".into(),
+        code: "0066".into(),
+        ak_id: "AKIAQDDYEQIRTBKNVKFR".into(),
+        secret_key: "".into(),
+        comment: "".to_string(),
+    };
+    vec![
+        account_cn_aws_dev_9554,
+        account_cn_aws_prod_3977,
+        account_us_aws_prod_7478,
+        account_us_aws_data_0066,
+    ]
+}
+
+pub fn user_3_cjj0() -> User {
+    User {
+        id: "c43e349a-0860-446e-9d2c-5bbc4211df79".to_string(),
+        name: "曹金娟".to_string(),
+        base_access_id: "AKPSPERS03CJJ0Z".to_string(),
+        secret: "".to_string(),
+        kind: Default::default(),
+    }
+}
+
+pub fn user_3_shf0() -> User {
+    User {
+        id: "56462cb1-4b8b-4a8a-97a2-ac2f5d2c714f".to_string(),
+        name: "宋海峰".to_string(),
+        base_access_id: "AKPSPERS03SHF0Z".to_string(),
+        secret: "".to_string(),
+        kind: Default::default(),
+    }
+}
+
+pub fn user_svcs_d_data_rd_processing_batch_qa() -> User {
+    User {
+        id: "82b52b79-4130-4846-9779-1ead6f0710dc".to_string(),
+        name: "d-data-rd-processing-batch-qa".to_string(),
+        base_access_id: "AKPSSVCS24DDATARDPROCESSINGBATCHQA".to_string(),
+        secret: "".to_string(),
+        kind: UserKind::Service,
+    }
+}
+
+pub fn user_svcs_d_data_dwc_script() -> User {
+    User {
+        id: "52ecaf5a-806a-442d-9ee3-5b44490facad".to_string(),
+        name: "d-data-dwc-script".to_string(),
+        base_access_id: "AKPSSVCS14DDATADWCSCRIPT".to_string(),
+        secret: "".to_string(),
+        kind: UserKind::Service,
+    }
+}
+
+pub fn user_svcs_d_data_image_sync_recover() -> User {
+    User {
+        id: "a0215e6d-88f0-4bd2-a3fe-ba1acf299689".to_string(),
+        name: "d-data-image-sync-recover".into(),
+        base_access_id: "AKPSSVCS21DDATAIMAGESYNCRECOVER".into(),
+        secret: "".to_string(),
+        kind: UserKind::Service,
+    }
+}
+
+pub fn make_users() -> Vec<User> {
+    vec![
+        user_3_cjj0(),
+        user_3_shf0(),
+        user_svcs_d_data_rd_processing_batch_qa(),
+        user_svcs_d_data_dwc_script(),
+        user_svcs_d_data_image_sync_recover(),
+    ]
+}
+
+pub fn group_3_cjj0() -> Group {
+    Group {
+        id: "8bc9f50f-d3fe-4ff6-950e-e2386ea4f523".to_string(),
+        name: "曹金娟".to_string(),
+    }
+}
+
+pub fn group_3_shf0() -> Group {
+    Group {
+        id: "226658af-85ca-45cf-918d-77c44469de84".to_string(),
+        name: "宋海峰".to_string(),
+    }
+}
+
+pub fn group_team_data_services() -> Group {
+    Group {
+        id: "374c9ce4-0fca-4520-93c8-0a74529c07c8".to_string(),
+        name: "team-data-services".to_string(),
+    }
+}
+
+pub fn make_groups() -> Vec<Group> {
+    vec![group_3_cjj0(), group_3_shf0(), group_team_data_services()]
+}
+
+fn base_s3_actions() -> Vec<String> {
+    vec![
+        "ListObjects".into(),
+        "HeadObject".into(),
+        "GetObject".into(),
+        "PutObject".into(),
+    ]
+}
+
+fn base_s3_actions_with_delete() -> Vec<String> {
+    vec![
+        "ListObjects".into(),
+        "HeadObject".into(),
+        "GetObject".into(),
+        "PutObject".into(),
+        "DeleteObject".into(),
+    ]
+}
+
+pub fn policy_os_7478_us_group_3_cjj0() -> Policy<ObjectStorageStatement> {
+    // s3://data-processing-data/bigdata/caojinjuan
+    Policy {
+        kind: "ObjectStorage".to_string(),
+        version: 1,
+        id: "c688c143-6575-4a54-b00b-e81f7dc22f3c".to_string(),
+        name: "policy_os_7478_us_group_3_cjj0".to_string(),
+        conditions: None,
+        statements: vec![ObjectStorageStatement {
+            version: 1,
+            id: "ca368e22-4a2b-4daa-802b-112e3b81389d".to_string(),
+            input_statement: ObjectStorageInputStatement {
+                actions: Some(base_s3_actions_with_delete()),
+                bucket: Bucket {
+                    name: Some(Name {
+                        eq: Some(vec!["data-processing-data".into()]),
+                        start_with: None,
+                    }),
+                    effect: Some(Effect::allow()),
+                    keys: Some(vec![Key {
+                        effect: Some(Effect::allow()),
+                        ..Default::default()
+                    }]),
+                    ..Default::default()
+                },
+                ..Default::default()
+            },
+            ..Default::default()
+        }],
+    }
+}
+
+pub fn policy_os_3977_cn_group_3_shf0() -> Policy<ObjectStorageStatement> {
+    // s3://datalake-internal.patsnap.com-cn-northwest-1/tmp
+    Policy {
+        kind: "ObjectStorage".to_string(),
+        version: 1,
+        id: "1504a97e-bd1d-4e5a-9397-7f2f7764a188".to_string(),
+        name: "policy_os_3977_cn_group_3_shf0".to_string(),
+        conditions: None,
+        statements: vec![ObjectStorageStatement {
+            version: 1,
+            id: "46cfbfb7-2104-4d09-96bd-1338a94366be".to_string(),
+            input_statement: ObjectStorageInputStatement {
+                actions: Some(base_s3_actions_with_delete()),
+                bucket: Bucket {
+                    name: Some(Name {
+                        eq: Some(vec!["datalake-internal.patsnap.com-cn-northwest-1".into()]),
+                        start_with: None,
+                    }),
+                    effect: Some(Effect::allow()),
+                    keys: Some(vec![Key {
+                        effect: Some(Effect::allow()),
+                        ..Default::default()
+                    }]),
+                    ..Default::default()
+                },
+                ..Default::default()
+            },
+            ..Default::default()
+        }],
+    }
+}
+
+pub fn policy_os_7478_us_east00000_1_group_team_data_services() -> Policy<ObjectStorageStatement> {
+    // 7478 s3://discovery-attachment-us-east-1/data/drug_approvals_v2/pmda/pdf/*.pdf
+    // 7478 s3://datalake-internal.patsnap.com/dpp/rd_process/test_parser_title_CN_v1_offline/
+    Policy {
+        kind: "ObjectStorage".to_string(),
+        version: 1,
+        id: "9d216c69-d9db-4720-8146-c5b2be6681bb".to_string(),
+        name: "policy_os_7478_us_east00000_1_group_team_data_services".to_string(),
+        conditions: None,
+        statements: vec![ObjectStorageStatement {
+            version: 0,
+            id: "63ae2d4c-5165-47ef-bcd7-203fc83b130a".to_string(),
+            input_statement: ObjectStorageInputStatement {
+                actions: Some(base_s3_actions()),
+                bucket: Bucket {
+                    name: Some(Name {
+                        eq: Some(vec![
+                            "discovery-attachment-us-east-1".into(),
+                            "datalake-internal.patsnap.com".into(),
+                        ]),
+                        start_with: None,
+                    }),
+                    tag: None,
+                    effect: Some(Effect::allow()),
+                    keys: Some(vec![Key {
+                        name: None,
+                        tag: None,
+                        effect: Some(Effect::allow()),
+                    }]),
+                },
+                ..Default::default()
+            },
+            output_statement: None,
+        }],
+    }
+}
+
+pub fn policy_os_3977_cn_northwest_1_group_team_data_services() -> Policy<ObjectStorageStatement> {
+    Policy {
+        kind: "ObjectStorage".to_string(),
+        version: 1,
+        id: "ba8cf2e6-ed3e-4c32-a054-48d86abee06e".to_string(),
+        name: "policy_os_3977_cn_northwest_1_group_team_data_services".to_string(),
+        conditions: None,
+        statements: vec![ObjectStorageStatement {
+            version: 0,
+            id: "944bf4ba-7618-4d28-9eda-52f9ef1750f0".to_string(),
+            input_statement: ObjectStorageInputStatement {
+                actions: Some(base_s3_actions()),
+                bucket: Bucket {
+                    name: Some(Name {
+                        eq: Some(vec![
+                            "data-pdf-cn-northwest-1".into(),
+                            "data-page-cn-northwest-1".into(),
+                            "data-page120-cn-northwest-1".into(),
+                            "data-image-cn-northwest-1".into(),
+                            "data-image120-cn-northwest-1".into(),
+                            "data-fulltextimage-cn-northwest-1".into(),
+                            "data-fulltextimage240-cn-northwest-1".into(),
+                            "data-page-image-cn-northwest-1".into(),
+                            "data-page-image240-cn-northwest-1".into(),
+                        ]),
+                        start_with: None,
+                    }),
+                    tag: None,
+                    effect: Some(Effect::allow()),
+                    keys: Some(vec![Key {
+                        name: None,
+                        tag: None,
+                        effect: Some(Effect::allow()),
+                    }]),
+                },
+                ..Default::default()
+            },
+            output_statement: None,
+        }],
+    }
+}
+
+pub fn policy_os_0066_us_east00000_1_group_team_data_services() -> Policy<ObjectStorageStatement> {
+    Policy {
+        kind: "ObjectStorage".to_string(),
+        version: 1,
+        id: "00a85912-02cc-40cd-8f0c-baed0409f23b".to_string(),
+        name: "policy_os_0066_us_east00000_1_group_team_data_services".to_string(),
+        conditions: None,
+        statements: vec![ObjectStorageStatement {
+            version: 0,
+            id: "1ff4803e-7745-47ad-a11e-f6c62595db49".to_string(),
+            input_statement: ObjectStorageInputStatement {
+                actions: Some(base_s3_actions_with_delete()),
+                bucket: Bucket {
+                    tag: None,
+                    effect: Some(Effect::allow()),
+                    keys: Some(vec![Key {
+                        effect: Some(Effect::allow()),
+                        ..Default::default()
+                    }]),
+                    ..Default::default()
+                },
+                ..Default::default()
+            },
+            output_statement: None,
+        }],
+    }
+}
+
+pub fn make_policies_object_storage() -> Vec<Policy<ObjectStorageStatement>> {
+    vec![
+        policy_os_7478_us_group_3_cjj0(),
+        policy_os_3977_cn_group_3_shf0(),
+        policy_os_7478_us_east00000_1_group_team_data_services(),
+        policy_os_3977_cn_northwest_1_group_team_data_services(),
+        policy_os_0066_us_east00000_1_group_team_data_services(),
+    ]
+}
+
+pub fn make_user_group_relationships() -> Vec<UserGroupRelationship> {
+    let group_team_data_services: Vec<UserGroupRelationship> = vec![
+        user_svcs_d_data_rd_processing_batch_qa(),
+        user_svcs_d_data_dwc_script(),
+        user_svcs_d_data_image_sync_recover(),
+    ]
+    .into_iter()
+    .map(|u| UserGroupRelationship {
+        user_id: u.id,
+        group_id: group_team_data_services().id,
+    })
+    .collect();
+    let group_persons = vec![
+        UserGroupRelationship {
+            user_id: user_3_cjj0().id,
+            group_id: group_3_cjj0().id,
+        },
+        UserGroupRelationship {
+            user_id: user_3_shf0().id,
+            group_id: group_3_shf0().id,
+        },
+    ];
+    let mut ugrs = vec![];
+    ugrs.extend(group_team_data_services);
+    ugrs.extend(group_persons);
+    ugrs
+}
+
+pub fn make_policy_relationships() -> Vec<PolicyRelationship> {
+    vec![
+        PolicyRelationship {
+            policy_model: "ObjectStorage".to_string(),
+            user_id: None,
+            group_id: Some(group_3_cjj0().id),
+            role_id: None,
+            account_id: "us_aws_prod_7478".to_string(),
+            region: "us-east-1".to_string(),
+            policy_id: policy_os_7478_us_group_3_cjj0().id,
+        },
+        PolicyRelationship {
+            policy_model: "ObjectStorage".to_string(),
+            user_id: None,
+            group_id: Some(group_3_shf0().id),
+            role_id: None,
+            account_id: "cn_aws_prod_3977".to_string(),
+            region: "cn-northwest-1".to_string(),
+            policy_id: policy_os_3977_cn_group_3_shf0().id,
+        },
+        PolicyRelationship {
+            policy_model: "ObjectStorage".to_string(),
+            user_id: None,
+            group_id: Some(group_team_data_services().id),
+            role_id: None,
+            account_id: "us_aws_prod_7478".to_string(),
+            region: "us-east-1".to_string(),
+            policy_id: policy_os_7478_us_east00000_1_group_team_data_services().id,
+        },
+        PolicyRelationship {
+            policy_model: "ObjectStorage".to_string(),
+            user_id: None,
+            group_id: Some(group_team_data_services().id),
+            role_id: None,
+            account_id: "cn_aws_prod_3977".to_string(),
+            region: "cn-northwest-1".to_string(),
+            policy_id: policy_os_3977_cn_northwest_1_group_team_data_services().id,
+        },
+        PolicyRelationship {
+            policy_model: "ObjectStorage".to_string(),
+            user_id: None,
+            group_id: Some(group_team_data_services().id),
+            role_id: None,
+            account_id: "us_aws_prod_0066".to_string(),
+            region: "us-east-1".to_string(),
+            policy_id: policy_os_0066_us_east00000_1_group_team_data_services().id,
+        },
+    ]
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct S3Config {
+    pub proxy_hosts: Vec<String>,
+}
+
+pub fn make_s3_config() -> S3Config {
+    S3Config {
+        proxy_hosts: vec![
+            "internal.s3-proxy.patsnap.info".into(),
+            "us-east-1.s3-proxy.patsnap.info".into(),
+            "na-ashburn.s3-proxy.patsnap.info".into(),
+            "cn-northwest-1.s3-proxy.patsnap.info".into(),
+            "ap-shanghai.s3-proxy.patsnap.info".into(),
+        ],
+    }
+}
+
+fn ser<T: ?Sized + ser::Serialize>(value: &T) -> String {
+    serde_yaml::to_string(value).unwrap()
+}
+
+#[test]
+fn write_all() {
+    let _accounts = ser(&make_accounts());
+    let users = ser(&make_users());
+    let groups = ser(&make_groups());
+    let policies_object_storage = ser(&make_policies_object_storage());
+
+    let user_group_relationships = ser(&make_user_group_relationships());
+    let policy_relationships = ser(&make_policy_relationships());
+    let s3_config = ser(&make_s3_config());
+
+    // write("accounts", _accounts);
+    write("users", users);
+    write("groups", groups);
+    write("policies:ObjectStorage", policies_object_storage);
+
+    write("user_group_relationships", user_group_relationships);
+    write("policy_relationships", policy_relationships);
+    write("extended_config:s3", s3_config);
+}
+
+pub fn write(key: &str, value: String) {
+    let client = redis::Client::open("redis://dev-redis.patsnap.info:30070/1").unwrap();
+    // let client = redis::Client::open("redis://localhost/1").unwrap();
+    let mut con = client.get_connection().unwrap();
+    let key = format!("piam:{}", key);
+    con.set(key, value).unwrap()
+}

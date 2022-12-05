@@ -1,46 +1,68 @@
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 
-use arc_swap::ArcSwap;
-use once_cell::sync::Lazy;
-use piam_proxy_core::config::{dev_mode, get_resource_string, CoreConfig, REGION};
+use async_trait::async_trait;
+use piam_proxy_core::{
+    config::{dev_mode, PROXY_TYPE},
+    error::{ProxyError, ProxyResult},
+    manager_api::ManagerClient,
+    state::GetNewState,
+};
 use serde::{Deserialize, Serialize};
 
 pub const DEV_PROXY_HOST: &str = "piam-s3-proxy.dev";
 pub const SERVICE: &str = "s3";
 
-pub static S3_CONFIG: Lazy<ArcSwap<S3Config>> =
-    Lazy::new(|| ArcSwap::from_pointee(S3Config::default()));
-
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct S3Config {
     pub proxy_hosts: Vec<String>,
-    pub actual_host: String,
+    #[cfg(feature = "uni-key")]
+    pub uni_key_info: Option<crate::uni_key::UniKeyInfo>,
 }
 
-impl S3Config {
-    pub async fn get_new() -> Self {
-        let key = format!("config/{}/{}", SERVICE, REGION.load());
-        let string = get_resource_string(&key).await;
-        let mut config: S3Config = serde_yaml::from_str(&string).unwrap();
+#[async_trait]
+impl GetNewState for S3Config {
+    async fn new_from_manager(manager: &ManagerClient) -> ProxyResult<Self> {
+        let mut config: S3Config = manager.get_extended_config(SERVICE).await?;
         if dev_mode() {
             config.proxy_hosts.push(DEV_PROXY_HOST.to_string());
         }
-        config
+        #[cfg(feature = "uni-key")]
+        let config = {
+            config.uni_key_info = Some(crate::uni_key::UniKeyInfo::new_from(manager).await?);
+            config
+        };
+        Ok(config)
     }
+}
 
-    pub async fn update() {
-        S3_CONFIG.store(Arc::new(S3Config::get_new().await));
-    }
-
-    pub async fn update_all() {
-        CoreConfig::update(SERVICE).await;
-        Self::update().await;
-    }
-
-    pub fn find_proxy_host(&self, host: &str) -> &String {
+impl S3Config {
+    pub fn find_proxy_host(&self, host: &str) -> &str {
         self.proxy_hosts
             .iter()
             .find(|&v| host.ends_with(v))
             .expect("host should ends with one of proxy_hosts")
     }
+
+    #[cfg(feature = "uni-key")]
+    pub fn get_uni_key_info(&self) -> ProxyResult<&crate::uni_key::UniKeyInfo> {
+        self.uni_key_info
+            .as_ref()
+            .ok_or_else(|| ProxyError::OtherInternal("UniKeyInfo not found".into()))
+    }
+}
+
+pub fn features() -> String {
+    let features = vec![
+        #[cfg(feature = "uni-key")]
+        "uni-key",
+    ];
+    let mut list = "[".to_string();
+    for feature in features {
+        list.push_str(feature);
+        list.push_str(", ");
+    }
+    list.pop();
+    list.pop();
+    list.push(']');
+    list
 }

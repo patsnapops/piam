@@ -4,15 +4,20 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq, Serialize, Deserialize)]
 pub enum Effect {
+    /// If multiple effects hit with all Allow, the request should be allowed
     #[serde(rename = "allow")]
     Allow {
+        /// If multiple effects hit, all of them can emit event
         #[serde(skip_serializing_if = "Option::is_none")]
         emit_event: Option<EmitEvent>,
+        /// If multiple effects hit, there can only be one rate_limit
         #[serde(skip_serializing_if = "Option::is_none")]
         rate_limit: Option<RateLimit>,
+        /// If multiple effects hit, there can only be one modify
         #[serde(skip_serializing_if = "Option::is_none")]
         modify: Option<Modify>,
     },
+    /// If multiple effects hit with both Allow and Deny, the request should be denied
     #[serde(rename = "deny")]
     Deny(Option<EmitEvent>),
 }

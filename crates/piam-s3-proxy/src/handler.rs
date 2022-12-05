@@ -1,34 +1,48 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::Arc};
 
+use arc_swap::Guard;
 use axum::{
     extract::{Path, Query, State},
     response::IntoResponse,
 };
 use http::{Response, StatusCode};
-use hyper::Body;
+use hyper::{client::HttpConnector, Body};
 use log::debug;
 use piam_proxy_core::{
-    config::CORE_CONFIG,
-    error::ProxyResult,
+    account::aws::AwsAccount,
+    config::POLICY_MODEL,
+    container::{IamContainer, PolicyQueryParams},
+    error::{ProxyError, ProxyResult},
     input::Input,
     policy::FindEffect,
-    request::HttpRequestExt,
+    request::{forward, ApplyResult, HttpRequestExt},
     response::HttpResponseExt,
-    sign::{sign_with_amz_params, AmzExt},
-    state::SharedState,
-    type_alias::{ApplyResult, HttpRequest, HttpResponse},
+    signature::{
+        aws::{AwsSigv4, AwsSigv4SignParams},
+        split_to_base_and_account_code,
+    },
+    state::{ArcState, ProxyState},
+    type_alias::{HttpClient, HttpRequest, HttpResponse},
 };
 use piam_tracing::logger::change_debug;
 
-use crate::{parser::S3Input, policy::S3PolicyStatementImpl, request::S3RequestTransform};
+use crate::{
+    config,
+    config::SERVICE,
+    parser::{ActionKind, S3Input},
+    policy::S3Statement,
+    request::S3RequestTransform,
+    S3Config,
+};
 
-pub type S3ProxyState = SharedState<S3PolicyStatementImpl>;
+pub type S3ProxyState = ArcState<S3Statement, S3Config>;
 
 pub async fn health() -> impl IntoResponse {
     "OK"
 }
 
 pub async fn manage(
+    State(state): State<S3ProxyState>,
     Query(params): Query<HashMap<String, String>>,
     // mut req: Request<Body>,
 ) -> Response<Body> {
@@ -39,10 +53,7 @@ pub async fn manage(
             .unwrap()
     }
     if let Some(debug) = params.get("debug") {
-        let on = change_debug(
-            CORE_CONFIG.load().log_handle.as_ref().unwrap(),
-            debug.as_str(),
-        );
+        let on = change_debug(state.load().log_handle.as_ref().unwrap(), debug.as_str());
         return if on {
             resp("debug mode on")
         } else {
@@ -60,7 +71,8 @@ pub async fn handle_path(
     Path(path): Path<String>,
     mut req: HttpRequest,
 ) -> ProxyResult<HttpResponse> {
-    req.adapt_path_style(path);
+    let proxy_hosts: &Vec<String> = &state.load().extended_config.proxy_hosts;
+    req.adapt_path_style(path, proxy_hosts);
     handle(State(state), req).await
 }
 
@@ -68,35 +80,68 @@ pub async fn handle(
     State(state): State<S3ProxyState>,
     req: HttpRequest,
 ) -> ProxyResult<HttpResponse> {
-    debug!("handle req.headers {:#?}", req.headers());
-    let access_key = req.extract_access_key()?;
-    let lock = state.read().await;
-    let principal_container = &lock.principal_container;
-    let policy_container = &lock.policy_container;
-    let user = principal_container.find_user_by_access_key(access_key)?;
-    debug!("{:#?}", user);
-    let group = principal_container.find_group_by_user(user)?;
-    debug!("{:#?}", group);
-    let policies = policy_container.find_policies_by_group(group)?;
-    let input = S3Input::from_http(&req).expect("parse input should not fail");
-    let effect = policies.find_effect(&input)?;
-    let apply_result = req.apply_effect(effect);
+    debug!("req.uri '{}'", req.uri());
+    debug!("req.method {}", req.method());
+    debug!("req.headers {:#?}", req.headers());
+    let state = state.load();
 
-    let res: HttpResponse = match apply_result {
-        ApplyResult::Forward(mut new_req) => {
-            new_req.set_actual_host();
-            // TODO now: 2 support multi cloud sign
-            // 1. find bucket belong to which cloud
-            // 2. sign_with_xxx_params
-            new_req = sign_with_amz_params(new_req)
+    /// Get input structure by parsing the request for specific protocol.
+    /// Example: getting S3Input with bucket and key as its fields.
+    let s3_config = &state.extended_config;
+    let input = S3Input::from_http(&req, Some(s3_config))?;
+
+    let iam_container = &state.iam_container;
+
+    // aws sigv4 specific
+    let (access_key_id, region) = req.extract_aws_access_key_and_region()?;
+    // When feature uni-key is enabled, base_access_id is aws access_key,
+    // otherwise base_access_id + account_code = aws_access_key_id
+    #[cfg(feature = "uni-key")]
+    let (account, base_access_id) = (
+        s3_config
+            .get_uni_key_info()?
+            .find_account_by_input(&input)?,
+        access_key_id,
+    );
+    #[cfg(not(feature = "uni-key"))]
+    let (account, base_access_id) = {
+        let (base_access_id, code) = split_to_base_and_account_code(access_key_id)?;
+        let account = iam_container.find_account_by_code(code)?;
+        (account, base_access_id)
+    };
+
+    /// Find matching policies by base_access_id in the request
+    let user = iam_container.find_user_by_base_access_id(base_access_id)?;
+    debug!("user: {:#?}", user);
+    let groups = iam_container.find_groups_by_user(user)?;
+    debug!("groups: {:#?}", groups);
+    let policy_query_param = PolicyQueryParams {
+        roles: None,
+        user: None,
+        groups: Some(groups),
+        account,
+        region,
+    };
+    let policies = iam_container.find_policies(&policy_query_param)?;
+
+    /// Find effects in policies by input structure
+    let effects = policies.find_effects_by_input(&input)?;
+
+    /// Apply effects to the request and return the final response
+    let region = region.to_string();
+    let res = match req.apply_effects(effects)? {
+        ApplyResult::Forward(mut raw_req) => {
+            raw_req.set_actual_host(s3_config, &region)?;
+            let aws_sigv4_sign_params = AwsSigv4SignParams {
+                account,
+                service: SERVICE,
+                region: &region,
+            };
+            let signed_req = raw_req
+                .sign_with_aws_sigv4_params(&aws_sigv4_sign_params)
                 .await
-                .expect("sign should not fail");
-            let client = &CORE_CONFIG.load().client;
-            debug!("new_req headers {:#?}", new_req.headers());
-            client
-                .request(new_req)
-                .await
-                .expect("request to s3 service should not fail")
+                .expect("sign request error");
+            forward(signed_req, &state.http_client).await?
         }
         ApplyResult::Reject(response) => response,
     };

@@ -1,11 +1,15 @@
 use anyhow::{anyhow, Result};
 use http::{header::HOST, Method};
 use log::error;
-use piam_proxy_core::{input::Input, type_alias::HttpRequest};
+use piam_proxy_core::{
+    error::{ProxyError, ProxyResult},
+    input::Input,
+    type_alias::HttpRequest,
+};
 use serde::{Deserialize, Serialize};
 use strum_macros::Display;
 
-use crate::config::S3_CONFIG;
+use crate::S3Config;
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq, Display)]
 pub enum S3Input {
@@ -83,7 +87,7 @@ pub enum S3Input {
     },
 }
 
-#[derive(Debug)]
+#[derive(Debug, Eq, Hash, PartialEq)]
 pub enum ActionKind {
     ListBuckets,
     Bucket,
@@ -126,7 +130,7 @@ impl S3Input {
     /// # Panics
     ///
     /// If call this method on input that does not contains `bucket` field
-    pub fn bucket(&self) -> &String {
+    pub fn bucket(&self) -> &str {
         match self {
             Self::CreateBucket { bucket } => bucket,
             Self::HeadBucket { bucket } => bucket,
@@ -155,7 +159,7 @@ impl S3Input {
     /// # Panics
     ///
     /// If call this method on input that does not contains `key` field
-    pub fn key(&self) -> &String {
+    pub fn key(&self) -> &str {
         match self {
             Self::GetObject { key, .. } => key,
             Self::PutObject { key, .. } => key,
@@ -184,13 +188,15 @@ struct Form {
 }
 
 impl Input for S3Input {
-    fn from_http(req: &HttpRequest) -> Result<Self> {
+    type State = S3Config;
+
+    fn from_http(req: &HttpRequest, state: Option<&S3Config>) -> ProxyResult<Self> {
         use S3Input::*;
         let path = req.uri().path();
         let method = req.method();
         let headers = req.headers();
         let host = headers.get(HOST).unwrap().to_str().unwrap();
-        let config = S3_CONFIG.load();
+        let config = state.expect("s3_config should be set");
         let proxy_host = config.find_proxy_host(host);
         let bucket = host
             .strip_suffix(&format!(".{}", proxy_host))
@@ -278,9 +284,14 @@ impl Input for S3Input {
     }
 }
 
-fn parse_error(msg: &str, req: &HttpRequest) -> Result<S3Input> {
-    error!("{}: {:#?}", msg, req);
-    Err(anyhow!(""))
+fn parse_error(msg: &str, req: &HttpRequest) -> ProxyResult<S3Input> {
+    let uri = req.uri().to_string();
+    let method = req.method().to_string();
+    let headers = req.headers().to_owned();
+    Err(ProxyError::OperationNotSupported(format!(
+        "{} uri: {} method: {} headers: {:#?} ",
+        msg, uri, method, headers
+    )))
 }
 
 #[derive(Debug, Serialize, Deserialize)]

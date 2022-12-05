@@ -1,4 +1,4 @@
-#![allow(unused)]
+// #![allow(unused)]
 
 use std::net::SocketAddr;
 
@@ -7,8 +7,9 @@ use log::info;
 use piam_tracing::logger::init_logger;
 
 mod config;
+mod error;
 mod handler;
-mod store;
+mod persist;
 
 #[tokio::main]
 async fn main() {
@@ -18,13 +19,22 @@ async fn main() {
     let app = Router::new()
         // .route("/_piam_manage_api", put(handler::manage))
         .route("/health", get(handler::health))
-        .route("/principals", get(handler::get_principals))
-        .route("/policies/:kind", get(handler::get_policies))
+        .route("/accounts", get(handler::get_accounts))
+        .route("/users", get(handler::get_users))
+        .route("/groups", get(handler::get_groups))
+        .route("/policies/:policy_model", get(handler::get_policies))
         .route(
-            "/amz_sign_params/:service/:region",
-            get(handler::get_amz_sign_params),
+            "/user_group_relationships",
+            get(handler::get_user_group_relationships),
         )
-        .route("/config/:service/:region", get(handler::get_config));
+        .route(
+            "/policy_relationships",
+            get(handler::get_policy_relationships),
+        )
+        .route(
+            "/extended_config/:config_type",
+            get(handler::extended_config),
+        );
 
     let addr = SocketAddr::from(([0, 0, 0, 0], config::port()));
     info!("piam-manager listening on {}", addr);

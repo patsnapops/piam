@@ -1,18 +1,18 @@
 use http::{header::HOST, uri::PathAndQuery, HeaderValue, Uri};
-use piam_proxy_core::type_alias::HttpRequest;
+use piam_proxy_core::{error::ProxyResult, request::from_region_to_host, type_alias::HttpRequest};
 
-use crate::config::S3_CONFIG;
+use crate::S3Config;
 
 pub trait S3RequestTransform {
     /// convert path-style-url to virtual hosted style
-    /// https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-bucket-intro.html
-    fn adapt_path_style(&mut self, path: String);
+    /// <https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-bucket-intro.html>
+    fn adapt_path_style(&mut self, path: String, proxy_hosts: &[String]);
 
-    fn set_actual_host(&mut self);
+    fn set_actual_host(&mut self, config: &S3Config, actual_host: &str) -> ProxyResult<()>;
 }
 
 impl S3RequestTransform for HttpRequest {
-    fn adapt_path_style(&mut self, path: String) {
+    fn adapt_path_style(&mut self, path: String, proxy_hosts: &[String]) {
         let host = self
             .headers()
             .get(HOST)
@@ -21,7 +21,7 @@ impl S3RequestTransform for HttpRequest {
             .unwrap()
             .to_string();
 
-        if S3_CONFIG.load().proxy_hosts.contains(&host) {
+        if proxy_hosts.contains(&host) {
             // get content of path before first '/'
             let bucket = path.split('/').next().expect("path should start with /");
 
@@ -29,7 +29,7 @@ impl S3RequestTransform for HttpRequest {
             let mut uri_without_bucket = self
                 .uri_mut()
                 .path_and_query()
-                .unwrap()
+                .expect("path_and_query should not be None")
                 .as_str()
                 .strip_prefix(&format!("/{}", bucket))
                 .expect("uri should start with /{bucket}");
@@ -49,18 +49,19 @@ impl S3RequestTransform for HttpRequest {
         }
     }
 
-    fn set_actual_host(&mut self) {
+    fn set_actual_host(&mut self, config: &S3Config, region: &str) -> ProxyResult<()> {
         let host = self.headers().get(HOST).unwrap().to_str().unwrap();
-        let config = S3_CONFIG.load();
         let proxy_host = config.find_proxy_host(host);
         let bucket_dot = host
             .strip_suffix(proxy_host)
             .expect("host should end with proxy_host");
-        let host = format!("{}{}", bucket_dot, config.actual_host);
+        let actual_host = from_region_to_host(region)?;
+        let host = format!("{}{}", bucket_dot, actual_host);
         self.headers_mut()
             .insert(HOST, HeaderValue::from_str(&host).unwrap());
 
-        let uri = format!("http://{}{}", config.actual_host, self.uri());
+        let uri = format!("http://{}{}", actual_host, self.uri());
         *self.uri_mut() = Uri::try_from(uri).unwrap();
+        Ok(())
     }
 }

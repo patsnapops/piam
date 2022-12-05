@@ -21,7 +21,7 @@ FROM 955466075186.dkr.ecr.cn-northwest-1.amazonaws.com.cn/ops-basic/base:cargo-c
 ARG package
 RUN echo "package to build: ${package}"
 COPY . .
-RUN cargo build --release -p ${package}
+RUN cargo build --release --all-features -p ${package}
 
 # runtime stage
 #FROM alpine:3.16 as runtime

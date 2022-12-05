@@ -1,7 +1,7 @@
 use piam_proxy_core::{
     effect::Effect,
     policy::{
-        s3_policy::{S3InputPolicyStatement, S3PolicyStatement},
+        object_storage_policy::{ObjectStorageInputStatement, ObjectStorageStatement},
         Statement,
     },
 };
@@ -10,9 +10,9 @@ use serde::{Deserialize, Serialize};
 use crate::parser::{ActionKind, S3Input};
 
 #[derive(Debug, Default, Serialize, Deserialize)]
-pub struct S3PolicyStatementImpl(S3PolicyStatement);
+pub struct S3Statement(ObjectStorageStatement);
 
-impl Statement for S3PolicyStatementImpl {
+impl Statement for S3Statement {
     type Input = S3Input;
 
     fn version(&self) -> i32 {
@@ -20,17 +20,19 @@ impl Statement for S3PolicyStatementImpl {
     }
 
     fn id(&self) -> String {
-        self.0.id.to_string()
+        self.0.id.clone()
     }
 
-    fn find_effect_for_input(&self, input: &Self::Input) -> Option<&Effect> {
-        let input_policy = &self.0.input_policy;
-        if !input_policy.match_action(input) {
+    fn find_effect_by_input(&self, input: &Self::Input) -> Option<&Effect> {
+        let input_statement = &self.0.input_statement;
+        if !input_statement.match_action(input) {
             return None;
         }
         match input.action_kind() {
-            ActionKind::ListBuckets | ActionKind::Bucket => input_policy.find_bucket_effect(input),
-            ActionKind::Object => input_policy.find_object_effect(input),
+            ActionKind::ListBuckets | ActionKind::Bucket => {
+                input_statement.find_bucket_effect(input)
+            }
+            ActionKind::Object => input_statement.find_object_effect(input),
         }
     }
 }
@@ -41,7 +43,7 @@ trait Matches {
     fn find_object_effect(&self, input: &S3Input) -> Option<&Effect>;
 }
 
-impl Matches for S3InputPolicyStatement {
+impl Matches for ObjectStorageInputStatement {
     fn match_action(&self, input: &S3Input) -> bool {
         match &self.actions {
             None => true,
@@ -95,7 +97,7 @@ mod tests {
     use piam_proxy_core::{
         effect::{Effect, Modify},
         policy::{
-            s3_policy::{Key, S3InputPolicyStatement},
+            object_storage_policy::{Key, ObjectStorageInputStatement},
             Name,
         },
     };
@@ -104,7 +106,7 @@ mod tests {
 
     #[test]
     fn match_action() {
-        let policy = S3InputPolicyStatement {
+        let policy = ObjectStorageInputStatement {
             actions: Some(vec!["CreateBucket".to_string(), "GetObject".to_string()]),
             ..Default::default()
         };
@@ -135,7 +137,7 @@ mod tests {
 
     #[test]
     fn match_bucket_effect() {
-        let mut policy = S3InputPolicyStatement::default();
+        let mut policy = ObjectStorageInputStatement::default();
         policy.bucket.name = Some(Name {
             eq: Some(vec![String::from("bucket1")]),
             start_with: Some(vec![String::from("start")]),
@@ -162,7 +164,7 @@ mod tests {
 
     #[test]
     fn match_object_effect() {
-        let mut policy = S3InputPolicyStatement::default();
+        let mut policy = ObjectStorageInputStatement::default();
         policy.bucket.name = Some(Name {
             eq: Some(vec![String::from("bucket1")]),
             start_with: Some(vec![String::from("start1")]),

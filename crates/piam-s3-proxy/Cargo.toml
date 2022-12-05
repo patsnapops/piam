@@ -8,7 +8,7 @@ axum = "0.6.0-rc.2"
 hyper = { version = "0.14", features = ["full"] }
 tokio = { version = "1", features = ["full"] }
 log = "0.4.17"
-piam-proxy-core = { path = "../piam-proxy-core", features = ["s3-policy", "aws-xml-response"] }
+piam-proxy-core = { path = "../piam-proxy-core", features = ["object-storage-policy", "aws-xml-response"] }
 piam-tracing = { path = "../piam-tracing" }
 http = "0.2.8"
 anyhow = "1.0"
@@ -19,6 +19,9 @@ arc-swap = "1.5.1"
 once_cell = "1.15.0"
 strum_macros = "0.24"
 strum = { version = "0.24", features = ["derive"] }
+async-trait = "0.1"
+aws-sdk-s3 = { version = "0.18.0", optional = true }
+aws-types = { version = "0.48.0", features = ["hardcoded-credentials"], optional = true }
 
 [dev-dependencies]
 aws-sdk-s3 = "0.18.0"
@@ -27,3 +30,8 @@ aws-config = "0.48.0"
 aws-smithy-client = "0.48.0"
 futures = "0.3.24"
 uuid = { version = "1.1.2", features = ["v4", "fast-rng", "macro-diagnostics"] }
+
+[features]
+# Special requirement for s3 proxy: Using a unified access key (without account code at the end) to
+# access buckets across multiple accounts for each user
+uni-key = ["aws-sdk-s3", "aws-types"]

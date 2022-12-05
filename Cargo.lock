@@ -1091,6 +1091,7 @@ dependencies = [
  "piam-proxy-core",
  "piam-tracing",
  "redis",
+ "serde",
  "serde_yaml",
  "tokio",
  "uuid",
@@ -1102,6 +1103,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "arc-swap",
+ "async-trait",
  "aws-sigv4",
  "axum",
  "cidr",
@@ -1125,6 +1127,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "arc-swap",
+ "async-trait",
  "aws-config",
  "aws-sdk-s3",
  "aws-smithy-client",

@@ -5,38 +5,24 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::{
+    condition::ConditionRange,
     effect::Effect,
     error::{ProxyError, ProxyResult},
     input::Input,
-    principal::Group,
+    type_alias::IamEntityIdType,
 };
 
-/// There can only be one policy takes effect for each request
-pub type Policies<S> = Vec<Policy<S>>;
-
-#[derive(Debug, Default, Serialize, Deserialize)]
-pub struct PolicyContainer<S: Debug> {
-    pub policy_by_user: HashMap<Uuid, Policies<S>>,
-    pub policy_by_group: HashMap<Uuid, Policies<S>>,
-    pub policy_by_role: HashMap<Uuid, Policies<S>>,
-}
-
-impl<S: Debug> PolicyContainer<S> {
-    pub fn find_policies_by_group(&self, group: &Group) -> ProxyResult<&Policies<S>> {
-        self.policy_by_group.get(&group.id).ok_or_else(|| {
-            ProxyError::PolicyNotFound(format!("Policy not found for group: {}", group.id))
-        })
-    }
-}
+pub type PolicyId = IamEntityIdType;
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct Policy<S: Debug> {
     pub kind: String,
     pub version: i32,
-    pub id: Uuid,
+    pub id: PolicyId,
+    pub name: String,
     /// if condition specified, only takes effect when condition is met
-    // pub conditions: Vec<Conditions>,
-    pub statement: S,
+    pub conditions: Option<Vec<ConditionRange>>,
+    pub statements: Vec<S>,
 }
 
 pub trait Statement {
@@ -46,7 +32,29 @@ pub trait Statement {
 
     fn id(&self) -> String;
 
-    fn find_effect_for_input(&self, input: &Self::Input) -> Option<&Effect>;
+    fn find_effect_by_input(&self, input: &Self::Input) -> Option<&Effect>;
+}
+
+impl<S, I> Policy<S>
+where
+    S: Statement<Input = I> + Debug,
+    I: Input,
+{
+    fn find_effects_by_input(&self, input: &I) -> ProxyResult<Vec<&Effect>> {
+        // TODO: check condition find_effects_by_input
+        let statements = &self.statements;
+        if statements.is_empty() {
+            return Err(ProxyError::OtherInternal(format!(
+                "policy {} has no statements",
+                self.id
+            )));
+        }
+        let effects = statements
+            .iter()
+            .filter_map(|statement| statement.find_effect_by_input(input))
+            .collect();
+        Ok(effects)
+    }
 }
 
 pub trait FindEffect<S, I>
@@ -54,26 +62,20 @@ where
     S: Statement<Input = I> + Debug,
     I: Input,
 {
-    fn find_effect(&self, input: &I) -> ProxyResult<&Effect>;
+    fn find_effects_by_input(&self, input: &I) -> ProxyResult<Vec<&Effect>>;
 }
 
-impl<S, I> FindEffect<S, I> for Policies<S>
+impl<S, I> FindEffect<S, I> for Vec<&Policy<S>>
 where
     S: Statement<Input = I> + Debug,
     I: Input,
 {
-    fn find_effect(&self, input: &I) -> ProxyResult<&Effect> {
-        self.iter()
-            .find_map(|policy| {
-                debug!("{:#?}", policy);
-                // TODO: find condition
-                // let _condition = self.condition();
-                // let _condition_policy = &policy.conditions;
-                policy.statement.find_effect_for_input(input)
-            })
-            .ok_or_else(|| {
-                ProxyError::EffectNotFound(format!("Effect not found for input: {:?}", input))
-            })
+    fn find_effects_by_input(&self, input: &I) -> ProxyResult<Vec<&Effect>> {
+        let mut all_effects = Vec::new();
+        for policy in self {
+            all_effects.extend(policy.find_effects_by_input(input)?);
+        }
+        Ok(all_effects)
     }
 }
 
@@ -90,12 +92,12 @@ pub struct Name {
 }
 
 impl Name {
-    pub fn matches(&self, name: &String) -> bool {
+    pub fn matches(&self, name: &str) -> bool {
         // TODO: static analyze Name
         // should have at least one of eq or start_with
         // should not conflict
         if let Some(eq) = &self.eq {
-            if eq.contains(name) {
+            if eq.contains(&name.to_string()) {
                 return true;
             }
         }
@@ -108,24 +110,24 @@ impl Name {
     }
 }
 
-#[cfg(feature = "s3-policy")]
-pub mod s3_policy {
+#[cfg(feature = "object-storage-policy")]
+pub mod object_storage_policy {
     use serde::{Deserialize, Serialize};
     use uuid::Uuid;
 
     use crate::{effect::Effect, policy::Name};
 
     #[derive(Debug, Default, Serialize, Deserialize)]
-    pub struct S3PolicyStatement {
+    pub struct ObjectStorageStatement {
         pub version: i32,
-        pub id: Uuid,
-        pub input_policy: S3InputPolicyStatement,
+        pub id: String,
+        pub input_statement: ObjectStorageInputStatement,
         #[serde(skip_serializing_if = "Option::is_none")]
-        pub output_policy: Option<String>,
+        pub output_statement: Option<String>,
     }
 
     #[derive(Debug, Default, Serialize, Deserialize)]
-    pub struct S3InputPolicyStatement {
+    pub struct ObjectStorageInputStatement {
         // TODO: use enum ActionName instead of String
         #[serde(skip_serializing_if = "Option::is_none")]
         pub actions: Option<Vec<String>>,

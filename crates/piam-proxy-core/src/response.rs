@@ -5,7 +5,7 @@ use log::error;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::{error::ProxyError, type_alias::HttpResponse};
+use crate::{config::PROXY_TYPE, error::ProxyError, type_alias::HttpResponse};
 
 pub trait HttpResponseExt {
     fn add_piam_headers(self, id: String) -> Self;
@@ -32,19 +32,35 @@ impl HttpResponseExt for HttpResponse {
 impl IntoResponse for ProxyError {
     fn into_response(self) -> axum::response::Response {
         let id = Uuid::new_v4().to_string();
-        error!("x-patsnap-request-id: {} ProxyError: {:?}", id, &self);
-        let res = match self {
-            ProxyError::BadRequest(m) => {
-                bad_request("BadRequest", &format!("{} x-patsnap-request-id: {}", m, id))
-            }
-            ProxyError::InvalidAuthorizationHeader(m)
-            | ProxyError::UserNotFound(m)
-            | ProxyError::GroupNotFound(m)
-            | ProxyError::PolicyNotFound(m)
-            | ProxyError::EffectNotFound(m) => {
-                forbidden("Forbidden", &format!("{} x-patsnap-request-id: {}", m, id))
-            }
+        let proxy = PROXY_TYPE.load();
+        let trace_info = format!("Proxy: {} x-patsnap-request-id: {}", proxy, id);
+        let (res, err_type) = match &self {
+            ProxyError::BadRequest(msg)
+            | ProxyError::OperationNotSupported(msg)
+            | ProxyError::InvalidRegion(msg) => (
+                bad_request("BadRequest", &format!("{} {}", msg, trace_info)),
+                "BadRequest",
+            ),
+            ProxyError::InvalidAuthorizationHeader(msg)
+            | ProxyError::InvalidAccessKey(msg)
+            | ProxyError::MissingPolicy(msg)
+            | ProxyError::EffectNotFound(msg) => (
+                forbidden("Forbidden", &format!("{} {}", msg, trace_info)),
+                "Forbidden",
+            ),
+            ProxyError::OtherInternal(msg)
+            | ProxyError::ManagerApi(msg)
+            | ProxyError::Deserialize(msg)
+            | ProxyError::UserNotFound(msg)
+            | ProxyError::GroupNotFound(msg) => (
+                internal_error("InternalError", &format!("{} {}", msg, trace_info)),
+                "Internal",
+            ),
         };
+        error!(
+            "x-patsnap-request-id: {} ErrorType: {} Error: {:?}",
+            id, err_type, &self
+        );
         res.add_piam_headers(id).into_response()
     }
 }
@@ -69,6 +85,14 @@ pub fn forbidden(code: &str, message: &str) -> HttpResponse {
         .expect("build forbidden response should not fail")
 }
 
+pub fn internal_error(code: &str, message: &str) -> HttpResponse {
+    Response::builder()
+        .status(StatusCode::INTERNAL_SERVER_ERROR)
+        .header(CONTENT_TYPE, "application/xml")
+        .body(Body::from(error_payload(code, message)))
+        .expect("build internal error response should not fail")
+}
+
 fn error_payload(code: &str, message: &str) -> String {
     #[cfg(feature = "aws-xml-response")]
     aws_xml_error_payload(code, message)
@@ -88,7 +112,7 @@ pub struct AwsErrorXml {
 fn aws_xml_error_payload(code: &str, message: &str) -> String {
     let error = AwsErrorXml {
         code: format!("Piam{}", code),
-        message: format!("[PIAM] {}", message),
+        message: format!("[Patsnap IAM] {}", message),
         aws_access_key_id: "".into(),
         host_id: "".into(),
     };

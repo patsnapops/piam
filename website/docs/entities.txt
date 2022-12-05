@@ -1,0 +1,46 @@
+// Sweet Class Diagram
+// -------------------
+
+[Service| name: String]
+[Service]-[note: Examples(name):\n DPP\nCommon ETL\nXXX]
+
+[AccessKey: String|base_access_key: String;account_code: String ]
+[AccessKey: String]-[note: Examples:\n AKDataDPP3977\nAKDataDPP7478\nAKDataDPP0066]
+
+[User|base_access_key: String;secret_key: String]
+[User]-[note: Examples(base_access_key):\n AKDataDPP]
+
+[Group|name: String]
+[Group]-[note: Examples(name): DataServices]
+
+[≪Trait≫;PolicySet]
+[PolicySet]-[note: Examples:\n ObjectStorage:DataServices:7478:us-east-1\nObjectStorage:DataServices:7478:eu-cent-1]
+
+[Account| account_code: String; real_ak: String; real_sk: String]
+[note: Account\n Examples(account_code):\n7478\n0066]
+
+[Region: String]
+[Region: String]-[note: Examples:\n us-east-1\neu-cent-1]
+
+[≪Trait≫;Input|bucket: String; key: String]
+
+[Effect]
+[Effect]-[note: Effect Examples:\nDeny\nAllow\nModify\nEmitEvent]
+
+[Service]1->1[AccessKey: String]n->1[User]n->n[Group]1->n[PolicySet]
+
+[Request {bg:lightgreen}]1->1[AccessKey: String]
+[Request {bg:lightgreen}]1->1[Region: String]
+[Request {bg:lightgreen}]1->1[Input]
+
+[AccessKey: String]1->1[Account]
+
+[Account]1->n[PolicySet]
+
+[Region: String]1->n[PolicySet]
+
+[PolicySet]1->n[Effect]
+[Input]1->n[Effect]
+
+[Request {bg:lightgreen}]1->1[Response {bg:lightgreen}]
+[Effect]n->1[Response {bg:lightgreen}]

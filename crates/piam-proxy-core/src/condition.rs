@@ -1,17 +1,19 @@
-use std::{net::IpAddr, time::Instant};
+use std::net::IpAddr;
+
+use serde::{Deserialize, Serialize};
 
 use crate::type_alias::HttpRequest;
 
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Condition {
     pub ip_addr: Option<IpAddr>,
     pub region: Option<Region>,
-    pub time: Instant,
 }
 
-pub struct Conditions {
-    pub ip_addr: Vec<IpAddr>,
-    pub region: Vec<Region>,
-    pub times: Vec<(Instant, Instant)>,
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+pub struct ConditionRange {
+    pub ip_addr: Option<Vec<IpAddr>>,
+    pub region: Option<Vec<Region>>,
 }
 
 impl Condition {}
@@ -25,11 +27,12 @@ impl ConditionExt for HttpRequest {
         Condition {
             ip_addr: None,
             region: None,
-            time: Instant::now(),
         }
     }
 }
 
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub enum Region {
+    #[default]
     Unknown,
 }
