@@ -65,7 +65,7 @@ impl IntoResponse for ProxyError {
             | ProxyError::OperationNotSupported(msg)
             | ProxyError::MissingPolicy(msg)
             | ProxyError::EffectNotFound(msg) => {
-                let (r, t) = r_t(forbidden, msg, "Forbidden");
+                let (r, t) = r_t(forbidden, msg, self.name());
                 warn!("{}", t);
                 r
             }
@@ -74,7 +74,7 @@ impl IntoResponse for ProxyError {
             | ProxyError::Deserialize(msg)
             | ProxyError::UserNotFound(msg)
             | ProxyError::GroupNotFound(msg) => {
-                let (r, t) = r_t(internal_err, msg, "GroupNotFound");
+                let (r, t) = r_t(internal_err, msg, self.name());
                 error!("{}", t);
                 r
             }
