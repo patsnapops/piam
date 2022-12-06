@@ -36,11 +36,18 @@ impl GetNewState for S3Config {
 }
 
 impl S3Config {
-    pub fn find_proxy_host(&self, host: &str) -> &str {
-        self.proxy_hosts
+    pub fn find_proxy_host(&self, host: &str) -> ProxyResult<&str> {
+        let s = self
+            .proxy_hosts
             .iter()
             .find(|&v| host.ends_with(v))
-            .expect("host should ends with one of proxy_hosts")
+            .ok_or_else(|| {
+                ProxyError::InvalidEndpoint(format!(
+                    "'{}' is not ending with a valid piam s3 proxy endpoint",
+                    host
+                ))
+            })?;
+        Ok(s)
     }
 
     #[cfg(feature = "uni-key")]

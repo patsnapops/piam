@@ -197,10 +197,14 @@ impl Input for S3Input {
         let headers = req.headers();
         let host = headers.get(HOST).unwrap().to_str().unwrap();
         let config = state.expect("s3_config should be set");
-        let proxy_host = config.find_proxy_host(host);
+        let proxy_host = config.find_proxy_host(host)?;
         let bucket = host
             .strip_suffix(&format!(".{}", proxy_host))
-            .expect("host should end with .{proxy_host}")
+            .ok_or_else(|| {
+                ProxyError::OperationNotSupported(
+                    "ListBuckets not supported due to uni-key feature".into(),
+                )
+            })?
             .to_string();
         let query = req.uri().query().unwrap_or_default();
         let form: Form = serde_urlencoded::from_str(query).unwrap();

@@ -54,6 +54,7 @@ impl IntoResponse for ProxyError {
         };
         let res = match &self {
             ProxyError::BadRequest(msg)
+            | ProxyError::InvalidEndpoint(msg)
             | ProxyError::InvalidRegion(msg)
             | ProxyError::InvalidAuthorizationHeader(msg) => {
                 let (r, t) = r_t(bad_request, msg, self.name());

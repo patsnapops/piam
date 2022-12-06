@@ -5,6 +5,7 @@ pub type ProxyResult<T> = Result<T, ProxyError>;
 #[derive(Debug)]
 pub enum ProxyError {
     BadRequest(String),
+    InvalidEndpoint(String),
     InvalidRegion(String),
     InvalidAuthorizationHeader(String),
     InvalidAccessKey(String),
@@ -22,6 +23,7 @@ impl ProxyError {
     pub fn name(&self) -> &str {
         match self {
             ProxyError::BadRequest(_) => "BadRequest",
+            ProxyError::InvalidEndpoint(_) => "InvalidEndpoint",
             ProxyError::InvalidRegion(_) => "InvalidRegion",
             ProxyError::InvalidAuthorizationHeader(_) => "InvalidAuthorizationHeader",
             ProxyError::InvalidAccessKey(_) => "InvalidAccessKey",
@@ -42,6 +44,7 @@ impl fmt::Display for ProxyError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             ProxyError::BadRequest(msg) => write!(f, "BadRequest: {}", msg),
+            ProxyError::InvalidEndpoint(_) => write!(f, "InvalidEndpoint"),
             ProxyError::InvalidRegion(msg) => write!(f, "InvalidRegion: {}", msg),
             ProxyError::InvalidAuthorizationHeader(msg) => {
                 write!(f, "InvalidAuthorizationHeader: {}", msg)

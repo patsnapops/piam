@@ -1,5 +1,9 @@
 use http::{header::HOST, uri::PathAndQuery, HeaderValue, Uri};
-use piam_proxy_core::{error::ProxyResult, request::from_region_to_host, type_alias::HttpRequest};
+use piam_proxy_core::{
+    error::{ProxyError, ProxyResult},
+    request::from_region_to_host,
+    type_alias::HttpRequest,
+};
 
 use crate::S3Config;
 
@@ -51,10 +55,10 @@ impl S3RequestTransform for HttpRequest {
 
     fn set_actual_host(&mut self, config: &S3Config, region: &str) -> ProxyResult<()> {
         let host = self.headers().get(HOST).unwrap().to_str().unwrap();
-        let proxy_host = config.find_proxy_host(host);
-        let bucket_dot = host
-            .strip_suffix(proxy_host)
-            .expect("host should end with proxy_host");
+        let proxy_host = config.find_proxy_host(host)?;
+        let bucket_dot = host.strip_suffix(proxy_host).ok_or_else(|| {
+            ProxyError::InvalidEndpoint(format!("host {} should end with {}", host, proxy_host))
+        })?;
         let actual_host = from_region_to_host(region)?;
         let host = format!("{}{}", bucket_dot, actual_host);
         self.headers_mut()

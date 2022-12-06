@@ -55,7 +55,7 @@ pub fn from_region_to_host(region: &str) -> ProxyResult<&'static str> {
         "us-east-1" => Ok("s3.us-east-1.amazonaws.com"),
         "eu-central-1" => Ok("s3.eu-central-1.amazonaws.com"),
         _ => Err(ProxyError::InvalidRegion(format!(
-            "Unsupported region: {}",
+            "unsupported region: {}",
             region,
         ))),
     }
