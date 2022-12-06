@@ -1,11 +1,15 @@
 use axum::response::IntoResponse;
 use http::{header::CONTENT_TYPE, HeaderValue, Response, StatusCode};
 use hyper::Body;
-use log::error;
+use log::{error, info, warn};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::{config::PROXY_TYPE, error::ProxyError, type_alias::HttpResponse};
+use crate::{
+    config::{CLUSTER_ENV, PROXY_TYPE},
+    error::ProxyError,
+    type_alias::HttpResponse,
+};
 
 pub trait HttpResponseExt {
     fn add_piam_headers(self, id: String) -> Self;
@@ -18,7 +22,11 @@ impl HttpResponseExt for HttpResponse {
         let headers = self.headers_mut();
         headers.append(
             "x-patsnap-proxy-type",
-            HeaderValue::from_static("Patsnap S3 Proxy"),
+            HeaderValue::from_static(&PROXY_TYPE.load()),
+        );
+        headers.append(
+            "x-patsnap-proxy-cluster-env",
+            HeaderValue::from_str(&CLUSTER_ENV.load()).expect("CLUSTER_ENV should be valid"),
         );
         headers.append("x-patsnap-request-id", HeaderValue::from_str(&id).unwrap());
         self
@@ -32,35 +40,44 @@ impl HttpResponseExt for HttpResponse {
 impl IntoResponse for ProxyError {
     fn into_response(self) -> axum::response::Response {
         let id = Uuid::new_v4().to_string();
-        let proxy = PROXY_TYPE.load();
-        let trace_info = format!("Proxy: {} x-patsnap-request-id: {}", proxy, id);
-        let (res, err_type) = match &self {
+        let r_t = |resp_fn: fn(&str, &str) -> HttpResponse, msg, err_type| {
+            let trace_info = format!(
+                "proxy_type: {}, proxy_cluster_env: {}, \
+                error_type: {}, message: {}, x-patsnap-request-id: {}",
+                PROXY_TYPE.load(),
+                CLUSTER_ENV.load(),
+                err_type,
+                msg,
+                id
+            );
+            (resp_fn(err_type, &trace_info), trace_info)
+        };
+        let res = match &self {
             ProxyError::BadRequest(msg)
+            | ProxyError::InvalidRegion(msg)
+            | ProxyError::InvalidAuthorizationHeader(msg) => {
+                let (r, t) = r_t(bad_request, msg, self.name());
+                info!("{}", t);
+                r
+            }
+            ProxyError::InvalidAccessKey(msg)
             | ProxyError::OperationNotSupported(msg)
-            | ProxyError::InvalidRegion(msg) => (
-                bad_request("BadRequest", &format!("{} {}", msg, trace_info)),
-                "BadRequest",
-            ),
-            ProxyError::InvalidAuthorizationHeader(msg)
-            | ProxyError::InvalidAccessKey(msg)
             | ProxyError::MissingPolicy(msg)
-            | ProxyError::EffectNotFound(msg) => (
-                forbidden("Forbidden", &format!("{} {}", msg, trace_info)),
-                "Forbidden",
-            ),
+            | ProxyError::EffectNotFound(msg) => {
+                let (r, t) = r_t(forbidden, msg, "Forbidden");
+                warn!("{}", t);
+                r
+            }
             ProxyError::OtherInternal(msg)
             | ProxyError::ManagerApi(msg)
             | ProxyError::Deserialize(msg)
             | ProxyError::UserNotFound(msg)
-            | ProxyError::GroupNotFound(msg) => (
-                internal_error("InternalError", &format!("{} {}", msg, trace_info)),
-                "Internal",
-            ),
+            | ProxyError::GroupNotFound(msg) => {
+                let (r, t) = r_t(internal_err, msg, "GroupNotFound");
+                error!("{}", t);
+                r
+            }
         };
-        error!(
-            "x-patsnap-request-id: {} ErrorType: {} Error: {:?}",
-            id, err_type, &self
-        );
         res.add_piam_headers(id).into_response()
     }
 }
@@ -85,7 +102,7 @@ pub fn forbidden(code: &str, message: &str) -> HttpResponse {
         .expect("build forbidden response should not fail")
 }
 
-pub fn internal_error(code: &str, message: &str) -> HttpResponse {
+pub fn internal_err(code: &str, message: &str) -> HttpResponse {
     Response::builder()
         .status(StatusCode::INTERNAL_SERVER_ERROR)
         .header(CONTENT_TYPE, "application/xml")

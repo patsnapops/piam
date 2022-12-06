@@ -10,7 +10,7 @@ use axum::{
 };
 use log::{debug, info};
 use piam_proxy_core::{
-    config::{proxy_port, set_policy_model, set_proxy_type, STATE_UPDATE_INTERVAL},
+    config::{proxy_port, set_constants, CLUSTER_ENV, STATE_UPDATE_INTERVAL},
     state::StateManager,
 };
 use piam_tracing::logger::init_logger;
@@ -31,18 +31,17 @@ mod uni_key;
 
 #[tokio::main]
 async fn main() {
-    set_proxy_type("[Patsnap S3 Proxy]");
-    set_policy_model("ObjectStorage");
     let bin_name = env!("CARGO_PKG_NAME").replace('-', "_");
     let (_guard, _log_handle) = init_logger(&bin_name, true);
+    set_constants("[Patsnap S3 Proxy]", "ObjectStorage");
 
     let state_manager = StateManager::initialize().await;
     let state: S3ProxyState = state_manager.arc_state.clone();
     // TODO: move this into state::StateManager
     tokio::spawn(async move {
         loop {
-            state_manager.update_state().await;
             tokio::time::sleep(std::time::Duration::from_secs(STATE_UPDATE_INTERVAL)).await;
+            state_manager.update_state().await;
         }
     });
 

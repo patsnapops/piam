@@ -21,13 +21,17 @@ pub static PROXY_TYPE: Lazy<ArcSwap<&'static str>> = Lazy::new(|| ArcSwap::from_
 pub static POLICY_MODEL: Lazy<ArcSwap<&'static str>> = Lazy::new(|| ArcSwap::from_pointee("Unset"));
 pub const STATE_UPDATE_INTERVAL: u64 = 60;
 
-pub fn set_proxy_type(proxy_type: &'static str) {
+pub fn set_constants(proxy_type: &'static str, policy_model: &'static str) {
     PROXY_TYPE.store(Arc::new(proxy_type));
+    POLICY_MODEL.store(Arc::new(policy_model));
+    info!("PROXY_TYPE: {}", proxy_type);
+    info!("POLICY_MODEL: {}", policy_model);
+    info!("CLUSTER_ENV: {}", CLUSTER_ENV.load());
+    info!("PIAM_MANAGER_ADDRESS: {}", PIAM_MANAGER_ADDRESS.load());
 }
 
-pub fn set_policy_model(policy_model: &'static str) {
-    POLICY_MODEL.store(Arc::new(policy_model));
-}
+pub static CLUSTER_ENV: Lazy<ArcSwap<String>> =
+    Lazy::new(|| string_var_with_default("CLUSTER_ENV", "Unset"));
 
 pub static PIAM_MANAGER_ADDRESS: Lazy<ArcSwap<String>> =
     Lazy::new(|| string_var_with_default("PIAM_MANAGER_ADDRESS", "http://localhost:8080"));
@@ -37,6 +41,5 @@ fn string_var_with_default(name: &str, default: &str) -> ArcSwap<String> {
         Ok(s) => s,
         Err(_) => default.to_string(),
     };
-    info!("{}: {}", name, val);
     ArcSwap::from_pointee(val)
 }

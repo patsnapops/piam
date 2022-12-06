@@ -5,10 +5,10 @@ pub type ProxyResult<T> = Result<T, ProxyError>;
 #[derive(Debug)]
 pub enum ProxyError {
     BadRequest(String),
-    OperationNotSupported(String),
     InvalidRegion(String),
     InvalidAuthorizationHeader(String),
     InvalidAccessKey(String),
+    OperationNotSupported(String),
     UserNotFound(String),
     GroupNotFound(String),
     MissingPolicy(String),
@@ -18,17 +18,36 @@ pub enum ProxyError {
     OtherInternal(String),
 }
 
+impl ProxyError {
+    pub fn name(&self) -> &str {
+        match self {
+            ProxyError::BadRequest(_) => "BadRequest",
+            ProxyError::InvalidRegion(_) => "InvalidRegion",
+            ProxyError::InvalidAuthorizationHeader(_) => "InvalidAuthorizationHeader",
+            ProxyError::InvalidAccessKey(_) => "InvalidAccessKey",
+            ProxyError::OperationNotSupported(_) => "OperationNotSupported",
+            ProxyError::UserNotFound(_) => "UserNotFound",
+            ProxyError::GroupNotFound(_) => "GroupNotFound",
+            ProxyError::MissingPolicy(_) => "MissingPolicy",
+            ProxyError::EffectNotFound(_) => "EffectNotFound",
+            ProxyError::ManagerApi(_) => "ManagerApi",
+            ProxyError::Deserialize(_) => "Deserialize",
+            ProxyError::OtherInternal(_) => "OtherInternal",
+        }
+    }
+}
+
 // impl Display trait for ProxyError
 impl fmt::Display for ProxyError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             ProxyError::BadRequest(msg) => write!(f, "BadRequest: {}", msg),
-            ProxyError::OperationNotSupported(msg) => write!(f, "OperationNotSupported: {}", msg),
             ProxyError::InvalidRegion(msg) => write!(f, "InvalidRegion: {}", msg),
             ProxyError::InvalidAuthorizationHeader(msg) => {
                 write!(f, "InvalidAuthorizationHeader: {}", msg)
             }
             ProxyError::InvalidAccessKey(msg) => write!(f, "InvalidAccessKey: {}", msg),
+            ProxyError::OperationNotSupported(msg) => write!(f, "OperationNotSupported: {}", msg),
             ProxyError::UserNotFound(msg) => write!(f, "UserNotFound: {}", msg),
             ProxyError::GroupNotFound(msg) => write!(f, "GroupNotFound: {}", msg),
             ProxyError::MissingPolicy(msg) => write!(f, "MissingPolicy: {}", msg),

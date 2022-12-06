@@ -125,7 +125,7 @@ impl<S: Statement + DeserializeOwned + Debug> IamContainer<S> {
             .get(base_access_id)
             .ok_or_else(|| {
                 ProxyError::InvalidAccessKey(format!(
-                    "User not found for base access key id: {}",
+                    "User not found for base access key id: '{}'",
                     base_access_id
                 ))
             })?;
