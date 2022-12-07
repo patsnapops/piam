@@ -162,7 +162,10 @@ pub mod aws {
 
     #[cfg(test)]
     mod test {
-        use crate::signature::aws::extract_aws_access_key_and_region_from_auth_header;
+        use crate::{
+            config::CN_NORTHWEST_1,
+            signature::aws::extract_aws_access_key_and_region_from_auth_header,
+        };
 
         #[test]
         fn test_extract_aws_access_key_and_region_from_auth_header() {
@@ -170,7 +173,7 @@ pub mod aws {
                 "AWS4-HMAC-SHA256 Credential=AKPSSVCSPROXYDEV/20221012/cn-northwest-1/s3/aws4_request ..."
             ).unwrap();
             assert_eq!(key, "AKPSSVCSPROXYDEV");
-            assert_eq!(region, "cn-northwest-1");
+            assert_eq!(region, CN_NORTHWEST_1);
         }
     }
 }

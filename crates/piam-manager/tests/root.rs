@@ -1,5 +1,6 @@
 use piam_proxy_core::{
     account::aws::AwsAccount,
+    config::{AP_SHANGHAI, CN_NORTHWEST_1, NA_ASHBURN, US_EAST_1},
     effect::Effect,
     group::Group,
     policy::{
@@ -601,7 +602,7 @@ pub fn make_policy_relationships() -> Vec<PolicyRelationship> {
             group_id: Some(group_3_cjj0().id),
             role_id: None,
             account_id: "us_aws_prod_7478".to_string(),
-            region: "us-east-1".to_string(),
+            region: US_EAST_1.to_string(),
             policy_id: policy_os_7478_us_group_3_cjj0().id,
         },
         PolicyRelationship {
@@ -610,7 +611,7 @@ pub fn make_policy_relationships() -> Vec<PolicyRelationship> {
             group_id: Some(group_3_shf0().id),
             role_id: None,
             account_id: "cn_aws_prod_3977".to_string(),
-            region: "cn-northwest-1".to_string(),
+            region: CN_NORTHWEST_1.to_string(),
             policy_id: policy_os_3977_cn_group_3_shf0().id,
         },
         PolicyRelationship {
@@ -619,7 +620,7 @@ pub fn make_policy_relationships() -> Vec<PolicyRelationship> {
             group_id: Some(group_3_qwt0().id),
             role_id: None,
             account_id: "us_tencent_4258".to_string(),
-            region: "na-ashburn".to_string(),
+            region: NA_ASHBURN.to_string(),
             policy_id: policy_os_3977_cn_group_3_qwt0().id,
         },
         PolicyRelationship {
@@ -628,7 +629,7 @@ pub fn make_policy_relationships() -> Vec<PolicyRelationship> {
             group_id: Some(group_team_data_services().id),
             role_id: None,
             account_id: "us_aws_prod_7478".to_string(),
-            region: "us-east-1".to_string(),
+            region: US_EAST_1.to_string(),
             policy_id: policy_os_7478_us_east00000_1_group_team_data_services().id,
         },
         PolicyRelationship {
@@ -637,7 +638,7 @@ pub fn make_policy_relationships() -> Vec<PolicyRelationship> {
             group_id: Some(group_team_data_services().id),
             role_id: None,
             account_id: "cn_aws_prod_3977".to_string(),
-            region: "cn-northwest-1".to_string(),
+            region: CN_NORTHWEST_1.to_string(),
             policy_id: policy_os_3977_cn_northwest_1_group_team_data_services().id,
         },
         PolicyRelationship {
@@ -646,7 +647,7 @@ pub fn make_policy_relationships() -> Vec<PolicyRelationship> {
             group_id: Some(group_team_data_services().id),
             role_id: None,
             account_id: "us_aws_prod_0066".to_string(),
-            region: "us-east-1".to_string(),
+            region: US_EAST_1.to_string(),
             policy_id: policy_os_0066_us_east00000_1_group_team_data_services().id,
         },
         // opst
@@ -656,7 +657,7 @@ pub fn make_policy_relationships() -> Vec<PolicyRelationship> {
             group_id: Some(group_svcs_opst().id),
             role_id: None,
             account_id: "us_aws_prod_7478".to_string(),
-            region: "us-east-1".to_string(),
+            region: US_EAST_1.to_string(),
             policy_id: policy_os_opst_for_all().id,
         },
         PolicyRelationship {
@@ -665,7 +666,7 @@ pub fn make_policy_relationships() -> Vec<PolicyRelationship> {
             group_id: Some(group_svcs_opst().id),
             role_id: None,
             account_id: "us_aws_prod_0066".to_string(),
-            region: "us-east-1".to_string(),
+            region: US_EAST_1.to_string(),
             policy_id: policy_os_opst_for_all().id,
         },
         PolicyRelationship {
@@ -674,7 +675,7 @@ pub fn make_policy_relationships() -> Vec<PolicyRelationship> {
             group_id: Some(group_svcs_opst().id),
             role_id: None,
             account_id: "cn_aws_prod_3977".to_string(),
-            region: "cn-northwest-1".to_string(),
+            region: CN_NORTHWEST_1.to_string(),
             policy_id: policy_os_opst_for_all().id,
         },
         PolicyRelationship {
@@ -683,7 +684,7 @@ pub fn make_policy_relationships() -> Vec<PolicyRelationship> {
             group_id: Some(group_svcs_opst().id),
             role_id: None,
             account_id: "us_tencent_4258".to_string(),
-            region: "ap-shanghai".to_string(),
+            region: AP_SHANGHAI.to_string(),
             policy_id: policy_os_opst_for_all().id,
         },
         PolicyRelationship {
@@ -702,7 +703,7 @@ pub fn make_policy_relationships() -> Vec<PolicyRelationship> {
             group_id: Some(group_data_tmp().id),
             role_id: None,
             account_id: "us_aws_prod_7478".to_string(),
-            region: "us-east-1".to_string(),
+            region: US_EAST_1.to_string(),
             policy_id: policy_os_7478_us_east00000_1_group_data_tmp().id,
         },
         PolicyRelationship {
@@ -711,7 +712,7 @@ pub fn make_policy_relationships() -> Vec<PolicyRelationship> {
             group_id: Some(group_data_tmp().id),
             role_id: None,
             account_id: "cn_aws_prod_3977".to_string(),
-            region: "cn-northwest-1".to_string(),
+            region: CN_NORTHWEST_1.to_string(),
             policy_id: policy_os_3977_cn_northwest_1_group_data_tmp().id,
         },
     ]

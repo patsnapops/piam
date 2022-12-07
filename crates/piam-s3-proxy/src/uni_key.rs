@@ -8,6 +8,7 @@ use aws_types::{region::Region, Credentials};
 use log::debug;
 use piam_proxy_core::{
     account::{aws::AwsAccount, AccountId},
+    config::{AP_SHANGHAI, CN_NORTHWEST_1, NA_ASHBURN, US_EAST_1},
     container::IamContainer,
     error::{ProxyError, ProxyResult},
     manager_api::ManagerClient,
@@ -58,24 +59,24 @@ impl UniKeyInfo {
                 match &account.id {
                     id if id.starts_with("cn_aws") => Ok(SdkClientConf {
                         account,
-                        region: "cn-northwest-1".to_string(),
+                        region: CN_NORTHWEST_1.to_string(),
                         endpoint: None,
                     }),
                     id if id.starts_with("us_aws") => Ok(SdkClientConf {
                         account,
-                        region: "us-east-1".to_string(),
+                        region: US_EAST_1.to_string(),
                         endpoint: None,
                     }),
                     // TODO: refactor this quick and dirty solution for s3 uni-key feature
                     id if id.starts_with("cn_tencent") => Ok(SdkClientConf {
                         account,
-                        region: "ap-shanghai".to_string(),
-                        endpoint: Some(from_region_to_endpoint("ap-shanghai")?),
+                        region: AP_SHANGHAI.to_string(),
+                        endpoint: Some(from_region_to_endpoint(AP_SHANGHAI)?),
                     }),
                     id if id.starts_with("us_tencent") => Ok(SdkClientConf {
                         account,
-                        region: "na-ashburn".to_string(),
-                        endpoint: Some(from_region_to_endpoint("na-ashburn")?),
+                        region: NA_ASHBURN.to_string(),
+                        endpoint: Some(from_region_to_endpoint(NA_ASHBURN)?),
                     }),
                     _ => Err(ProxyError::OtherInternal(format!(
                         "match region failed, unsupported account id: {}",
@@ -128,19 +129,15 @@ impl UniKeyInfo {
         Ok(Self { inner })
     }
 
-    async fn get_buckets(
-        client_conf: &SdkClientConf,
-        client: &Client,
-    ) -> ProxyResult<Vec<String>> {
-        dbg!(&client_conf);
+    async fn get_buckets(client_conf: &SdkClientConf, client: &Client) -> ProxyResult<Vec<String>> {
         let buckets = client
             .list_buckets()
             .send()
             .await
             .map_err(|e| {
                 ProxyError::OtherInternal(format!(
-                    "client_conf: {:#?} failed to list buckets: {}",
-                    client_conf, e
+                    "client_conf.account.ak_id: {:#?} failed to list buckets: {}",
+                    client_conf.account.ak_id, e
                 ))
             })?
             .buckets

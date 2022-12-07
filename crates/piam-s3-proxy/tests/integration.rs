@@ -10,6 +10,7 @@ use aws_sdk_s3::{
 use aws_smithy_client::{erase::DynConnector, never::NeverConnector};
 use aws_types::{os_shim_internal::Env, region::Region, Credentials};
 use futures::future;
+use piam_proxy_core::config::{AP_SHANGHAI, CN_NORTHWEST_1, NA_ASHBURN, US_EAST_1};
 use uuid::Uuid;
 
 pub const DEV_PROXY_HOST: &str = "piam-s3-proxy.dev";
@@ -17,11 +18,6 @@ pub const DEV_PROXY_ENDPOINT: &str = "http://piam-s3-proxy.dev";
 
 const REAL_ACCESS_KEY_ID: &str = "";
 const REAL_SECRET_ACCESS_KEY: &str = "";
-
-const CN_NORTHWEST_1: &str = "cn-northwest-1";
-const US_EAST_1: &str = "us-east-1";
-const AP_SHANGHAI: &str = "ap-shanghai";
-const NA_ASHBURN: &str = "na-ashburn";
 
 // only ListBuckets does not have bucket name in url or host
 #[tokio::test]
@@ -357,7 +353,7 @@ async fn build_client() -> Client {
 async fn build_real_key_to_cn_northwest_client() -> Client {
     let env = Env::from_slice(&[
         ("AWS_MAX_ATTEMPTS", "1"),
-        ("AWS_REGION", "cn-northwest-1"),
+        ("AWS_REGION", CN_NORTHWEST_1),
         ("AWS_ACCESS_KEY_ID", REAL_ACCESS_KEY_ID),
         ("AWS_SECRET_ACCESS_KEY", REAL_SECRET_ACCESS_KEY),
     ]);
@@ -367,7 +363,7 @@ async fn build_real_key_to_cn_northwest_client() -> Client {
 async fn build_fake_key_to_us_east_client_dev() -> Client {
     let env = Env::from_slice(&[
         ("AWS_MAX_ATTEMPTS", "1"),
-        ("AWS_REGION", "us-east-1"),
+        ("AWS_REGION", US_EAST_1),
         ("AWS_ACCESS_KEY_ID", "AKPSSVCSDATALAKE"),
         ("AWS_SECRET_ACCESS_KEY", "dummy_sk"),
     ]);
@@ -377,7 +373,7 @@ async fn build_fake_key_to_us_east_client_dev() -> Client {
 async fn build_fake_key_to_cn_northwest_client_dev() -> Client {
     let env = Env::from_slice(&[
         ("AWS_MAX_ATTEMPTS", "1"),
-        ("AWS_REGION", "cn-northwest-1"),
+        ("AWS_REGION", CN_NORTHWEST_1),
         ("AWS_ACCESS_KEY_ID", "AKPSSVCSPROXYDEV"),
         ("AWS_SECRET_ACCESS_KEY", "dummy_sk"),
     ]);
@@ -418,7 +414,7 @@ fn build_client_from_params(params: ClientParams) -> Client {
 async fn build_dt_us_east_client() -> Client {
     let env = Env::from_slice(&[
         ("AWS_MAX_ATTEMPTS", "1"),
-        ("AWS_REGION", "us-east-1"),
+        ("AWS_REGION", US_EAST_1),
         ("AWS_ACCESS_KEY_ID", "AKPSSVCSDATALAKE"),
         ("AWS_SECRET_ACCESS_KEY", "dummy_sk"),
     ]);
@@ -432,7 +428,7 @@ async fn build_dt_us_east_client() -> Client {
 async fn build_liych_us_east_client() -> Client {
     let env = Env::from_slice(&[
         ("AWS_MAX_ATTEMPTS", "1"),
-        ("AWS_REGION", "us-east-1"),
+        ("AWS_REGION", US_EAST_1),
         ("AWS_ACCESS_KEY_ID", "AKPSPERSLIYCH"),
         ("AWS_SECRET_ACCESS_KEY", "dummy_sk"),
     ]);
@@ -446,7 +442,7 @@ async fn build_liych_us_east_client() -> Client {
 async fn build_cjj_us_east_client() -> Client {
     let env = Env::from_slice(&[
         ("AWS_MAX_ATTEMPTS", "1"),
-        ("AWS_REGION", "us-east-1"),
+        ("AWS_REGION", US_EAST_1),
         ("AWS_ACCESS_KEY_ID", "caojinjuan"),
         ("AWS_SECRET_ACCESS_KEY", "dummy_sk"),
     ]);
@@ -509,7 +505,7 @@ async fn cjj_us_east() {
 async fn wwt_test() {
     let env = Env::from_slice(&[
         ("AWS_MAX_ATTEMPTS", "1"),
-        ("AWS_REGION", "us-east-1"),
+        ("AWS_REGION", US_EAST_1),
         ("AWS_ACCESS_KEY_ID", "AKPSSVCSPROXYDEV"),
         ("AWS_SECRET_ACCESS_KEY", "dummy_sk"),
     ]);
@@ -533,7 +529,7 @@ async fn wwt_test() {
 async fn data_team_dev() {
     let env = Env::from_slice(&[
         ("AWS_MAX_ATTEMPTS", "1"),
-        ("AWS_REGION", "cn-northwest-1"),
+        ("AWS_REGION", CN_NORTHWEST_1),
         ("AWS_ACCESS_KEY_ID", "AKPSTEAMDATA"),
         ("AWS_SECRET_ACCESS_KEY", "dummy_sk"),
     ]);
@@ -561,7 +557,7 @@ async fn data_team_dev() {
 async fn cx() {
     let env = Env::from_slice(&[
         ("AWS_MAX_ATTEMPTS", "1"),
-        ("AWS_REGION", "us-east-1"),
+        ("AWS_REGION", US_EAST_1),
         ("AWS_ACCESS_KEY_ID", "AKPSSVCSDATA"),
         // ("AWS_ACCESS_KEY_ID", "AKPSSVCSPROXYDEV"),
         ("AWS_SECRET_ACCESS_KEY", "dummy_sk"),
@@ -598,7 +594,7 @@ async fn cx() {
 async fn shf() {
     let env = Env::from_slice(&[
         ("AWS_MAX_ATTEMPTS", "1"),
-        ("AWS_REGION", "cn-northwest-1"),
+        ("AWS_REGION", CN_NORTHWEST_1),
         ("AWS_ACCESS_KEY_ID", "AKPSPERS03SHF0Z"),
         ("AWS_SECRET_ACCESS_KEY", "dummy_sk"),
     ]);
@@ -621,7 +617,7 @@ async fn shf() {
 async fn zx_new() {
     let env = Env::from_slice(&[
         ("AWS_MAX_ATTEMPTS", "1"),
-        ("AWS_REGION", "us-east-1"),
+        ("AWS_REGION", US_EAST_1),
         ("AWS_ACCESS_KEY_ID", "AKPSSVCS24DDATARDPROCESSINGBATCHQA"),
         ("AWS_SECRET_ACCESS_KEY", "dummy_sk"),
     ]);
@@ -644,7 +640,7 @@ async fn zx_new() {
 async fn zx_old() {
     let env = Env::from_slice(&[
         ("AWS_MAX_ATTEMPTS", "1"),
-        ("AWS_REGION", "us-east-1"),
+        ("AWS_REGION", US_EAST_1),
         ("AWS_ACCESS_KEY_ID", "1AKPSSVCSDATA"),
         ("AWS_SECRET_ACCESS_KEY", "dummy_sk"),
     ]);
@@ -667,8 +663,8 @@ async fn zx_old() {
 async fn tencent_list_buckets() {
     let env = Env::from_slice(&[
         ("AWS_MAX_ATTEMPTS", "1"),
-        ("AWS_REGION", "ap-shanghai"),
-        // ("AWS_REGION", "na-ashburn"),
+        ("AWS_REGION", AP_SHANGHAI),
+        // ("AWS_REGION", NA_ASHBURN),
         ("AWS_ACCESS_KEY_ID", "AKIDlT7kM0dGqOwS1Y4b7fjFkDdCospljYFm"),
         ("AWS_SECRET_ACCESS_KEY", ""),
     ]);
@@ -710,8 +706,8 @@ async fn tencent_list_buckets() {
 async fn opst() {
     let env = Env::from_slice(&[
         ("AWS_MAX_ATTEMPTS", "1"),
-        ("AWS_REGION", "ap-shanghai"),
-        // ("AWS_REGION", "na-ashburn"),
+        ("AWS_REGION", AP_SHANGHAI),
+        // ("AWS_REGION", NA_ASHBURN),
         ("AWS_ACCESS_KEY_ID", "AKIDlT7kM0dGqOwS1Y4b7fjFkDdCospljYFm"),
         ("AWS_SECRET_ACCESS_KEY", ""),
     ]);
