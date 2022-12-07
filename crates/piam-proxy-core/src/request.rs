@@ -49,11 +49,19 @@ impl HttpRequestExt for HttpRequest {
     }
 }
 
+pub fn from_region_to_endpoint(region: &str) -> ProxyResult<String> {
+    Ok(format!("http://{}", from_region_to_host(region)?))
+}
+
 pub fn from_region_to_host(region: &str) -> ProxyResult<&'static str> {
     match region {
+        // aws
         "cn-northwest-1" => Ok("s3.cn-northwest-1.amazonaws.com.cn"),
         "us-east-1" => Ok("s3.us-east-1.amazonaws.com"),
         "eu-central-1" => Ok("s3.eu-central-1.amazonaws.com"),
+        // tencent
+        "ap-shanghai" => Ok("cos.ap-shanghai.myqcloud.com"),
+        "na-ashburn" => Ok("cos.na-ashburn.myqcloud.com"),
         _ => Err(ProxyError::InvalidRegion(format!(
             "unsupported region: {}",
             region,

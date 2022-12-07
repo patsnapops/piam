@@ -84,7 +84,11 @@ impl IntoResponse for ProxyError {
 }
 
 pub fn rejected_by_policy() -> HttpResponse {
-    forbidden("RejectedByPolicy", "RejectedByPolicy", &Uuid::new_v4().to_string())
+    forbidden(
+        "RejectedByPolicy",
+        "RejectedByPolicy",
+        &Uuid::new_v4().to_string(),
+    )
 }
 
 pub fn bad_request(code: &str, message: &str, request_id: &str) -> HttpResponse {

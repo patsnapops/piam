@@ -3,7 +3,7 @@
 
 use std::collections::HashMap;
 
-use aws_sdk_s3::{Client, Config};
+use aws_sdk_s3::{Client, Config, Endpoint};
 use aws_types::{region::Region, Credentials};
 use log::debug;
 use piam_proxy_core::{
@@ -11,6 +11,7 @@ use piam_proxy_core::{
     container::IamContainer,
     error::{ProxyError, ProxyResult},
     manager_api::ManagerClient,
+    request::{from_region_to_endpoint, from_region_to_host},
 };
 use serde::{Deserialize, Serialize};
 
@@ -28,9 +29,11 @@ pub struct UniKeyInfo {
     inner: BucketToAccount,
 }
 
-struct AwsAccountRegion {
+#[derive(Debug, Default)]
+struct SdkClientConf {
     account: AwsAccount,
     region: String,
+    endpoint: Option<String>,
 }
 
 impl UniKeyInfo {
@@ -49,43 +52,74 @@ impl UniKeyInfo {
 
     pub async fn new_from(manager: &ManagerClient) -> ProxyResult<Self> {
         let accounts = manager.get_accounts().await?;
-        let vec_account_region: ProxyResult<Vec<AwsAccountRegion>> = accounts
+        let vec_conf: ProxyResult<Vec<SdkClientConf>> = accounts
             .into_iter()
             .map(|account| {
-                let region = match &account.id {
-                    id if id.starts_with("cn") => "cn-north-1",
-                    id if id.starts_with("us") => "us-east-1",
+                match &account.id {
+                    id if id.starts_with("cn_aws") => Ok(SdkClientConf {
+                        account,
+                        region: "cn-north-1".to_string(),
+                        endpoint: None,
+                    }),
+                    id if id.starts_with("us_aws") => Ok(SdkClientConf {
+                        account,
+                        region: "us-east-1".to_string(),
+                        endpoint: None,
+                    }),
+                    // TODO: refactor this quick and dirty solution for s3 uni-key feature
+                    id if id.starts_with("cn_tencent") => Ok(SdkClientConf {
+                        account,
+                        region: "ap-shanghai".to_string(),
+                        endpoint: Some(from_region_to_endpoint("ap-shanghai")?),
+                    }),
+                    id if id.starts_with("us_tencent") => Ok(SdkClientConf {
+                        account,
+                        region: "na-ashburn".to_string(),
+                        endpoint: Some(from_region_to_endpoint("na-ashburn")?),
+                    }),
                     _ => Err(ProxyError::OtherInternal(format!(
-                        "unsupported account id: {}",
+                        "match region failed, unsupported account id: {}",
                         &account.code
                     )))?,
                 }
-                .to_string();
-                Ok(AwsAccountRegion { account, region })
             })
             .collect();
 
-        let vec_account_region_client: Vec<(AwsAccountRegion, Client)> = vec_account_region?
+        let vec_account_region_client: ProxyResult<Vec<(SdkClientConf, Client)>> = vec_conf?
             .into_iter()
-            .map(|ar| {
-                let creds = Credentials::from_keys(&ar.account.ak_id, &ar.account.secret_key, None);
-                let config = Config::builder()
+            .map(|conf| {
+                let creds =
+                    Credentials::from_keys(&conf.account.ak_id, &conf.account.secret_key, None);
+                let cb = Config::builder()
                     .credentials_provider(creds)
-                    // TODO: see if one region is enough for ListBuckets
-                    .region(Region::new(ar.region.clone()))
-                    .build();
-                (ar, Client::from_conf(config))
+                    .region(Region::new(conf.region.clone()));
+                let config = match &conf.endpoint {
+                    // TODO: refactor this quick and dirty solution for s3 uni-key feature
+                    None => cb.build(),
+                    Some(tep) => {
+                        let uri = tep.parse().map_err(|e| {
+                            ProxyError::OtherInternal(format!(
+                                "invalid URI for tencent endpoint: {}",
+                                e
+                            ))
+                        })?;
+                        cb.endpoint_resolver(Endpoint::immutable(uri)).build()
+                    }
+                };
+                Ok((conf, Client::from_conf(config)))
             })
             .collect();
 
         let mut inner = BucketToAccount::new();
-        for (account_region, client) in vec_account_region_client {
-            let buckets = Self::get_buckets(&client).await.map_err(|e| {
-                ProxyError::OtherInternal(format!(
-                    "failed to get buckets for account: {} region: {} Error: {}",
-                    account_region.account.code, account_region.region, e
-                ))
-            })?;
+        for (account_region, client) in vec_account_region_client? {
+            let buckets = Self::get_buckets(&account_region, &client)
+                .await
+                .map_err(|e| {
+                    ProxyError::OtherInternal(format!(
+                        "failed to get buckets for account: {} region: {} Error: {}",
+                        account_region.account.code, account_region.region, e
+                    ))
+                })?;
             buckets.into_iter().for_each(|bucket| {
                 inner.insert(bucket, account_region.account.clone());
             });
@@ -94,12 +128,20 @@ impl UniKeyInfo {
         Ok(Self { inner })
     }
 
-    async fn get_buckets(client: &Client) -> ProxyResult<Vec<String>> {
+    async fn get_buckets(
+        account_region: &SdkClientConf,
+        client: &Client,
+    ) -> ProxyResult<Vec<String>> {
         let buckets = client
             .list_buckets()
             .send()
             .await
-            .map_err(|e| ProxyError::OtherInternal(format!("failed to list buckets: {}", e)))?
+            .map_err(|e| {
+                ProxyError::OtherInternal(format!(
+                    "account_region: {:#?} failed to list buckets: {}",
+                    account_region, e
+                ))
+            })?
             .buckets
             .ok_or_else(|| ProxyError::OtherInternal("no buckets found".into()))?
             .into_iter()

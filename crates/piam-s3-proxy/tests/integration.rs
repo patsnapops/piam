@@ -5,17 +5,23 @@ use aws_sdk_s3::{
     error::HeadBucketErrorKind,
     model::{CompletedMultipartUpload, CompletedPart, Object},
     types::{ByteStream, SdkError},
-    Client, Endpoint,
+    Client, Config, Endpoint,
 };
 use aws_smithy_client::{erase::DynConnector, never::NeverConnector};
-use aws_types::os_shim_internal::Env;
+use aws_types::{os_shim_internal::Env, region::Region, Credentials};
 use futures::future;
 use uuid::Uuid;
 
 pub const DEV_PROXY_HOST: &str = "piam-s3-proxy.dev";
+pub const DEV_PROXY_ENDPOINT: &str = "http://piam-s3-proxy.dev";
 
 const REAL_ACCESS_KEY_ID: &str = "";
 const REAL_SECRET_ACCESS_KEY: &str = "";
+
+const CN_NORTHWEST_1: &str = "cn-northwest-1";
+const US_EAST_1: &str = "us-east-1";
+const AP_SHANGHAI: &str = "ap-shanghai";
+const NA_ASHBURN: &str = "na-ashburn";
 
 // only ListBuckets does not have bucket name in url or host
 #[tokio::test]
@@ -355,7 +361,7 @@ async fn build_real_key_to_cn_northwest_client() -> Client {
         ("AWS_ACCESS_KEY_ID", REAL_ACCESS_KEY_ID),
         ("AWS_SECRET_ACCESS_KEY", REAL_SECRET_ACCESS_KEY),
     ]);
-    build_client_with_params(env, "http://s3.cn-northwest-1.amazonaws.com.cn").await
+    build_client_from_env(env, "http://s3.cn-northwest-1.amazonaws.com.cn").await
 }
 
 async fn build_fake_key_to_us_east_client_dev() -> Client {
@@ -365,7 +371,7 @@ async fn build_fake_key_to_us_east_client_dev() -> Client {
         ("AWS_ACCESS_KEY_ID", "AKPSSVCSDATALAKE"),
         ("AWS_SECRET_ACCESS_KEY", "dummy_sk"),
     ]);
-    build_client_with_params(env, &format!("http://{}", DEV_PROXY_HOST)).await
+    build_client_from_env(env, &format!("http://{}", DEV_PROXY_HOST)).await
 }
 
 async fn build_fake_key_to_cn_northwest_client_dev() -> Client {
@@ -375,10 +381,10 @@ async fn build_fake_key_to_cn_northwest_client_dev() -> Client {
         ("AWS_ACCESS_KEY_ID", "AKPSSVCSPROXYDEV"),
         ("AWS_SECRET_ACCESS_KEY", "dummy_sk"),
     ]);
-    build_client_with_params(env, &format!("http://{}", DEV_PROXY_HOST)).await
+    build_client_from_env(env, &format!("http://{}", DEV_PROXY_HOST)).await
 }
 
-async fn build_client_with_params(env: Env, endpoint: &str) -> Client {
+async fn build_client_from_env(env: Env, endpoint: &str) -> Client {
     let conf = from_env()
         .configure(
             ProviderConfig::empty()
@@ -391,6 +397,24 @@ async fn build_client_with_params(env: Env, endpoint: &str) -> Client {
     aws_sdk_s3::Client::new(&conf)
 }
 
+pub struct ClientParams {
+    pub access_id: &'static str,
+    pub secret: &'static str,
+    pub region: &'static str,
+    pub endpoint: &'static str,
+}
+
+fn build_client_from_params(params: ClientParams) -> Client {
+    let creds = Credentials::from_keys(params.access_id, params.secret, None);
+    let cb = Config::builder()
+        .credentials_provider(creds)
+        .endpoint_resolver(Endpoint::immutable(
+            params.endpoint.parse().expect("invalid URI"),
+        ))
+        .region(Region::new(params.region));
+    Client::from_conf(cb.build())
+}
+
 async fn build_dt_us_east_client() -> Client {
     let env = Env::from_slice(&[
         ("AWS_MAX_ATTEMPTS", "1"),
@@ -398,7 +422,7 @@ async fn build_dt_us_east_client() -> Client {
         ("AWS_ACCESS_KEY_ID", "AKPSSVCSDATALAKE"),
         ("AWS_SECRET_ACCESS_KEY", "dummy_sk"),
     ]);
-    build_client_with_params(
+    build_client_from_env(
         env,
         &format!("http://{}", "us-east-1.s3-proxy.patsnap.info"),
     )
@@ -412,7 +436,7 @@ async fn build_liych_us_east_client() -> Client {
         ("AWS_ACCESS_KEY_ID", "AKPSPERSLIYCH"),
         ("AWS_SECRET_ACCESS_KEY", "dummy_sk"),
     ]);
-    build_client_with_params(
+    build_client_from_env(
         env,
         &format!("http://{}", "us-east-1.s3-proxy.patsnap.info"),
     )
@@ -426,7 +450,7 @@ async fn build_cjj_us_east_client() -> Client {
         ("AWS_ACCESS_KEY_ID", "caojinjuan"),
         ("AWS_SECRET_ACCESS_KEY", "dummy_sk"),
     ]);
-    build_client_with_params(
+    build_client_from_env(
         env,
         // &format!("http://{}", "s-ops-s3-proxy-us-aws.patsnap.info"),
         &format!("http://{}", DEV_PROXY_HOST),
@@ -489,7 +513,7 @@ async fn wwt_test() {
         ("AWS_ACCESS_KEY_ID", "AKPSSVCSPROXYDEV"),
         ("AWS_SECRET_ACCESS_KEY", "dummy_sk"),
     ]);
-    let client = build_client_with_params(
+    let client = build_client_from_env(
         env,
         &format!("http://{}", "us-east-1.s3-proxy.patsnap.info"),
         // &format!("http://{}", DEV_PROXY_HOST),
@@ -513,46 +537,12 @@ async fn data_team_dev() {
         ("AWS_ACCESS_KEY_ID", "AKPSTEAMDATA"),
         ("AWS_SECRET_ACCESS_KEY", "dummy_sk"),
     ]);
-    let client = build_client_with_params(
+    let client = build_client_from_env(
         env,
         &format!("http://{}", "cn-northwest-1.s3-proxy.patsnap.info"),
         // &format!("http://{}", DEV_PROXY_HOST),
     )
     .await;
-    // let mut string = "string".to_string();
-    // for i in 0..5 {
-    //     string.push_str("0123456789");
-    // }
-    // let string = string.as_bytes().to_vec();
-    // let output = client
-    //     .put_object()
-    //     .bucket("datalake-internal.patsnap.com")
-    //     .key("dpp/rd_process/test20221018-1")
-    //     .body(ByteStream::from(string))
-    //     .send()
-    //     .await
-    //     .unwrap();
-    // assert!(output.e_tag().is_some());
-
-    // 7478
-    // let bucket = "datalake-internal.patsnap.com";
-    // let key = "dpp/rd_process/sum_advantage_jp_JP_v2_offLine202210210512/CTAS/20221021_051212_00052_2p9tk_bucket-01627.gz";
-    // client
-    //     .head_object()
-    //     .bucket(bucket)
-    //     .key(key)
-    //     .send()
-    //     .await.unwrap();
-
-    // let bucket = "discovery-attachment-us-east-1";
-    // let key = "data/drug_approvals_v2/pmda/pdf/test_as897d68sa76d87sa.pdf";
-    // client
-    //     .head_object()
-    //     .bucket(bucket)
-    //     .key(key)
-    //     .send()
-    //     .await
-    //     .unwrap();
 
     let bucket = "datalake-internal.patsnap.com-cn-northwest-1";
     let key = "/tmp/cdc/ticdc/cn_source/legal/20221114/test_oplog_02.zip";
@@ -576,7 +566,7 @@ async fn cx() {
         // ("AWS_ACCESS_KEY_ID", "AKPSSVCSPROXYDEV"),
         ("AWS_SECRET_ACCESS_KEY", "dummy_sk"),
     ]);
-    let client = build_client_with_params(
+    let client = build_client_from_env(
         env,
         // &format!("http://{}", "us-east-1.s3-proxy.patsnap.info"),
         &format!("http://{}", DEV_PROXY_HOST),
@@ -602,31 +592,6 @@ async fn cx() {
         .send()
         .await
         .unwrap();
-
-    // let key0066 = vec![
-    //     ("data.uk.segmentation.patsnap.com", "index.html"),
-    //     (
-    //         "patsnap-general-source",
-    //         "pharmsnap/cde/slpzxx/20220718/CXHB2200111.json",
-    //     ),
-    // ];
-    //
-    // // 7478
-    // // let bucket = "pdf-images-patsnap-us-east-1";
-    // // let key = "AE/B/10/07/00000000.PNG";
-    // // let bucket = "autodeploy-patsnap-us-east-1";
-    // // let key = "aes_key.txt";
-    //
-    // for (b, k) in key0066 {
-    //     match client.head_object().bucket(b).key(k).send().await {
-    //         Ok(output) => {
-    //             dbg!(output.content_length());
-    //         }
-    //         Err(e) => {
-    //             dbg!(b, k);
-    //         }
-    //     };
-    // }
 }
 
 #[tokio::test]
@@ -637,7 +602,7 @@ async fn shf() {
         ("AWS_ACCESS_KEY_ID", "AKPSPERS03SHF0Z"),
         ("AWS_SECRET_ACCESS_KEY", "dummy_sk"),
     ]);
-    let client = build_client_with_params(
+    let client = build_client_from_env(
         env,
         // &format!("http://{}", "us-east-1.s3-proxy.patsnap.info"),
         &format!("http://{}", DEV_PROXY_HOST),
@@ -653,14 +618,14 @@ async fn shf() {
 }
 
 #[tokio::test]
-async fn zx() {
+async fn zx_new() {
     let env = Env::from_slice(&[
         ("AWS_MAX_ATTEMPTS", "1"),
         ("AWS_REGION", "us-east-1"),
         ("AWS_ACCESS_KEY_ID", "AKPSSVCS24DDATARDPROCESSINGBATCHQA"),
         ("AWS_SECRET_ACCESS_KEY", "dummy_sk"),
     ]);
-    let client = build_client_with_params(
+    let client = build_client_from_env(
         env,
         // &format!("http://{}", "us-east-1.s3-proxy.patsnap.info"),
         &format!("http://{}", DEV_PROXY_HOST),
@@ -673,4 +638,140 @@ async fn zx() {
         .send()
         .await
         .unwrap();
+}
+
+#[tokio::test]
+async fn zx_old() {
+    let env = Env::from_slice(&[
+        ("AWS_MAX_ATTEMPTS", "1"),
+        ("AWS_REGION", "us-east-1"),
+        ("AWS_ACCESS_KEY_ID", "1AKPSSVCSDATA"),
+        ("AWS_SECRET_ACCESS_KEY", "dummy_sk"),
+    ]);
+    let client = build_client_from_env(
+        env,
+        // &format!("http://{}", "us-east-1.s3-proxy.patsnap.info"),
+        &format!("http://{}", DEV_PROXY_HOST),
+    )
+    .await;
+    let output = client
+        .get_object()
+        .bucket("datalake-internal.patsnap.com")
+        .key("tmp/10w_pid.txt")
+        .send()
+        .await
+        .unwrap();
+}
+
+#[tokio::test]
+async fn tencent_list_buckets() {
+    let env = Env::from_slice(&[
+        ("AWS_MAX_ATTEMPTS", "1"),
+        ("AWS_REGION", "ap-shanghai"),
+        // ("AWS_REGION", "na-ashburn"),
+        ("AWS_ACCESS_KEY_ID", "AKIDlT7kM0dGqOwS1Y4b7fjFkDdCospljYFm"),
+        ("AWS_SECRET_ACCESS_KEY", ""),
+    ]);
+    let client = build_client_from_env(
+        env,
+        // &format!("http://{}", "cos.ap-shanghai.myqcloud.com"),
+        // &format!("http://{}", "cos.na-ashburn.myqcloud.com"),
+        &format!("http://{}", DEV_PROXY_HOST),
+    )
+    .await;
+
+    // let output = client.list_buckets().send().await.unwrap();
+    // output.buckets().unwrap().iter().for_each(|b| {
+    //     dbg!(b.name().unwrap());
+    // });
+    // data-bio-source-cn-1251949819
+    // data-bio-source-us-1251949819
+
+    let objects = client
+        .list_objects_v2()
+        .bucket("data-bio-source-cn-1251949819")
+        // .bucket("data-bio-source-us-1251949819")
+        .send()
+        .await
+        .unwrap();
+    dbg!(&objects.contents().unwrap());
+
+    client
+        .get_object()
+        .bucket("data-bio-source-cn-1251949819")
+        // .bucket("data-bio-source-us-1251949819")
+        .key("asdsad")
+        .send()
+        .await
+        .unwrap();
+}
+
+#[tokio::test]
+async fn opst() {
+    let env = Env::from_slice(&[
+        ("AWS_MAX_ATTEMPTS", "1"),
+        ("AWS_REGION", "ap-shanghai"),
+        // ("AWS_REGION", "na-ashburn"),
+        ("AWS_ACCESS_KEY_ID", "AKIDlT7kM0dGqOwS1Y4b7fjFkDdCospljYFm"),
+        ("AWS_SECRET_ACCESS_KEY", ""),
+    ]);
+    let client = build_client_from_env(
+        env,
+        // &format!("http://{}", "cos.ap-shanghai.myqcloud.com"),
+        // &format!("http://{}", "cos.na-ashburn.myqcloud.com"),
+        &format!("http://{}", DEV_PROXY_HOST),
+    )
+    .await;
+
+    // let output = client.list_buckets().send().await.unwrap();
+    // output.buckets().unwrap().iter().for_each(|b| {
+    //     dbg!(b.name().unwrap());
+    // });
+    // data-bio-source-cn-1251949819
+    // data-bio-source-us-1251949819
+
+    let objects = client
+        .list_objects_v2()
+        .bucket("data-bio-source-cn-1251949819")
+        // .bucket("data-bio-source-us-1251949819")
+        .send()
+        .await
+        .unwrap();
+    dbg!(&objects.contents().unwrap());
+
+    client
+        .get_object()
+        .bucket("data-bio-source-cn-1251949819")
+        // .bucket("data-bio-source-us-1251949819")
+        .key("asdsad")
+        .send()
+        .await
+        .unwrap();
+}
+
+#[tokio::test]
+async fn qwt() {
+    let client = build_client_from_params(ClientParams {
+        access_id: "AKPSPERS03QWT0Z",
+        secret: "",
+        region: NA_ASHBURN,
+        endpoint: DEV_PROXY_ENDPOINT,
+    });
+
+    let objects = client
+        .list_objects_v2()
+        .bucket("patsnap-country-source-1251949819")
+        .send()
+        .await
+        .unwrap();
+    dbg!(&objects.contents().unwrap());
+
+    let output = client
+        .get_object()
+        .bucket("patsnap-country-source-1251949819")
+        .key("HK/A/12/51/79/0/output.json")
+        .send()
+        .await
+        .unwrap();
+    dbg!(&output.e_tag());
 }
