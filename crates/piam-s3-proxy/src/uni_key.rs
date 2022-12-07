@@ -58,7 +58,7 @@ impl UniKeyInfo {
                 match &account.id {
                     id if id.starts_with("cn_aws") => Ok(SdkClientConf {
                         account,
-                        region: "cn-north-1".to_string(),
+                        region: "cn-northwest-1".to_string(),
                         endpoint: None,
                     }),
                     id if id.starts_with("us_aws") => Ok(SdkClientConf {
