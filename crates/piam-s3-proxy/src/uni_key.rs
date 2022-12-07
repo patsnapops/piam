@@ -111,17 +111,17 @@ impl UniKeyInfo {
             .collect();
 
         let mut inner = BucketToAccount::new();
-        for (account_region, client) in vec_account_region_client? {
-            let buckets = Self::get_buckets(&account_region, &client)
+        for (client_conf, client) in vec_account_region_client? {
+            let buckets = Self::get_buckets(&client_conf, &client)
                 .await
                 .map_err(|e| {
                     ProxyError::OtherInternal(format!(
-                        "failed to get buckets for account: {} region: {} Error: {}",
-                        account_region.account.code, account_region.region, e
+                        "failed to get buckets for account: {} ak_id: {} region: {} Error: {}",
+                        client_conf.account.code, client_conf.account.ak_id, client_conf.region, e
                     ))
                 })?;
             buckets.into_iter().for_each(|bucket| {
-                inner.insert(bucket, account_region.account.clone());
+                inner.insert(bucket, client_conf.account.clone());
             });
         }
 
@@ -129,17 +129,18 @@ impl UniKeyInfo {
     }
 
     async fn get_buckets(
-        account_region: &SdkClientConf,
+        client_conf: &SdkClientConf,
         client: &Client,
     ) -> ProxyResult<Vec<String>> {
+        dbg!(&client_conf);
         let buckets = client
             .list_buckets()
             .send()
             .await
             .map_err(|e| {
                 ProxyError::OtherInternal(format!(
-                    "account_region: {:#?} failed to list buckets: {}",
-                    account_region, e
+                    "client_conf: {:#?} failed to list buckets: {}",
+                    client_conf, e
                 ))
             })?
             .buckets
