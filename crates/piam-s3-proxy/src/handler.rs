@@ -85,8 +85,8 @@ pub async fn handle(
     debug!("req.headers {:#?}", req.headers());
     let state = state.load();
 
-    /// Get input structure by parsing the request for specific protocol.
-    /// Example: getting S3Input with bucket and key as its fields.
+    // Get input structure by parsing the request for specific protocol.
+    // Example: getting S3Input with bucket and key as its fields.
     let s3_config = &state.extended_config;
     let input = S3Input::from_http(&req, Some(s3_config))?;
 
@@ -110,11 +110,9 @@ pub async fn handle(
         (account, base_access_key)
     };
 
-    /// Find matching policies by base_access_key in the request
+    // Find matching policies by base_access_key in the request
     let user = iam_container.find_user_by_base_access_key(base_access_key)?;
-    debug!("user: {:#?}", user);
     let groups = iam_container.find_groups_by_user(user)?;
-    debug!("groups: {:#?}", groups);
     let policy_query_param = PolicyQueryParams {
         roles: None,
         user: None,
@@ -124,10 +122,10 @@ pub async fn handle(
     };
     let policies = iam_container.find_policies(&policy_query_param)?;
 
-    /// Find effects in policies by input structure
+    // Find effects in policies by input structure
     let effects = policies.find_effects_by_input(&input)?;
 
-    /// Apply effects to the request and return the final response
+    // Apply effects to the request and return the final response
     let region = region.to_string();
     let res = match req.apply_effects(effects)? {
         ApplyResult::Forward(mut raw_req) => {

@@ -62,7 +62,9 @@ pub fn change_debug(handle: &LogHandle, debug: &str) -> bool {
 
 fn log_path() -> PathBuf {
     if dev_mode() {
-        return std::env::current_dir().unwrap();
+        let dir = env::temp_dir();
+        println!("log will be saved to temporary directory: {}", dir.display());
+        return dir;
     }
     // TODO: log_path read from env
     PathBuf::from(r"/opt/logs/apps/")
