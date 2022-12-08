@@ -19,6 +19,7 @@ variables:
   #新增发到生产跳过审批
   PRIVILEGE: "yes"
 
+# TODO: add test stage for automatic system test and etc.
 stages:
   - init
   - build

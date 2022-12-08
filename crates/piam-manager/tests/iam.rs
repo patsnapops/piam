@@ -448,6 +448,37 @@ pub fn policy_os_0066_us_east00000_1_group_team_data_services() -> Policy<Object
     }
 }
 
+pub fn policy_os_4258_global_group_team_data_services() -> Policy<ObjectStorageStatement> {
+    Policy {
+        kind: "ObjectStorage".to_string(),
+        version: 1,
+        id: "8be9190d-e7b1-4398-ae62-95afc5c69b0b".to_string(),
+        name: "policy_os_4258_global_group_team_data_services".to_string(),
+        conditions: None,
+        statements: vec![ObjectStorageStatement {
+            version: 0,
+            id: "81eec3f4-a4d4-46f0-97fe-10635a2f8632".to_string(),
+            input_statement: ObjectStorageInputStatement {
+                actions: Some(base_s3_actions_with_delete()),
+                bucket: Bucket {
+                    name: Some(Name {
+                        eq: Some(vec!["patsnap-country-source-1251949819".into()]),
+                        start_with: None,
+                    }),
+                    tag: None,
+                    effect: Some(Effect::allow()),
+                    keys: Some(vec![Key {
+                        effect: Some(Effect::allow()),
+                        ..Default::default()
+                    }]),
+                },
+                ..Default::default()
+            },
+            output_statement: None,
+        }],
+    }
+}
+
 pub fn policy_os_opst_for_all() -> Policy<ObjectStorageStatement> {
     Policy {
         kind: "ObjectStorage".to_string(),
@@ -540,6 +571,7 @@ pub fn make_policies_object_storage() -> Vec<Policy<ObjectStorageStatement>> {
         policy_os_7478_us_east00000_1_group_team_data_services(),
         policy_os_3977_cn_northwest_1_group_team_data_services(),
         policy_os_0066_us_east00000_1_group_team_data_services(),
+        policy_os_4258_global_group_team_data_services(),
         policy_os_opst_for_all(),
         policy_os_7478_us_east00000_1_group_data_tmp(),
         policy_os_3977_cn_northwest_1_group_data_tmp(),
@@ -649,6 +681,24 @@ pub fn make_policy_relationships() -> Vec<PolicyRelationship> {
             account_id: "us_aws_prod_0066".to_string(),
             region: US_EAST_1.to_string(),
             policy_id: policy_os_0066_us_east00000_1_group_team_data_services().id,
+        },
+        PolicyRelationship {
+            policy_model: "ObjectStorage".to_string(),
+            user_id: None,
+            group_id: Some(group_team_data_services().id),
+            role_id: None,
+            account_id: "us_tencent_4258".to_string(),
+            region: NA_ASHBURN.to_string(),
+            policy_id: policy_os_4258_global_group_team_data_services().id,
+        },
+        PolicyRelationship {
+            policy_model: "ObjectStorage".to_string(),
+            user_id: None,
+            group_id: Some(group_team_data_services().id),
+            role_id: None,
+            account_id: "cn_tencent_4258".to_string(),
+            region: AP_SHANGHAI.to_string(),
+            policy_id: policy_os_4258_global_group_team_data_services().id,
         },
         // opst
         PolicyRelationship {
@@ -763,7 +813,7 @@ fn write_all() {
 
 pub fn write(key: &str, value: String) {
     let client = redis::Client::open("redis://dev-redis.patsnap.info:30070/1").unwrap();
-    // let client = redis::Client::open("redis://localhost/1").unwrap();
+    let client = redis::Client::open("redis://localhost/1").unwrap();
     let mut con = client.get_connection().unwrap();
     let key = format!("piam:{}", key);
     con.set(key, value).unwrap()

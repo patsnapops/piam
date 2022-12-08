@@ -771,3 +771,30 @@ async fn qwt() {
         .unwrap();
     dbg!(&output.e_tag());
 }
+
+#[tokio::test]
+async fn lrj() {
+    let client = build_client_from_params(ClientParams {
+        access_id: "AKPSSVCS14DDATADWCSCRIPT",
+        secret: "",
+        region: NA_ASHBURN,
+        endpoint: DEV_PROXY_ENDPOINT,
+    });
+
+    let objects = client
+        .list_objects_v2()
+        .bucket("patsnap-country-source-1251949819")
+        .send()
+        .await
+        .unwrap();
+    dbg!(&objects.contents().unwrap());
+    //
+    // let output = client
+    //     .get_object()
+    //     .bucket("patsnap-country-source-1251949819")
+    //     .key("HK/A/12/51/79/0/output.json")
+    //     .send()
+    //     .await
+    //     .unwrap();
+    // dbg!(&output.e_tag());
+}
