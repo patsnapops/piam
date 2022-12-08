@@ -15,6 +15,7 @@ use uuid::Uuid;
 
 pub const DEV_PROXY_HOST: &str = "piam-s3-proxy.dev";
 pub const DEV_PROXY_ENDPOINT: &str = "http://piam-s3-proxy.dev";
+pub const EP_AP_SHANGHAI: &str = "http://ap-shanghai.s3-proxy.patsnap.info";
 
 const REAL_ACCESS_KEY_ID: &str = "";
 const REAL_SECRET_ACCESS_KEY: &str = "";
@@ -778,7 +779,7 @@ async fn lrj() {
         access_id: "AKPSSVCS14DDATADWCSCRIPT",
         secret: "",
         region: NA_ASHBURN,
-        endpoint: DEV_PROXY_ENDPOINT,
+        endpoint: EP_AP_SHANGHAI,
     });
 
     let objects = client
