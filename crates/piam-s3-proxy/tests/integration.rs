@@ -778,8 +778,8 @@ async fn lrj() {
     let client = build_client_from_params(ClientParams {
         access_id: "AKPSSVCS14DDATADWCSCRIPT",
         secret: "",
-        region: NA_ASHBURN,
-        endpoint: EP_AP_SHANGHAI,
+        region: US_EAST_1,
+        endpoint: DEV_PROXY_ENDPOINT,
     });
 
     let objects = client

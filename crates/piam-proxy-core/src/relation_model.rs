@@ -14,6 +14,7 @@ use crate::{
 /// n to n
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct UserGroupRelationship {
+    // TODO now: add id
     pub user_id: UserId,
     pub group_id: GroupId,
 }
@@ -21,6 +22,7 @@ pub struct UserGroupRelationship {
 /// Policy IDs can be filtered by data_model, group_id, user_id, role_id, account_id and region
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct PolicyRelationship {
+    // TODO now: add id
     /// example: ObjectStorage, DocumentDatabase, MessageQueue.
     pub policy_model: String,
     pub user_id: Option<UserId>,

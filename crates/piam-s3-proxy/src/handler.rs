@@ -97,12 +97,12 @@ pub async fn handle(
     // When feature uni-key is enabled, base_access_id is aws access_key,
     // otherwise base_access_id + account_code = aws_access_key_id
     #[cfg(feature = "uni-key")]
-    let (account, base_access_id) = (
-        s3_config
+    let (account, region, base_access_id) = {
+        let access_info = s3_config
             .get_uni_key_info()?
-            .find_account_by_input(&input)?,
-        access_key_id,
-    );
+            .find_access_info_input(&input)?;
+        (&access_info.account, &access_info.region, access_key_id)
+    };
     #[cfg(not(feature = "uni-key"))]
     let (account, base_access_id) = {
         let (base_access_id, code) = split_to_base_and_account_code(access_key_id)?;

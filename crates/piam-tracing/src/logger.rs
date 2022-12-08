@@ -27,7 +27,7 @@ pub fn init_logger(bin_name: &str, debug: bool) -> (Option<WorkerGuard>, Option<
     let reg = tracing_subscriber::registry();
     let base_filter = filter::Targets::new()
         .with_target(bin_name, filter::LevelFilter::DEBUG)
-        // TODO: do not hardcode piam_proxy_core
+        // TODO: remove hardcode piam_proxy_core
         .with_target("piam_proxy_core", filter::LevelFilter::DEBUG);
     let (filter, reload_handle) = reload::Layer::new(base_filter.clone());
 

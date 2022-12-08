@@ -22,58 +22,58 @@ use crate::{
     S3Config,
 };
 
-type BucketToAccount = HashMap<String, AwsAccount>;
+type BucketToAccessInfo = HashMap<String, AccessInfo>;
 
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct UniKeyInfo {
     /// bucket_name to account code
-    inner: BucketToAccount,
+    inner: BucketToAccessInfo,
 }
 
-#[derive(Debug, Default)]
-struct SdkClientConf {
-    account: AwsAccount,
-    region: String,
-    endpoint: Option<String>,
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+pub struct AccessInfo {
+    pub account: AwsAccount,
+    pub region: String,
+    pub endpoint: Option<String>,
 }
 
 impl UniKeyInfo {
-    pub fn find_account_by_input(&self, s3_input: &S3Input) -> ProxyResult<&AwsAccount> {
+    pub fn find_access_info_input(&self, s3_input: &S3Input) -> ProxyResult<&AccessInfo> {
         if s3_input.action_kind() == ActionKind::ListBuckets {
             return Err(ProxyError::OperationNotSupported(
                 "ListBuckets not supported due to uni-key feature".into(),
             ));
         }
         let bucket = s3_input.bucket();
-        let account = self.inner.get(bucket).ok_or_else(|| {
-            ProxyError::BadRequest(format!("account not found for bucket: {}", bucket))
+        let access_info = self.inner.get(bucket).ok_or_else(|| {
+            ProxyError::BadRequest(format!("access info not found for bucket: {}", bucket))
         })?;
-        Ok(account)
+        Ok(access_info)
     }
 
     pub async fn new_from(manager: &ManagerClient) -> ProxyResult<Self> {
         let accounts = manager.get_accounts().await?;
-        let vec_conf: ProxyResult<Vec<SdkClientConf>> = accounts
+        let access_info_vec: ProxyResult<Vec<AccessInfo>> = accounts
             .into_iter()
             .map(|account| {
                 match &account.id {
-                    id if id.starts_with("cn_aws") => Ok(SdkClientConf {
+                    id if id.starts_with("cn_aws") => Ok(AccessInfo {
                         account,
                         region: CN_NORTHWEST_1.to_string(),
                         endpoint: None,
                     }),
-                    id if id.starts_with("us_aws") => Ok(SdkClientConf {
+                    id if id.starts_with("us_aws") => Ok(AccessInfo {
                         account,
                         region: US_EAST_1.to_string(),
                         endpoint: None,
                     }),
                     // TODO: refactor this quick and dirty solution for s3 uni-key feature
-                    id if id.starts_with("cn_tencent") => Ok(SdkClientConf {
+                    id if id.starts_with("cn_tencent") => Ok(AccessInfo {
                         account,
                         region: AP_SHANGHAI.to_string(),
                         endpoint: Some(from_region_to_endpoint(AP_SHANGHAI)?),
                     }),
-                    id if id.starts_with("us_tencent") => Ok(SdkClientConf {
+                    id if id.starts_with("us_tencent") => Ok(AccessInfo {
                         account,
                         region: NA_ASHBURN.to_string(),
                         endpoint: Some(from_region_to_endpoint(NA_ASHBURN)?),
@@ -86,15 +86,15 @@ impl UniKeyInfo {
             })
             .collect();
 
-        let vec_account_region_client: ProxyResult<Vec<(SdkClientConf, Client)>> = vec_conf?
+        let access_info_client_vec: ProxyResult<Vec<(AccessInfo, Client)>> = access_info_vec?
             .into_iter()
-            .map(|conf| {
+            .map(|access| {
                 let creds =
-                    Credentials::from_keys(&conf.account.ak_id, &conf.account.secret_key, None);
+                    Credentials::from_keys(&access.account.ak_id, &access.account.secret_key, None);
                 let cb = Config::builder()
                     .credentials_provider(creds)
-                    .region(Region::new(conf.region.clone()));
-                let config = match &conf.endpoint {
+                    .region(Region::new(access.region.clone()));
+                let config = match &access.endpoint {
                     // TODO: refactor this quick and dirty solution for s3 uni-key feature
                     None => cb.build(),
                     Some(tep) => {
@@ -107,29 +107,29 @@ impl UniKeyInfo {
                         cb.endpoint_resolver(Endpoint::immutable(uri)).build()
                     }
                 };
-                Ok((conf, Client::from_conf(config)))
+                Ok((access, Client::from_conf(config)))
             })
             .collect();
 
-        let mut inner = BucketToAccount::new();
-        for (client_conf, client) in vec_account_region_client? {
-            let buckets = Self::get_buckets(&client_conf, &client)
+        let mut inner = BucketToAccessInfo::new();
+        for (access_info, client) in access_info_client_vec? {
+            let buckets = Self::get_buckets(&access_info, &client)
                 .await
                 .map_err(|e| {
                     ProxyError::OtherInternal(format!(
                         "failed to get buckets for account: {} ak_id: {} region: {} Error: {}",
-                        client_conf.account.code, client_conf.account.ak_id, client_conf.region, e
+                        access_info.account.code, access_info.account.ak_id, access_info.region, e
                     ))
                 })?;
             buckets.into_iter().for_each(|bucket| {
-                inner.insert(bucket, client_conf.account.clone());
+                inner.insert(bucket, access_info.clone());
             });
         }
 
         Ok(Self { inner })
     }
 
-    async fn get_buckets(client_conf: &SdkClientConf, client: &Client) -> ProxyResult<Vec<String>> {
+    async fn get_buckets(client_conf: &AccessInfo, client: &Client) -> ProxyResult<Vec<String>> {
         let buckets = client
             .list_buckets()
             .send()
