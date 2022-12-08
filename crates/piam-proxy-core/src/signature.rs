@@ -104,7 +104,7 @@ pub mod aws {
             // do signing
             let signing_settings = SigningSettings::default();
             let signing_params = SigningParams::builder()
-                .access_key(&params.account.ak_id)
+                .access_key(&params.account.access_key)
                 .secret_key(&params.account.secret_key)
                 .region(params.region)
                 .service_name(params.service)
@@ -179,5 +179,6 @@ pub mod aws {
 }
 
 pub fn split_to_base_and_account_code(access_key: &str) -> ProxyResult<(&str, &str)> {
+    // TODO: split_to_base_and_account_code
     todo!("later")
 }

@@ -16,7 +16,7 @@ pub struct User {
     pub id: UserId,
     pub name: String,
     // example: AKPSTEAMXXX
-    pub base_access_id: String,
+    pub base_access_key: String,
     pub secret: String,
     pub kind: UserKind,
 }

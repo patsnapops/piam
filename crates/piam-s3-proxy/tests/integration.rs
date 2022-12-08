@@ -395,14 +395,14 @@ async fn build_client_from_env(env: Env, endpoint: &str) -> Client {
 }
 
 pub struct ClientParams {
-    pub access_id: &'static str,
+    pub access_key: &'static str,
     pub secret: &'static str,
     pub region: &'static str,
     pub endpoint: &'static str,
 }
 
 fn build_client_from_params(params: ClientParams) -> Client {
-    let creds = Credentials::from_keys(params.access_id, params.secret, None);
+    let creds = Credentials::from_keys(params.access_key, params.secret, None);
     let cb = Config::builder()
         .credentials_provider(creds)
         .endpoint_resolver(Endpoint::immutable(
@@ -749,7 +749,7 @@ async fn opst() {
 #[tokio::test]
 async fn qwt() {
     let client = build_client_from_params(ClientParams {
-        access_id: "AKPSPERS03QWT0Z",
+        access_key: "AKPSPERS03QWT0Z",
         secret: "",
         region: NA_ASHBURN,
         endpoint: DEV_PROXY_ENDPOINT,
@@ -776,9 +776,9 @@ async fn qwt() {
 #[tokio::test]
 async fn lrj() {
     let client = build_client_from_params(ClientParams {
-        access_id: "AKPSSVCS14DDATADWCSCRIPT",
+        access_key: "AKPSSVCS14DDATADWCSCRIPT",
         secret: "",
-        region: US_EAST_1,
+        region: CN_NORTHWEST_1,
         endpoint: DEV_PROXY_ENDPOINT,
     });
 
@@ -788,7 +788,6 @@ async fn lrj() {
         .send()
         .await
         .unwrap();
-    dbg!(&objects.contents().unwrap());
     //
     // let output = client
     //     .get_object()
@@ -798,4 +797,23 @@ async fn lrj() {
     //     .await
     //     .unwrap();
     // dbg!(&output.e_tag());
+}
+
+#[tokio::test]
+async fn test_9554() {
+    let client = build_client_from_params(ClientParams {
+        access_key: "AKPSSVCS04OPST",
+        secret: "",
+        region: CN_NORTHWEST_1,
+        endpoint: DEV_PROXY_ENDPOINT,
+    });
+
+    let objects = client
+        .get_object()
+        .bucket("anniversary")
+        .key("image/birthday_bottom.jpg")
+        .send()
+        .await
+        .unwrap();
+    objects.e_tag().unwrap();
 }

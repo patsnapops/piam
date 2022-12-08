@@ -89,8 +89,11 @@ impl UniKeyInfo {
         let access_info_client_vec: ProxyResult<Vec<(AccessInfo, Client)>> = access_info_vec?
             .into_iter()
             .map(|access| {
-                let creds =
-                    Credentials::from_keys(&access.account.ak_id, &access.account.secret_key, None);
+                let creds = Credentials::from_keys(
+                    &access.account.access_key,
+                    &access.account.secret_key,
+                    None,
+                );
                 let cb = Config::builder()
                     .credentials_provider(creds)
                     .region(Region::new(access.region.clone()));
@@ -117,8 +120,11 @@ impl UniKeyInfo {
                 .await
                 .map_err(|e| {
                     ProxyError::OtherInternal(format!(
-                        "failed to get buckets for account: {} ak_id: {} region: {} Error: {}",
-                        access_info.account.code, access_info.account.ak_id, access_info.region, e
+                        "failed to get buckets for account: {} access_key: {} region: {} Error: {}",
+                        access_info.account.code,
+                        access_info.account.access_key,
+                        access_info.region,
+                        e
                     ))
                 })?;
             buckets.into_iter().for_each(|bucket| {
@@ -136,8 +142,8 @@ impl UniKeyInfo {
             .await
             .map_err(|e| {
                 ProxyError::OtherInternal(format!(
-                    "client_conf.account.ak_id: {} failed to list buckets: {}",
-                    client_conf.account.ak_id, e
+                    "account.access_key: {} failed to list buckets: {}",
+                    client_conf.account.access_key, e
                 ))
             })?
             .buckets

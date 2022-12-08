@@ -93,25 +93,25 @@ pub async fn handle(
     let iam_container = &state.iam_container;
 
     // aws sigv4 specific
-    let (access_key_id, region) = req.extract_aws_access_key_and_region()?;
-    // When feature uni-key is enabled, base_access_id is aws access_key,
-    // otherwise base_access_id + account_code = aws_access_key_id
+    let (access_key, region) = req.extract_aws_access_key_and_region()?;
+    // When feature uni-key is enabled, base_access_key is aws access_key,
+    // otherwise base_access_key + account_code = aws_access_key
     #[cfg(feature = "uni-key")]
-    let (account, region, base_access_id) = {
+    let (account, region, base_access_key) = {
         let access_info = s3_config
             .get_uni_key_info()?
             .find_access_info_input(&input)?;
-        (&access_info.account, &access_info.region, access_key_id)
+        (&access_info.account, &access_info.region, access_key)
     };
     #[cfg(not(feature = "uni-key"))]
-    let (account, base_access_id) = {
-        let (base_access_id, code) = split_to_base_and_account_code(access_key_id)?;
+    let (account, base_access_key) = {
+        let (base_access_key, code) = split_to_base_and_account_code(access_key)?;
         let account = iam_container.find_account_by_code(code)?;
-        (account, base_access_id)
+        (account, base_access_key)
     };
 
-    /// Find matching policies by base_access_id in the request
-    let user = iam_container.find_user_by_base_access_id(base_access_id)?;
+    /// Find matching policies by base_access_key in the request
+    let user = iam_container.find_user_by_base_access_key(base_access_key)?;
     debug!("user: {:#?}", user);
     let groups = iam_container.find_groups_by_user(user)?;
     debug!("groups: {:#?}", groups);

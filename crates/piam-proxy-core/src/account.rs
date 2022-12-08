@@ -17,7 +17,7 @@ pub mod aws {
     pub struct AwsAccount {
         pub id: AccountId,
         pub code: String,
-        pub ak_id: String,
+        pub access_key: String,
         pub secret_key: String,
         pub comment: String,
     }
@@ -26,8 +26,8 @@ pub mod aws {
         fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
             write!(
                 f,
-                "AWS Account: id: {} code: {} ak_id: {}",
-                self.id, self.code, self.ak_id
+                "AWS Account: id: {} code: {} access_key: {}",
+                self.id, self.code, self.access_key
             )
         }
     }

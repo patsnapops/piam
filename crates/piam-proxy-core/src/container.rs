@@ -32,7 +32,7 @@ pub struct IamContainer<S: Statement + Debug> {
     // All policies, each one is unique
     policies: HashMap<PolicyId, Policy<S>>,
     // In-memory index built from all `AccessKeyUserRelationship`s
-    base_access_id_to_user_id: HashMap<String, UserId>,
+    base_access_key_to_user_id: HashMap<String, UserId>,
     // In-memory index built from all `UserGroupRelationship`s
     user_id_to_group_ids: HashMap<UserId, Vec<GroupId>>,
     // Relationships of policies and other items
@@ -79,9 +79,9 @@ impl<S: Statement + DeserializeOwned + Debug + Send> GetNewState for IamContaine
             .map(|policy| (policy.id.clone(), policy))
             .collect();
 
-        let base_access_id_to_user_id = users_vec
+        let base_access_key_to_user_id = users_vec
             .into_iter()
-            .map(|user| (user.base_access_id, user.id))
+            .map(|user| (user.base_access_key, user.id))
             .collect();
 
         let mut user_id_to_group_ids: HashMap<UserId, Vec<GroupId>> = HashMap::default();
@@ -103,7 +103,7 @@ impl<S: Statement + DeserializeOwned + Debug + Send> GetNewState for IamContaine
             users,
             groups,
             policies,
-            base_access_id_to_user_id,
+            base_access_key_to_user_id,
             user_id_to_group_ids,
             policy_relationships,
         })
@@ -120,14 +120,14 @@ impl<S: Statement + DeserializeOwned + Debug> IamContainer<S> {
         })
     }
 
-    pub fn find_user_by_base_access_id(&self, base_access_id: &str) -> ProxyResult<&User> {
+    pub fn find_user_by_base_access_key(&self, base_access_key: &str) -> ProxyResult<&User> {
         let user_id = self
-            .base_access_id_to_user_id
-            .get(base_access_id)
+            .base_access_key_to_user_id
+            .get(base_access_key)
             .ok_or_else(|| {
                 ProxyError::InvalidAccessKey(format!(
                     "User not found for base access key id: '{}'",
-                    base_access_id
+                    base_access_key
                 ))
             })?;
         self.users

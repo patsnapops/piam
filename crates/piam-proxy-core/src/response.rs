@@ -127,7 +127,7 @@ pub struct AwsErrorXml {
     pub code: String,
     pub message: String,
     #[serde(rename = "AWSAccessKeyId")]
-    pub aws_access_key_id: String,
+    pub aws_access_key: String,
     pub request_id: String,
     pub host_id: String,
 }
@@ -136,7 +136,7 @@ fn aws_xml_error_payload(code: &str, message: &str, request_id: &str) -> String 
     let error = AwsErrorXml {
         code: format!("Piam{}", code),
         message: format!("PIAM {}", message),
-        aws_access_key_id: "".into(),
+        aws_access_key: "".into(),
         request_id: request_id.into(),
         host_id: "".into(),
     };

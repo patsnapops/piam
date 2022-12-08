@@ -17,35 +17,35 @@ pub fn make_accounts() -> Vec<AwsAccount> {
     let account_cn_aws_dev_9554 = AwsAccount {
         id: "cn_aws_dev_9554".into(),
         code: "9554".into(),
-        ak_id: "AKIA545RXJQZN5UDTZZZ".into(),
+        access_key: "AKIA545RXJQZN5UDTZZZ".into(),
         secret_key: "".into(),
         comment: "".to_string(),
     };
     let account_cn_aws_prod_3977 = AwsAccount {
         id: "cn_aws_prod_3977".into(),
         code: "3977".into(),
-        ak_id: "AKIAVZG6PPVKGB77FSFI".into(),
+        access_key: "AKIAVZG6PPVKGB77FSFI".into(),
         secret_key: "".into(),
         comment: "".to_string(),
     };
     let account_us_aws_prod_7478 = AwsAccount {
         id: "us_aws_prod_7478".into(),
         code: "7478".into(),
-        ak_id: "AKIA24IGUMII4I3EGYOU".into(),
+        access_key: "AKIA24IGUMII4I3EGYOU".into(),
         secret_key: "".into(),
         comment: "".to_string(),
     };
     let account_us_aws_data_0066 = AwsAccount {
         id: "us_aws_data_0066".into(),
         code: "0066".into(),
-        ak_id: "AKIAQDDYEQIRTBKNVKFR".into(),
+        access_key: "AKIAQDDYEQIRTBKNVKFR".into(),
         secret_key: "".into(),
         comment: "".to_string(),
     };
     let account_cn_tencent_4258 = AwsAccount {
         id: "cn_tencent_4258".to_string(),
         code: "4258".to_string(),
-        ak_id: "AKIDlT7kM0dGqOwS1Y4b7fjFkDdCospljYFm".to_string(),
+        access_key: "AKIDlT7kM0dGqOwS1Y4b7fjFkDdCospljYFm".to_string(),
         secret_key: "".to_string(),
         comment: "Temporarily Solution! this account contains dev/release/prod resources"
             .to_string(),
@@ -54,7 +54,7 @@ pub fn make_accounts() -> Vec<AwsAccount> {
     let account_us_tencent_4258 = AwsAccount {
         id: "us_tencent_4258".to_string(),
         code: "4258".to_string(),
-        ak_id: "AKIDlT7kM0dGqOwS1Y4b7fjFkDdCospljYFm".to_string(),
+        access_key: "AKIDlT7kM0dGqOwS1Y4b7fjFkDdCospljYFm".to_string(),
         secret_key: "".to_string(),
         comment: "Temporarily Solution! this account contains dev/release/prod resources"
             .to_string(),
@@ -73,7 +73,7 @@ pub fn user_3_cjj0() -> User {
     User {
         id: "c43e349a-0860-446e-9d2c-5bbc4211df79".to_string(),
         name: "曹金娟".to_string(),
-        base_access_id: "AKPSPERS03CJJ0Z".to_string(),
+        base_access_key: "AKPSPERS03CJJ0Z".to_string(),
         secret: "".to_string(),
         kind: Default::default(),
     }
@@ -83,7 +83,7 @@ pub fn user_3_shf0() -> User {
     User {
         id: "56462cb1-4b8b-4a8a-97a2-ac2f5d2c714f".to_string(),
         name: "宋海峰".to_string(),
-        base_access_id: "AKPSPERS03SHF0Z".to_string(),
+        base_access_key: "AKPSPERS03SHF0Z".to_string(),
         secret: "".to_string(),
         kind: Default::default(),
     }
@@ -93,7 +93,7 @@ pub fn user_3_qwt0() -> User {
     User {
         id: "77cb60d9-2498-4ecb-840d-bf4ab130a584".to_string(),
         name: "钱伟涛".to_string(),
-        base_access_id: "AKPSPERS03QWT0Z".to_string(),
+        base_access_key: "AKPSPERS03QWT0Z".to_string(),
         secret: "".to_string(),
         kind: Default::default(),
     }
@@ -103,7 +103,7 @@ pub fn user_svcs_d_data_rd_processing_batch_qa() -> User {
     User {
         id: "82b52b79-4130-4846-9779-1ead6f0710dc".to_string(),
         name: "d-data-rd-processing-batch-qa".to_string(),
-        base_access_id: "AKPSSVCS24DDATARDPROCESSINGBATCHQA".to_string(),
+        base_access_key: "AKPSSVCS24DDATARDPROCESSINGBATCHQA".to_string(),
         secret: "".to_string(),
         kind: UserKind::Service,
     }
@@ -113,7 +113,7 @@ pub fn user_svcs_d_data_dwc_script() -> User {
     User {
         id: "52ecaf5a-806a-442d-9ee3-5b44490facad".to_string(),
         name: "d-data-dwc-script".to_string(),
-        base_access_id: "AKPSSVCS14DDATADWCSCRIPT".to_string(),
+        base_access_key: "AKPSSVCS14DDATADWCSCRIPT".to_string(),
         secret: "".to_string(),
         kind: UserKind::Service,
     }
@@ -123,7 +123,7 @@ pub fn user_svcs_d_data_image_sync_recover() -> User {
     User {
         id: "a0215e6d-88f0-4bd2-a3fe-ba1acf299689".to_string(),
         name: "d-data-image-sync-recover".into(),
-        base_access_id: "AKPSSVCS21DDATAIMAGESYNCRECOVER".into(),
+        base_access_key: "AKPSSVCS21DDATAIMAGESYNCRECOVER".into(),
         secret: "".to_string(),
         kind: UserKind::Service,
     }
@@ -133,7 +133,7 @@ pub fn user_svcs_opst() -> User {
     User {
         id: "429fd5dd-fc3f-4237-86e1-6d49c2256506".to_string(),
         name: "user_svcs_opst".into(),
-        base_access_id: "AKPSSVCS04OPST".into(),
+        base_access_key: "AKPSSVCS04OPST".into(),
         secret: "".to_string(),
         kind: UserKind::Service,
     }
@@ -143,7 +143,7 @@ pub fn user_svcs_data_tmp() -> User {
     User {
         id: "934848a9-76d5-49d0-8165-3676eac0bb58".to_string(),
         name: "user_svcs_data_tmp".into(),
-        base_access_id: "AKPSSVCSDATA".into(),
+        base_access_key: "AKPSSVCSDATA".into(),
         secret: "".to_string(),
         kind: UserKind::Service,
     }
@@ -153,7 +153,7 @@ pub fn user_team_data_tmp() -> User {
     User {
         id: "710d54f7-cb5b-436d-b027-4160e4e428a4".to_string(),
         name: "user_team_data_tmp".into(),
-        base_access_id: "AKPSTEAMDATA".into(),
+        base_access_key: "AKPSTEAMDATA".into(),
         secret: "".to_string(),
         kind: UserKind::Team,
     }
@@ -782,6 +782,7 @@ pub fn make_s3_config() -> S3Config {
             "na-ashburn.s3-proxy.patsnap.info".into(),
             "ap-shanghai.s3-proxy.patsnap.info".into(),
             "local.s3-proxy.patsnap.info".into(),
+            "piam-s3-proxy.dev".into(),
         ],
     }
 }
