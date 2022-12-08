@@ -51,6 +51,7 @@ pub struct PolicyQueryParams<'a> {
 
 #[async_trait]
 impl<S: Statement + DeserializeOwned + Debug + Send> GetNewState for IamContainer<S> {
+    // TODO: change this to new_from_xxx for the sake of state independent unit test
     async fn new_from_manager(manager: &ManagerClient) -> ProxyResult<Self> {
         let account_vec = manager.get_accounts().await?;
         let users_vec = manager.get_users().await?;

@@ -48,3 +48,5 @@ pub const CN_NORTHWEST_1: &str = "cn-northwest-1";
 pub const US_EAST_1: &str = "us-east-1";
 pub const AP_SHANGHAI: &str = "ap-shanghai";
 pub const NA_ASHBURN: &str = "na-ashburn";
+
+pub trait ParserConfig {}

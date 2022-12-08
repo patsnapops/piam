@@ -136,7 +136,7 @@ impl UniKeyInfo {
             .await
             .map_err(|e| {
                 ProxyError::OtherInternal(format!(
-                    "client_conf.account.ak_id: {:#?} failed to list buckets: {}",
+                    "client_conf.account.ak_id: {} failed to list buckets: {}",
                     client_conf.account.ak_id, e
                 ))
             })?

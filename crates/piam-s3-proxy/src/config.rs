@@ -2,7 +2,7 @@ use std::{collections::HashMap, sync::Arc};
 
 use async_trait::async_trait;
 use piam_proxy_core::{
-    config::{dev_mode, PROXY_TYPE},
+    config::{dev_mode, ParserConfig, PROXY_TYPE},
     error::{ProxyError, ProxyResult},
     manager_api::ManagerClient,
     state::GetNewState,
@@ -18,6 +18,8 @@ pub struct S3Config {
     #[cfg(feature = "uni-key")]
     pub uni_key_info: Option<crate::uni_key::UniKeyInfo>,
 }
+
+impl ParserConfig for S3Config {}
 
 #[async_trait]
 impl GetNewState for S3Config {

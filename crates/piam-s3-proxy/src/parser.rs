@@ -188,15 +188,15 @@ struct Form {
 }
 
 impl Input for S3Input {
-    type State = S3Config;
+    type Config = S3Config;
 
-    fn from_http(req: &HttpRequest, state: Option<&S3Config>) -> ProxyResult<Self> {
+    fn from_http(req: &HttpRequest, config: Option<&S3Config>) -> ProxyResult<Self> {
         use S3Input::*;
         let path = req.uri().path();
         let method = req.method();
         let headers = req.headers();
         let host = headers.get(HOST).unwrap().to_str().unwrap();
-        let config = state.expect("s3_config should be set");
+        let config = config.expect("s3_config should be set");
         let proxy_host = config.find_proxy_host(host)?;
         let bucket = host
             .strip_suffix(&format!(".{}", proxy_host))
