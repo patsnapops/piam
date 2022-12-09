@@ -800,6 +800,26 @@ async fn lrj() {
 }
 
 #[tokio::test]
+async fn fxd() {
+    let client = build_client_from_params(ClientParams {
+        access_key: "AKPSPERS03FXD0Z",
+        secret: "",
+        region: CN_NORTHWEST_1,
+        endpoint: DEV_PROXY_ENDPOINT,
+    });
+
+    client
+        .get_object()
+        .bucket("patsnap-country-source-1251949819")
+        .key("HK/A/12/51/79/0/output.json")
+        .send()
+        .await
+        .unwrap()
+        .e_tag()
+        .unwrap();
+}
+
+#[tokio::test]
 async fn test_9554() {
     let client = build_client_from_params(ClientParams {
         access_key: "AKPSSVCS04OPST",

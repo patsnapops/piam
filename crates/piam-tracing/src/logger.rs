@@ -63,7 +63,10 @@ pub fn change_debug(handle: &LogHandle, debug: &str) -> bool {
 fn log_path() -> PathBuf {
     if dev_mode() {
         let dir = env::temp_dir();
-        println!("log will be saved to temporary directory: {}", dir.display());
+        println!(
+            "log will be saved to temporary directory: {}",
+            dir.display()
+        );
         return dir;
     }
     // TODO: log_path read from env
