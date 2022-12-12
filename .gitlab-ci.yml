@@ -84,7 +84,7 @@ build_s3_proxy:
 #  when: manual
   script:
     - export S3PROXY="${PRIVATE_DTR_URL}/${TEAM}/${PROJECT_TYPE}-${TEAM}-piam-s3-proxy:${CI_COMMIT_REF_NAME}-${CI_PIPELINE_ID}"
-    - docker build --build-arg package=piam-s3-proxy -t ${S3PROXY} --target runtime .
+    - docker build --build-arg package=s3-proxy -t ${S3PROXY} --target runtime .
     - docker push ${S3PROXY}
     - echo ${S3PROXY}
 

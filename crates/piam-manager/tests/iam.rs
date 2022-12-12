@@ -956,7 +956,7 @@ pub fn make_s3_config() -> S3Config {
             "na-ashburn.s3-proxy.patsnap.info".into(),
             "ap-shanghai.s3-proxy.patsnap.info".into(),
             "local.s3-proxy.patsnap.info".into(),
-            "piam-s3-proxy.dev".into(),
+            "s3-proxy.dev".into(),
         ],
     }
 }

@@ -2,7 +2,7 @@
 
 members = [
     "crates/piam-manager",
-    "crates/piam-s3-proxy",
+    "crates/s3-proxy",
     "crates/piam-proxy-core",
     "crates/piam-tracing",
 ]

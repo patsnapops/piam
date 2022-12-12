@@ -9,7 +9,7 @@ use piam_proxy_core::{
 };
 use serde::{Deserialize, Serialize};
 
-pub const DEV_PROXY_HOST: &str = "piam-s3-proxy.dev";
+pub const DEV_PROXY_HOST: &str = "s3-proxy.dev";
 pub const SERVICE: &str = "s3";
 
 #[derive(Debug, Default, Serialize, Deserialize)]

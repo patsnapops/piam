@@ -13,8 +13,8 @@ use futures::future;
 use piam_proxy_core::config::{AP_SHANGHAI, CN_NORTHWEST_1, NA_ASHBURN, US_EAST_1};
 use uuid::Uuid;
 
-pub const DEV_PROXY_HOST: &str = "piam-s3-proxy.dev";
-pub const DEV_PROXY_ENDPOINT: &str = "http://piam-s3-proxy.dev";
+pub const DEV_PROXY_HOST: &str = "s3-proxy.dev";
+pub const DEV_PROXY_ENDPOINT: &str = "http://s3-proxy.dev";
 pub const EP_AP_SHANGHAI: &str = "http://ap-shanghai.s3-proxy.patsnap.info";
 
 const REAL_ACCESS_KEY_ID: &str = "";
