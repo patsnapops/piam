@@ -75,3 +75,19 @@ pub fn features() -> String {
     list.push(']');
     list
 }
+
+pub mod test {
+    use crate::S3Config;
+
+    #[test]
+    fn find_proxy_host() {
+        let config = S3Config {
+            proxy_hosts: vec!["cn-northwest-1.s3-proxy.patsnap.info".into()],
+            uni_key_info: None,
+        };
+        let result = config.find_proxy_host(
+            "datalake-internal.patsnap.com-cn-northwest-1.cn-northwest-1.s3-proxy.patsnap.info",
+        );
+        assert!(result.is_ok())
+    }
+}

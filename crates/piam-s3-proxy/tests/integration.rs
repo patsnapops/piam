@@ -601,10 +601,11 @@ async fn shf() {
     ]);
     let client = build_client_from_env(
         env,
-        // &format!("http://{}", "us-east-1.s3-proxy.patsnap.info"),
-        &format!("http://{}", DEV_PROXY_HOST),
+        &format!("http://{}", "cn-northwest-1.s3-proxy.patsnap.info"),
+        // &format!("http://{}", DEV_PROXY_HOST),
     )
     .await;
+    // datalake-internal.patsnap.com-cn-northwest-1.cn-northwest-1.s3-proxy.patsnap.info
     let output = client
         .get_object()
         .bucket("datalake-internal.patsnap.com-cn-northwest-1")
@@ -820,6 +821,26 @@ async fn fxd() {
 }
 
 #[tokio::test]
+async fn zsz() {
+    let client = build_client_from_params(ClientParams {
+        access_key: "AKPSPERS03ZSZ0Z",
+        secret: "",
+        region: CN_NORTHWEST_1,
+        endpoint: DEV_PROXY_ENDPOINT,
+    });
+
+    client
+        .get_object()
+        .bucket("patsnap-country-source-1251949819")
+        .key("HK/A/12/51/79/0/output.json")
+        .send()
+        .await
+        .unwrap()
+        .e_tag()
+        .unwrap();
+}
+
+#[tokio::test]
 async fn test_9554() {
     let client = build_client_from_params(ClientParams {
         access_key: "AKPSSVCS04OPST",
@@ -836,4 +857,19 @@ async fn test_9554() {
         .await
         .unwrap();
     objects.e_tag().unwrap();
+}
+
+#[tokio::test]
+async fn test_list_buckets() {
+    // "ap-shanghai" => Ok("cos.ap-shanghai.myqcloud.com"),
+    // "na-ashburn" => Ok("cos.na-ashburn.myqcloud.com"),
+    let client = build_client_from_params(ClientParams {
+        access_key: "AKIDlT7kM0dGqOwS1Y4b7fjFkDdCospljYFm",
+        secret: "",
+        region: NA_ASHBURN,
+        endpoint: "http://cos.na-ashburn.myqcloud.com",
+    });
+
+    let output = client.list_buckets().send().await.unwrap();
+    dbg!(output.buckets().unwrap().len());
 }

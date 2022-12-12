@@ -23,23 +23,25 @@ use crate::{
 /// IamContainer store entities.
 #[derive(Debug, Default)]
 pub struct IamContainer<S: Statement + Debug> {
-    // All accounts by their code, each account one is unique
+    /// All accounts by their code, each account one is unique
     accounts: HashMap<String, AwsAccount>,
-    // All users, each one is unique
+    /// All users, each one is unique
     users: HashMap<UserId, User>,
-    // All groups, each one is unique
+    /// All groups, each one is unique
     groups: HashMap<GroupId, Group>,
-    // All policies, each one is unique
+    /// All policies, each one is unique
     policies: HashMap<PolicyId, Policy<S>>,
-    // In-memory index built from all `AccessKeyUserRelationship`s
+    /// In-memory index built from all `AccessKeyUserRelationship`s
     base_access_key_to_user_id: HashMap<String, UserId>,
-    // In-memory index built from all `UserGroupRelationship`s
+    /// In-memory index built from all `UserGroupRelationship`s
     user_id_to_group_ids: HashMap<UserId, Vec<GroupId>>,
-    // Relationships of policies and other items
+    /// Relationships of policies and other items
     policy_relationships: Vec<PolicyRelationship>,
     // TODO: Use index from all `PolicyRelatedItems`s to speed up policy querying
+    // join IamEntityIds and stuff as hash key of policy relation id
 }
 
+/// Struct to use when querying policies from the container.
 #[derive(Debug)]
 pub struct PolicyQueryParams<'a> {
     pub roles: Option<Vec<&'a Role>>,
