@@ -16,7 +16,7 @@ async fn main() {
     let bin_name = env!("CARGO_PKG_NAME").replace('-', "_");
     let (_guard, _log_handle) = init_logger(&bin_name, true);
 
-    let app = Router::new()
+    let routes = Router::new()
         // .route("/_piam_manage_api", put(handler::manage))
         .route("/health", get(handler::health))
         .route("/accounts", get(handler::get_accounts))
@@ -39,7 +39,7 @@ async fn main() {
     let addr = SocketAddr::from(([0, 0, 0, 0], config::port()));
     info!("piam-manager listening on {}", addr);
     axum::Server::bind(&addr)
-        .serve(app.into_make_service_with_connect_info::<SocketAddr>())
+        .serve(routes.into_make_service_with_connect_info::<SocketAddr>())
         .await
         .unwrap();
 }

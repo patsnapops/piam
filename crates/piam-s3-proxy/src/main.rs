@@ -45,13 +45,14 @@ async fn main() {
         }
     });
 
-    let app = Router::with_state(state)
+    let routes = Router::new()
         .route("/health", get(handler::health))
         .route("/_piam_manage_api", put(handler::manage))
         // the router for ListBucket only
         .route("/", any(handler::handle))
         // the router for other operations
-        .route("/*path", any(handler::handle_path));
+        .route("/*path", any(handler::handle_path))
+        .with_state(state);
 
     let addr = SocketAddr::from(([0, 0, 0, 0], proxy_port()));
     info!(
@@ -60,7 +61,7 @@ async fn main() {
         features()
     );
     axum::Server::bind(&addr)
-        .serve(app.into_make_service())
+        .serve(routes.into_make_service_with_connect_info::<SocketAddr>())
         .await
         .expect("Server error");
 }
