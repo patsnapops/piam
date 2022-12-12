@@ -1,0 +1,20 @@
+---
+sidebar_position: 99
+---
+
+# Concerns
+
+[//]: # (## Reference)
+
+[//]: # (https://casbin.org/)
+
+[//]: # ([aws iam dynamodb]&#40;https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/iam-policy-example-data-crud.html&#41;)
+
+[//]: # ([tencent cam mongodb]&#40;https://cloud.tencent.com/document/product/240/38705#.E4.BA.91.E6.95.B0.E6.8D.AE.E5.BA.93-mongodb-.E7.B3.BB.E7.BB.9F.E9.BB.98.E8.AE.A4.E6.9D.83.E9.99.90.E7.AD.96.E7.95.A5&#41;)
+
+:::note
+
+- 此方案中的设计选择是受制于[康威定律](https://zh.m.wikipedia.org/zh-sg/%E5%BA%B7%E5%A8%81%E5%AE%9A%E5%BE%8B)的。
+- 此方案尽量不泄露抽象，即文档中每一个层级的设计仅表达该层级所应该关注的事情而不暴露下层细节。
+
+:::

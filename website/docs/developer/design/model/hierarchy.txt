@@ -1,4 +1,4 @@
-// Sweet Class Diagram
+// https://yuml.me
 // -------------------
 
 [Service| name: String]
@@ -13,8 +13,11 @@
 [Group|name: String]
 [Group]-[note: Examples(name): DataServices]
 
-[≪Trait≫;PolicySet]
-[PolicySet]-[note: Examples:\n ObjectStorage:DataServices:7478:us-east-1\nObjectStorage:DataServices:7478:eu-cent-1]
+[PolicyModel]
+[PolicyModel]-[note: Examples:\n ObjectStorage\nMessage]
+
+[≪Trait≫;Policy]
+[Policy]-[note: Examples:\n ObjectStorage:DataServices:7478:us-east-1\nObjectStorage:DataServices:7478:eu-cent-1]
 
 [Account| account_code: String; real_ak: String; real_sk: String]
 [note: Account\n Examples(account_code):\n7478\n0066]
@@ -27,19 +30,22 @@
 [Effect]
 [Effect]-[note: Effect Examples:\nDeny\nAllow\nModify\nEmitEvent]
 
-[Service]1->1[AccessKey: String]n->1[User]n->n[Group]1->n[PolicySet]
-
 [Request {bg:lightgreen}]1->1[AccessKey: String]
 [Request {bg:lightgreen}]1->1[Region: String]
 [Request {bg:lightgreen}]1->1[Input]
 
 [AccessKey: String]1->1[Account]
+[AccessKey: String]n->1[User]
 
-[Account]1->n[PolicySet]
+[User]n->n[Group]
 
-[Region: String]1->n[PolicySet]
+[PolicyModel]1->n[Policy]
+[User]1->n[Policy]
+[Group]n->n[Policy]
+[Account]1->n[Policy]
+[Region: String]1->n[Policy]
 
-[PolicySet]1->n[Effect]
+[Policy]1->n[Effect]
 [Input]1->n[Effect]
 
 [Request {bg:lightgreen}]1->1[Response {bg:lightgreen}]
