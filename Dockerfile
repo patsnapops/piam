@@ -27,7 +27,9 @@ RUN cargo build --release --all-features -p ${package}
 #FROM alpine:3.16 as runtime
 FROM 955466075186.dkr.ecr.cn-northwest-1.amazonaws.com.cn/ops-basic/base:alpine3.16 AS runtime
 ARG package
+ENV ENV_PACKAGE=${package}
 RUN echo "package to run: ${package}"
-COPY --from=builder ./target/release/${package} /bin/${package}
+COPY --from=builder ./target/release/${package} /opt/${package}
+RUN ls /opt/
 WORKDIR /opt/logs/apps/
-CMD ["/bin/sh", "-c", "$(ls /bin/*)"]
+CMD ["/bin/sh", "-c", "/opt/${ENV_PACKAGE}"]
