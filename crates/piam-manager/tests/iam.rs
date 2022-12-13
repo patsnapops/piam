@@ -917,7 +917,7 @@ pub fn make_policy_relationships() -> Vec<PolicyRelationship> {
             group_id: Some(group_svcs_opst().id),
             role_id: None,
             account_id: "us_tencent_4258".to_string(),
-            region: "na-na-ashburn".to_string(),
+            region: NA_ASHBURN.to_string(),
             policy_id: policy_os_opst_for_all().id,
         },
         // data tmp

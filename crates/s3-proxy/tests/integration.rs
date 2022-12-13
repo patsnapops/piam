@@ -846,13 +846,32 @@ async fn test_9554() {
         access_key: "AKPSSVCS04OPST",
         secret: "",
         region: CN_NORTHWEST_1,
-        endpoint: DEV_PROXY_ENDPOINT,
+        endpoint: "http://local.s3-proxy.patsnap.info",
     });
 
     let objects = client
         .get_object()
         .bucket("anniversary")
         .key("image/birthday_bottom.jpg")
+        .send()
+        .await
+        .unwrap();
+    objects.e_tag().unwrap();
+}
+
+#[tokio::test]
+async fn system_test_local() {
+    let client = build_client_from_params(ClientParams {
+        access_key: "AKPSSVCS04OPST",
+        secret: "",
+        region: CN_NORTHWEST_1,
+        endpoint: "http://local.s3-proxy.patsnap.info",
+    });
+
+    let objects = client
+        .get_object()
+        .bucket("patsnap-country-source-1251949819")
+        .key("HK/A/12/51/79/0/output.json")
         .send()
         .await
         .unwrap();
