@@ -30,4 +30,4 @@ ARG package
 RUN echo "package to run: ${package}"
 COPY --from=builder ./target/release/${package} /bin/${package}
 WORKDIR /opt/logs/apps/
-CMD ["/bin/sh", "-c", "$(ls /bin/piam*)"]
+CMD ["/bin/sh", "-c", "$(ls /bin/*)"]

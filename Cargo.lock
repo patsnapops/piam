@@ -1091,7 +1091,6 @@ dependencies = [
  "hyper",
  "log",
  "once_cell",
- "piam-proxy-core",
  "piam-tracing",
  "redis",
  "serde",
