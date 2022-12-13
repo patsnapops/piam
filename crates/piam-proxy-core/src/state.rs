@@ -1,25 +1,14 @@
-use std::{
-    fmt::Debug,
-    sync::Arc,
-    time,
-    time::{Duration, Instant},
-};
+use std::{fmt::Debug, sync::Arc, time::Instant};
 
 use arc_swap::ArcSwap;
 use async_trait::async_trait;
-use hyper::{client::HttpConnector, Body};
 use log::error;
 use piam_tracing::logger::LogHandle;
 use serde::de::DeserializeOwned;
-use tokio::sync::RwLock;
 
 use crate::{
-    config::{dev_mode, POLICY_MODEL},
-    container::IamContainer,
-    error::ProxyResult,
-    manager_api::ManagerClient,
-    policy::Statement,
-    type_alias::HttpClient,
+    config::dev_mode, container::IamContainer, error::ProxyResult, manager_api::ManagerClient,
+    policy::Statement, type_alias::HttpClient,
 };
 
 pub type ArcState<S, C> = Arc<ArcSwap<ProxyState<S, C>>>;

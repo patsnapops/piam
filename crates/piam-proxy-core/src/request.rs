@@ -1,10 +1,6 @@
-use std::fmt::Debug;
-
 use log::debug;
-use thiserror::Error;
 
 use crate::{
-    config,
     effect::Effect,
     error::{ProxyError, ProxyResult},
     response,

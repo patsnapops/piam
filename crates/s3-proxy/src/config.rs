@@ -1,8 +1,6 @@
-use std::{collections::HashMap, sync::Arc};
-
 use async_trait::async_trait;
 use piam_proxy_core::{
-    config::{dev_mode, ParserConfig, PROXY_TYPE},
+    config::{dev_mode, ParserConfig},
     error::{ProxyError, ProxyResult},
     manager_api::ManagerClient,
     state::GetNewState,
@@ -77,11 +75,9 @@ pub fn features() -> String {
 }
 
 pub mod test {
-    use crate::S3Config;
-
     #[test]
     fn find_proxy_host() {
-        let config = S3Config {
+        let config = crate::config::S3Config {
             proxy_hosts: vec!["cn-northwest-1.s3-proxy.patsnap.info".into()],
             uni_key_info: None,
         };

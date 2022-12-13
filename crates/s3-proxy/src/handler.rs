@@ -1,37 +1,27 @@
-use std::{collections::HashMap, sync::Arc};
+use std::collections::HashMap;
 
 use axum::{
     extract::{Path, Query, State},
     response::IntoResponse,
 };
 use http::{Response, StatusCode};
-use hyper::{client::HttpConnector, Body};
+use hyper::Body;
 use log::debug;
 use piam_proxy_core::{
-    account::aws::AwsAccount,
-    config::POLICY_MODEL,
-    container::{IamContainer, PolicyQueryParams},
-    error::{ProxyError, ProxyResult},
+    container::PolicyQueryParams,
+    error::ProxyResult,
     input::Input,
     policy::FindEffect,
     request::{forward, ApplyResult, HttpRequestExt},
     response::HttpResponseExt,
-    signature::{
-        aws::{AwsSigv4, AwsSigv4SignParams},
-        split_to_base_and_account_code,
-    },
-    state::{ArcState, ProxyState},
-    type_alias::{HttpClient, HttpRequest, HttpResponse},
+    signature::aws::{AwsSigv4, AwsSigv4SignParams},
+    state::ArcState,
+    type_alias::{HttpRequest, HttpResponse},
 };
 use piam_tracing::logger::change_debug;
 
 use crate::{
-    config,
-    config::SERVICE,
-    parser::{ActionKind, S3Input},
-    policy::S3Statement,
-    request::S3RequestTransform,
-    S3Config,
+    config::SERVICE, parser::S3Input, policy::S3Statement, request::S3RequestTransform, S3Config,
 };
 
 pub type S3ProxyState = ArcState<S3Statement, S3Config>;

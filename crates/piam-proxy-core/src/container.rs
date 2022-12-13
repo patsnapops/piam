@@ -4,18 +4,16 @@
 use std::{collections::HashMap, fmt::Debug};
 
 use async_trait::async_trait;
-use log::{debug, error, info};
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
-use uuid::Uuid;
+use serde::de::DeserializeOwned;
 
 use crate::{
-    account::{aws::AwsAccount, AccountId},
-    config::{dev_mode, POLICY_MODEL},
+    account::aws::AwsAccount,
+    config::POLICY_MODEL,
     error::{ProxyError, ProxyResult},
     group::{Group, GroupId},
     manager_api::ManagerClient,
     policy::{Policy, PolicyId, Statement},
-    principal::{Role, RoleId, User, UserId},
+    principal::{Role, User, UserId},
     relation_model::PolicyRelationship,
     state::GetNewState,
 };

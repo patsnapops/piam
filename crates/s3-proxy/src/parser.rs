@@ -1,6 +1,4 @@
-use anyhow::{anyhow, Result};
 use http::{header::HOST, Method};
-use log::error;
 use piam_proxy_core::{
     error::{ProxyError, ProxyResult},
     input::Input,

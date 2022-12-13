@@ -1,7 +1,5 @@
-use std::{collections::HashMap, fmt::Debug};
+use std::fmt::Debug;
 
-use log::debug;
-use reqwest::Client;
 use serde::de::DeserializeOwned;
 
 use crate::{

@@ -1,8 +1,6 @@
-use std::{collections::HashMap, fmt::Debug};
+use std::fmt::Debug;
 
-use log::debug;
 use serde::{Deserialize, Serialize};
-use uuid::Uuid;
 
 use crate::{
     condition::ConditionRange,
@@ -113,7 +111,6 @@ impl Name {
 #[cfg(feature = "object-storage-policy")]
 pub mod object_storage_policy {
     use serde::{Deserialize, Serialize};
-    use uuid::Uuid;
 
     use crate::{effect::Effect, policy::Name};
 

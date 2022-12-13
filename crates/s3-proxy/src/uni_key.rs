@@ -5,22 +5,16 @@ use std::collections::HashMap;
 
 use aws_sdk_s3::{Client, Config, Endpoint};
 use aws_types::{region::Region, Credentials};
-use log::debug;
 use piam_proxy_core::{
-    account::{aws::AwsAccount, AccountId},
+    account::aws::AwsAccount,
     config::{AP_SHANGHAI, CN_NORTHWEST_1, NA_ASHBURN, US_EAST_1},
-    container::IamContainer,
     error::{ProxyError, ProxyResult},
     manager_api::ManagerClient,
-    request::{from_region_to_endpoint, from_region_to_host},
+    request::from_region_to_endpoint,
 };
 use serde::{Deserialize, Serialize};
 
-use crate::{
-    parser::{ActionKind, S3Input},
-    policy::S3Statement,
-    S3Config,
-};
+use crate::parser::{ActionKind, S3Input};
 
 type BucketToAccessInfo = HashMap<String, AccessInfo>;
 

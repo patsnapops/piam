@@ -1,8 +1,8 @@
-#![allow(unused)]
+// #![allow(unused)]
 
 use std::{env, path::PathBuf};
 
-use log::{debug, info};
+use log::debug;
 use time::UtcOffset;
 use tracing_appender::non_blocking::WorkerGuard;
 use tracing_subscriber::{
@@ -25,7 +25,7 @@ pub fn init_logger(bin_name: &str, debug: bool) -> (Option<WorkerGuard>, Option<
     );
     let stdout_log = tracing_subscriber::fmt::layer().with_timer(timer.clone());
     let reg = tracing_subscriber::registry();
-    let base_filter = filter::Targets::new()
+    let base_filter = Targets::new()
         .with_target(bin_name, filter::LevelFilter::DEBUG)
         // TODO: remove hardcode piam_proxy_core
         .with_target("piam_proxy_core", filter::LevelFilter::DEBUG);
@@ -52,6 +52,7 @@ pub fn init_logger(bin_name: &str, debug: bool) -> (Option<WorkerGuard>, Option<
     (None, None)
 }
 
+#[allow(unused)]
 pub fn change_debug(handle: &LogHandle, debug: &str) -> bool {
     // TODO: change_debug
     panic!("TODO: ");

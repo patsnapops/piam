@@ -2,15 +2,15 @@
 
 extern crate core;
 
-use std::{net::SocketAddr, sync::Arc};
+use std::net::SocketAddr;
 
 use axum::{
     routing::{any, get, put},
     Router,
 };
-use log::{debug, info};
+use log::info;
 use piam_proxy_core::{
-    config::{proxy_port, set_constants, CLUSTER_ENV, STATE_UPDATE_INTERVAL},
+    config::{server_port, set_constants, STATE_UPDATE_INTERVAL},
     state::StateManager,
 };
 use piam_tracing::logger::init_logger;
@@ -54,7 +54,7 @@ async fn main() {
         .route("/*path", any(handler::handle_path))
         .with_state(state);
 
-    let addr = SocketAddr::from(([0, 0, 0, 0], proxy_port()));
+    let addr = SocketAddr::from(([0, 0, 0, 0], server_port()));
     info!(
         "S3 compliant proxy listening on {} with features {}",
         addr,

@@ -1,6 +1,23 @@
 use crate::error::ProxyResult;
 
 pub mod aws {
+    use std::time::SystemTime;
+
+    use anyhow::Result;
+    use async_trait::async_trait;
+    use aws_sigv4::http_request::{sign, SignableRequest, SigningParams, SigningSettings};
+    use http::{header::AUTHORIZATION, Request};
+    use hyper::{body, Body};
+
+    use crate::{
+        account::aws::AwsAccount,
+        error::{ProxyError, ProxyResult},
+        signature::aws::canonical_request::header::{
+            X_AMZ_CONTENT_SHA_256, X_AMZ_DATE, X_AMZ_SECURITY_TOKEN,
+        },
+        type_alias::HttpRequest,
+    };
+
     mod canonical_request {
         #![allow(unused)]
 
@@ -32,23 +49,6 @@ pub mod aws {
         const UNSIGNED_PAYLOAD: &str = "UNSIGNED-PAYLOAD";
         const STREAMING_UNSIGNED_PAYLOAD_TRAILER: &str = "STREAMING-UNSIGNED-PAYLOAD-TRAILER";
     }
-
-    use std::time::SystemTime;
-
-    use anyhow::Result;
-    use async_trait::async_trait;
-    use aws_sigv4::http_request::{sign, SignableRequest, SigningParams, SigningSettings};
-    use http::{header::AUTHORIZATION, Request};
-    use hyper::{body, Body};
-
-    use crate::{
-        account::aws::AwsAccount,
-        error::{ProxyError, ProxyResult},
-        signature::aws::canonical_request::header::{
-            X_AMZ_CONTENT_SHA_256, X_AMZ_DATE, X_AMZ_SECURITY_TOKEN,
-        },
-        type_alias::HttpRequest,
-    };
 
     #[async_trait]
     pub trait AwsSigv4 {
@@ -178,6 +178,7 @@ pub mod aws {
     }
 }
 
+#[allow(unused)]
 pub fn split_to_base_and_account_code(access_key: &str) -> ProxyResult<(&str, &str)> {
     // TODO: split_to_base_and_account_code
     todo!("later")

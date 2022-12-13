@@ -1,16 +1,13 @@
 //! Account is an abstraction of cloud accounts such as AWS account, GCP Account, Tencent Cloud Account, etc.
 
-use crate::{
-    error::{ProxyError, ProxyResult},
-    type_alias::IamEntityIdType,
-};
+use crate::type_alias::IamEntityIdType;
 
 pub type AccountId = IamEntityIdType;
 
 pub mod aws {
     use serde::{Deserialize, Serialize};
 
-    use crate::{account::AccountId, error::ProxyResult};
+    use crate::account::AccountId;
 
     /// currently only aws sigv4 compatible
     #[derive(Clone, Debug, Default, Eq, Hash, PartialEq, Serialize, Deserialize)]
