@@ -65,6 +65,7 @@ impl Matches for ObjectStorageInputStatement {
     }
 
     fn find_object_effect(&self, input: &S3Input) -> Option<&Effect> {
+        // TODO: reduce indentation
         self.find_bucket_effect(input)?;
         match &self.bucket.keys {
             None => None,
