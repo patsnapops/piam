@@ -2,7 +2,7 @@ use std::{fmt::Debug, sync::Arc, time::Instant};
 
 use arc_swap::ArcSwap;
 use async_trait::async_trait;
-use log::error;
+use log::warn;
 use piam_tracing::logger::LogHandle;
 use serde::de::DeserializeOwned;
 
@@ -90,7 +90,7 @@ impl<
                     break;
                 }
                 Err(e) => {
-                    error!(
+                    warn!(
                         "ProxyState update failed while: {}, error: {}, retry_times: {}",
                         stage, e, i
                     );
