@@ -13,37 +13,44 @@ use piam_proxy_core::{
 use redis::Commands;
 use serde::{ser, Deserialize, Serialize};
 
+const OBJECT_STORAGE: &str = "ObjectStorage";
+const CN_AWS_DEV_9554: &str = "cn_aws_dev_9554";
+const CN_AWS_PROD_3977: &str = "cn_aws_prod_3977";
+const US_AWS_PROD_7478: &str = "us_aws_prod_7478";
+const US_AWS_DATA_0066: &str = "us_aws_data_0066";
+const CN_TENCENT_4258: &str = "cn_tencent_4258";
+
 pub fn make_accounts() -> Vec<AwsAccount> {
     let account_cn_aws_dev_9554 = AwsAccount {
-        id: "cn_aws_dev_9554".into(),
+        id: CN_AWS_DEV_9554.into(),
         code: "9554".into(),
         access_key: "AKIA545RXJQZANGAE744".into(),
         secret_key: "".into(),
         comment: "piam cn_aws_dev_9554".to_string(),
     };
     let account_cn_aws_prod_3977 = AwsAccount {
-        id: "cn_aws_prod_3977".into(),
+        id: CN_AWS_PROD_3977.into(),
         code: "3977".into(),
         access_key: "AKIAVZG6PPVKGB77FSFI".into(),
         secret_key: "".into(),
         comment: "".to_string(),
     };
     let account_us_aws_prod_7478 = AwsAccount {
-        id: "us_aws_prod_7478".into(),
+        id: US_AWS_PROD_7478.into(),
         code: "7478".into(),
         access_key: "AKIA24IGUMII4I3EGYOU".into(),
         secret_key: "".into(),
         comment: "".to_string(),
     };
     let account_us_aws_data_0066 = AwsAccount {
-        id: "us_aws_data_0066".into(),
+        id: US_AWS_DATA_0066.into(),
         code: "0066".into(),
         access_key: "AKIAQDDYEQIRTBKNVKFR".into(),
         secret_key: "".into(),
         comment: "".to_string(),
     };
     let account_cn_tencent_4258 = AwsAccount {
-        id: "cn_tencent_4258".to_string(),
+        id: CN_TENCENT_4258.to_string(),
         code: "4258".to_string(),
         access_key: "AKIDlT7kM0dGqOwS1Y4b7fjFkDdCospljYFm".to_string(),
         secret_key: "".to_string(),
@@ -283,7 +290,7 @@ fn base_s3_actions_with_delete() -> Vec<String> {
 pub fn policy_os_7478_us_group_3_cjj0() -> Policy<ObjectStorageStatement> {
     // s3://data-processing-data/bigdata/caojinjuan
     Policy {
-        kind: "ObjectStorage".to_string(),
+        kind: OBJECT_STORAGE.to_string(),
         version: 1,
         id: "c688c143-6575-4a54-b00b-e81f7dc22f3c".to_string(),
         name: "policy_os_7478_us_group_3_cjj0".to_string(),
@@ -315,7 +322,7 @@ pub fn policy_os_7478_us_group_3_cjj0() -> Policy<ObjectStorageStatement> {
 pub fn policy_os_3977_cn_group_3_shf0() -> Policy<ObjectStorageStatement> {
     // s3://datalake-internal.patsnap.com-cn-northwest-1/tmp
     Policy {
-        kind: "ObjectStorage".to_string(),
+        kind: OBJECT_STORAGE.to_string(),
         version: 1,
         id: "1504a97e-bd1d-4e5a-9397-7f2f7764a188".to_string(),
         name: "policy_os_3977_cn_group_3_shf0".to_string(),
@@ -347,7 +354,7 @@ pub fn policy_os_3977_cn_group_3_shf0() -> Policy<ObjectStorageStatement> {
 pub fn policy_os_3977_cn_group_3_qwt0() -> Policy<ObjectStorageStatement> {
     // cos://patsnap-country-source-1251949819/LEGAL/JP/REEXAM/DETAIL/
     Policy {
-        kind: "ObjectStorage".to_string(),
+        kind: OBJECT_STORAGE.to_string(),
         version: 1,
         id: "d3337c4b-33df-47be-980b-6dd31a67ca1b".to_string(),
         name: "policy_os_3977_cn_group_3_qwt0".to_string(),
@@ -379,7 +386,7 @@ pub fn policy_os_3977_cn_group_3_qwt0() -> Policy<ObjectStorageStatement> {
 pub fn policy_os_4258_us_group_3_fxd0() -> Policy<ObjectStorageStatement> {
     // cos://patsnap-country-source-1251949819/LITIGATION
     Policy {
-        kind: "ObjectStorage".to_string(),
+        kind: OBJECT_STORAGE.to_string(),
         version: 1,
         id: "af6ac00e-914a-4683-9e84-04513f8c92d4".to_string(),
         name: "policy_os_4258_us_group_3_fxd0".to_string(),
@@ -412,7 +419,7 @@ pub fn policy_os_0066_us_group_3_zsz0() -> Policy<ObjectStorageStatement> {
     // s3://patsnap-country-source
     // s3://testpatsnapus
     Policy {
-        kind: "ObjectStorage".to_string(),
+        kind: OBJECT_STORAGE.to_string(),
         version: 1,
         id: "c9f3b3f1-3b1a-4b0f-8b1a-3b1a4b0f8b1a".to_string(),
         name: "policy_os_0066_us_group_3_zsz0".to_string(),
@@ -447,7 +454,7 @@ pub fn policy_os_0066_us_group_3_zsz0() -> Policy<ObjectStorageStatement> {
 pub fn policy_os_4258_us_group_3_zsz0() -> Policy<ObjectStorageStatement> {
     // cos://patsnap-country-source-1251949819
     Policy {
-        kind: "ObjectStorage".to_string(),
+        kind: OBJECT_STORAGE.to_string(),
         version: 1,
         id: "b41a95b9-fbb7-41ca-9392-69fc6928f592".to_string(),
         name: "policy_os_4258_us_group_3_zsz0".to_string(),
@@ -480,7 +487,7 @@ pub fn policy_os_7478_us_east00000_1_group_team_data_services() -> Policy<Object
     // 7478 s3://discovery-attachment-us-east-1/data/drug_approvals_v2/pmda/pdf/*.pdf
     // 7478 s3://datalake-internal.patsnap.com/dpp/rd_process/test_parser_title_CN_v1_offline/
     Policy {
-        kind: "ObjectStorage".to_string(),
+        kind: OBJECT_STORAGE.to_string(),
         version: 1,
         id: "9d216c69-d9db-4720-8146-c5b2be6681bb".to_string(),
         name: "policy_os_7478_us_east00000_1_group_team_data_services".to_string(),
@@ -515,7 +522,7 @@ pub fn policy_os_7478_us_east00000_1_group_team_data_services() -> Policy<Object
 
 pub fn policy_os_3977_cn_northwest_1_group_team_data_services() -> Policy<ObjectStorageStatement> {
     Policy {
-        kind: "ObjectStorage".to_string(),
+        kind: OBJECT_STORAGE.to_string(),
         version: 1,
         id: "ba8cf2e6-ed3e-4c32-a054-48d86abee06e".to_string(),
         name: "policy_os_3977_cn_northwest_1_group_team_data_services".to_string(),
@@ -557,7 +564,7 @@ pub fn policy_os_3977_cn_northwest_1_group_team_data_services() -> Policy<Object
 
 pub fn policy_os_0066_us_east00000_1_group_team_data_services() -> Policy<ObjectStorageStatement> {
     Policy {
-        kind: "ObjectStorage".to_string(),
+        kind: OBJECT_STORAGE.to_string(),
         version: 1,
         id: "00a85912-02cc-40cd-8f0c-baed0409f23b".to_string(),
         name: "policy_os_0066_us_east00000_1_group_team_data_services".to_string(),
@@ -585,7 +592,7 @@ pub fn policy_os_0066_us_east00000_1_group_team_data_services() -> Policy<Object
 
 pub fn policy_os_4258_na_ashburn0000_group_team_data_services() -> Policy<ObjectStorageStatement> {
     Policy {
-        kind: "ObjectStorage".to_string(),
+        kind: OBJECT_STORAGE.to_string(),
         version: 1,
         id: "8be9190d-e7b1-4398-ae62-95afc5c69b0b".to_string(),
         name: "policy_os_4258_na_ashburn0000_group_team_data_services".to_string(),
@@ -616,7 +623,7 @@ pub fn policy_os_4258_na_ashburn0000_group_team_data_services() -> Policy<Object
 
 pub fn policy_os_opst_for_all() -> Policy<ObjectStorageStatement> {
     Policy {
-        kind: "ObjectStorage".to_string(),
+        kind: OBJECT_STORAGE.to_string(),
         version: 1,
         id: "05e75fbf-81dc-4962-9c78-9bab8d4fc926".to_string(),
         name: "policy_os_opst_for_all".to_string(),
@@ -644,7 +651,7 @@ pub fn policy_os_opst_for_all() -> Policy<ObjectStorageStatement> {
 
 pub fn policy_os_7478_us_east00000_1_group_data_tmp() -> Policy<ObjectStorageStatement> {
     Policy {
-        kind: "ObjectStorage".to_string(),
+        kind: OBJECT_STORAGE.to_string(),
         version: 1,
         id: "bd4558d4-c0d6-4045-afd5-902d6714c021".to_string(),
         name: "policy_os_7478_us_east00000_1_group_data_tmp".to_string(),
@@ -672,7 +679,7 @@ pub fn policy_os_7478_us_east00000_1_group_data_tmp() -> Policy<ObjectStorageSta
 
 pub fn policy_os_3977_cn_northwest_1_group_data_tmp() -> Policy<ObjectStorageStatement> {
     Policy {
-        kind: "ObjectStorage".to_string(),
+        kind: OBJECT_STORAGE.to_string(),
         version: 1,
         id: "35b1e920-0856-4965-aed4-7ced267ee4d5".to_string(),
         name: "policy_os_3977_cn_northwest_1_group_data_tmp".to_string(),
@@ -775,25 +782,25 @@ pub fn make_user_group_relationships() -> Vec<UserGroupRelationship> {
 pub fn make_policy_relationships() -> Vec<PolicyRelationship> {
     vec![
         PolicyRelationship {
-            policy_model: "ObjectStorage".to_string(),
+            policy_model: OBJECT_STORAGE.to_string(),
             user_id: None,
             group_id: Some(group_3_cjj0().id),
             role_id: None,
-            account_id: "us_aws_prod_7478".to_string(),
+            account_id: US_AWS_PROD_7478.to_string(),
             region: US_EAST_1.to_string(),
             policy_id: policy_os_7478_us_group_3_cjj0().id,
         },
         PolicyRelationship {
-            policy_model: "ObjectStorage".to_string(),
+            policy_model: OBJECT_STORAGE.to_string(),
             user_id: None,
             group_id: Some(group_3_shf0().id),
             role_id: None,
-            account_id: "cn_aws_prod_3977".to_string(),
+            account_id: CN_AWS_PROD_3977.to_string(),
             region: CN_NORTHWEST_1.to_string(),
             policy_id: policy_os_3977_cn_group_3_shf0().id,
         },
         PolicyRelationship {
-            policy_model: "ObjectStorage".to_string(),
+            policy_model: OBJECT_STORAGE.to_string(),
             user_id: None,
             group_id: Some(group_3_qwt0().id),
             role_id: None,
@@ -802,7 +809,7 @@ pub fn make_policy_relationships() -> Vec<PolicyRelationship> {
             policy_id: policy_os_3977_cn_group_3_qwt0().id,
         },
         PolicyRelationship {
-            policy_model: "ObjectStorage".to_string(),
+            policy_model: OBJECT_STORAGE.to_string(),
             user_id: None,
             group_id: Some(group_3_fxd0().id),
             role_id: None,
@@ -811,16 +818,16 @@ pub fn make_policy_relationships() -> Vec<PolicyRelationship> {
             policy_id: policy_os_4258_us_group_3_fxd0().id,
         },
         PolicyRelationship {
-            policy_model: "ObjectStorage".to_string(),
+            policy_model: OBJECT_STORAGE.to_string(),
             user_id: None,
             group_id: Some(group_3_zsz0().id),
             role_id: None,
-            account_id: "us_aws_data_0066".to_string(),
+            account_id: US_AWS_DATA_0066.to_string(),
             region: US_EAST_1.to_string(),
             policy_id: policy_os_0066_us_group_3_zsz0().id,
         },
         PolicyRelationship {
-            policy_model: "ObjectStorage".to_string(),
+            policy_model: OBJECT_STORAGE.to_string(),
             user_id: None,
             group_id: Some(group_3_zsz0().id),
             role_id: None,
@@ -830,34 +837,34 @@ pub fn make_policy_relationships() -> Vec<PolicyRelationship> {
         },
         // svcs
         PolicyRelationship {
-            policy_model: "ObjectStorage".to_string(),
+            policy_model: OBJECT_STORAGE.to_string(),
             user_id: None,
             group_id: Some(group_team_data_services().id),
             role_id: None,
-            account_id: "us_aws_prod_7478".to_string(),
+            account_id: US_AWS_PROD_7478.to_string(),
             region: US_EAST_1.to_string(),
             policy_id: policy_os_7478_us_east00000_1_group_team_data_services().id,
         },
         PolicyRelationship {
-            policy_model: "ObjectStorage".to_string(),
+            policy_model: OBJECT_STORAGE.to_string(),
             user_id: None,
             group_id: Some(group_team_data_services().id),
             role_id: None,
-            account_id: "cn_aws_prod_3977".to_string(),
+            account_id: CN_AWS_PROD_3977.to_string(),
             region: CN_NORTHWEST_1.to_string(),
             policy_id: policy_os_3977_cn_northwest_1_group_team_data_services().id,
         },
         PolicyRelationship {
-            policy_model: "ObjectStorage".to_string(),
+            policy_model: OBJECT_STORAGE.to_string(),
             user_id: None,
             group_id: Some(group_team_data_services().id),
             role_id: None,
-            account_id: "us_aws_data_0066".to_string(),
+            account_id: US_AWS_DATA_0066.to_string(),
             region: US_EAST_1.to_string(),
             policy_id: policy_os_0066_us_east00000_1_group_team_data_services().id,
         },
         PolicyRelationship {
-            policy_model: "ObjectStorage".to_string(),
+            policy_model: OBJECT_STORAGE.to_string(),
             user_id: None,
             group_id: Some(group_team_data_services().id),
             role_id: None,
@@ -866,53 +873,53 @@ pub fn make_policy_relationships() -> Vec<PolicyRelationship> {
             policy_id: policy_os_4258_na_ashburn0000_group_team_data_services().id,
         },
         PolicyRelationship {
-            policy_model: "ObjectStorage".to_string(),
+            policy_model: OBJECT_STORAGE.to_string(),
             user_id: None,
             group_id: Some(group_team_data_services().id),
             role_id: None,
-            account_id: "cn_tencent_4258".to_string(),
+            account_id: CN_TENCENT_4258.to_string(),
             region: AP_SHANGHAI.to_string(),
             policy_id: policy_os_4258_na_ashburn0000_group_team_data_services().id,
         },
         // opst
         PolicyRelationship {
-            policy_model: "ObjectStorage".to_string(),
+            policy_model: OBJECT_STORAGE.to_string(),
             user_id: None,
             group_id: Some(group_svcs_opst().id),
             role_id: None,
-            account_id: "us_aws_prod_7478".to_string(),
+            account_id: US_AWS_PROD_7478.to_string(),
             region: US_EAST_1.to_string(),
             policy_id: policy_os_opst_for_all().id,
         },
         PolicyRelationship {
-            policy_model: "ObjectStorage".to_string(),
+            policy_model: OBJECT_STORAGE.to_string(),
             user_id: None,
             group_id: Some(group_svcs_opst().id),
             role_id: None,
-            account_id: "us_aws_data_0066".to_string(),
+            account_id: US_AWS_DATA_0066.to_string(),
             region: US_EAST_1.to_string(),
             policy_id: policy_os_opst_for_all().id,
         },
         PolicyRelationship {
-            policy_model: "ObjectStorage".to_string(),
+            policy_model: OBJECT_STORAGE.to_string(),
             user_id: None,
             group_id: Some(group_svcs_opst().id),
             role_id: None,
-            account_id: "cn_aws_prod_3977".to_string(),
+            account_id: CN_AWS_PROD_3977.to_string(),
             region: CN_NORTHWEST_1.to_string(),
             policy_id: policy_os_opst_for_all().id,
         },
         PolicyRelationship {
-            policy_model: "ObjectStorage".to_string(),
+            policy_model: OBJECT_STORAGE.to_string(),
             user_id: None,
             group_id: Some(group_svcs_opst().id),
             role_id: None,
-            account_id: "cn_aws_dev_9554".to_string(),
+            account_id: CN_AWS_DEV_9554.to_string(),
             region: CN_NORTHWEST_1.to_string(),
             policy_id: policy_os_opst_for_all().id,
         },
         PolicyRelationship {
-            policy_model: "ObjectStorage".to_string(),
+            policy_model: OBJECT_STORAGE.to_string(),
             user_id: None,
             group_id: Some(group_svcs_opst().id),
             role_id: None,
@@ -921,7 +928,7 @@ pub fn make_policy_relationships() -> Vec<PolicyRelationship> {
             policy_id: policy_os_opst_for_all().id,
         },
         PolicyRelationship {
-            policy_model: "ObjectStorage".to_string(),
+            policy_model: OBJECT_STORAGE.to_string(),
             user_id: None,
             group_id: Some(group_svcs_opst().id),
             role_id: None,
@@ -931,20 +938,20 @@ pub fn make_policy_relationships() -> Vec<PolicyRelationship> {
         },
         // data tmp
         PolicyRelationship {
-            policy_model: "ObjectStorage".to_string(),
+            policy_model: OBJECT_STORAGE.to_string(),
             user_id: None,
             group_id: Some(group_data_tmp().id),
             role_id: None,
-            account_id: "us_aws_prod_7478".to_string(),
+            account_id: US_AWS_PROD_7478.to_string(),
             region: US_EAST_1.to_string(),
             policy_id: policy_os_7478_us_east00000_1_group_data_tmp().id,
         },
         PolicyRelationship {
-            policy_model: "ObjectStorage".to_string(),
+            policy_model: OBJECT_STORAGE.to_string(),
             user_id: None,
             group_id: Some(group_data_tmp().id),
             role_id: None,
-            account_id: "cn_aws_prod_3977".to_string(),
+            account_id: CN_AWS_PROD_3977.to_string(),
             region: CN_NORTHWEST_1.to_string(),
             policy_id: policy_os_3977_cn_northwest_1_group_data_tmp().id,
         },
