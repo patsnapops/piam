@@ -4,9 +4,13 @@ sidebar_position: 2
 
 # 🔌 接入指南
 
-1. [获取权限与 Access Key](/docs/feedback/feedback.md)
+1. [获取权限与 Access Key / Uni Key](/docs/feedback/feedback.md)
 2. 配置 AWS SDK/CLI 的 [Access Key](#access-key) 与 [Endpoint](#endpoint)
 3. 访问对应资源
+
+## Uni Key
+
+[说明](/docs/user/s3/feat#多云账号)
 
 ## Access Key
 
@@ -79,15 +83,23 @@ to be added
 ```
 BasicAWSCredentials piamCreds = new BasicAWSCredentials("`PIAM Uni Access Key`", "anything");
 AmazonS3 s3 = AmazonS3ClientBuilder.standard()
-        .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(
-                "http://internal.s3-proxy.patsnap.info", Regions.CN_NORTHWEST_1.getName()
-        ))
-        // Please disable retries when not needed
-        .withClientConfiguration(new ClientConfiguration().withMaxErrorRetry(0))
-        // Please set chunked encoding to true
-        .withChunkedEncodingDisabled(true)
-        .withCredentials(new AWSStaticCredentialsProvider(piamCreds))
-        .build();
+            .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(
+                    endpoint, Regions.CN_NORTHWEST_1.getName()
+            ))
+            .withClientConfiguration(
+                    new ClientConfiguration()
+                            // Disable retries when not needed for budget cutting
+                            .withMaxErrorRetry(0)
+                            // Set proper timeouts due to bandwidth limitation
+                            .withClientExecutionTimeout(Integer.MAX_VALUE)
+                            .withConnectionTimeout(Integer.MAX_VALUE)
+                            .withSocketTimeout(Integer.MAX_VALUE)
+                            .withRequestTimeout(Integer.MAX_VALUE)
+            )
+            // Chunked encoding MUST be disabled
+            .withChunkedEncodingDisabled(true)
+            .withCredentials(new AWSStaticCredentialsProvider(piamCreds))
+            .build();
 ```
 
 ### Python

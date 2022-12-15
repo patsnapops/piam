@@ -4,7 +4,7 @@ sidebar_position: 1
 
 # 概览
 
-出于数据安全等原因，部分场景云上资源需通过 PIAM Proxy 代理访问。这是一份供 Proxy 用户接入使用的手册。
+出于数据安全等[原因](/docs/developer/design/intro#背景)，部分场景云上资源需通过 PIAM Proxy 代理访问。这是一份供 Proxy 用户接入使用的手册。
 
 :::tip 浏览手册
 

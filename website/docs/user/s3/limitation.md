@@ -14,6 +14,7 @@ sidebar_position: 4
 
 初始化 S3 Client 时设定 `withChunkedEncodingDisabled` 参数为 true，样例：
 ```
+BasicAWSCredentials piamCreds = new BasicAWSCredentials("`Uni Key`", "anything");
 AmazonS3 s3 = AmazonS3ClientBuilder.standard()
             .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(
                     endpoint, Regions.CN_NORTHWEST_1.getName()
@@ -22,7 +23,7 @@ AmazonS3 s3 = AmazonS3ClientBuilder.standard()
                     new ClientConfiguration()
                             // Disable retries when not needed for budget cutting
                             .withMaxErrorRetry(0)
-                            // Set proper timeouts due for bandwidth limitation
+                            // Set proper timeouts due to bandwidth limitation
                             .withClientExecutionTimeout(Integer.MAX_VALUE)
                             .withConnectionTimeout(Integer.MAX_VALUE)
                             .withSocketTimeout(Integer.MAX_VALUE)

@@ -12,7 +12,7 @@ sidebar_position: 1
 
 ### 多云账号
 
-使用一个 PIAM Uni Access Key 即可访问所有 Patsnap 账号下的所有桶，无需关心桶所在账号。
+使用一个统一的 Access Key (uni-key) 即可访问所有 Patsnap 账号下的所有桶，无需为不同账号区分 Access Key。
 
 目前已添加:
 
@@ -26,7 +26,7 @@ sidebar_position: 1
 
 ### 多云地区
 
-使用一个 PIAM Uni Access Key 即可访问所有 Patsnap 账号下的所有桶，无需关心桶所在地区。
+使用一个统一的 Access Key (uni-key) 即可访问所有 Patsnap 账号下的所有桶，无需关心桶所在地区。
 
 目前已添加:
 
