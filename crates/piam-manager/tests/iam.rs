@@ -17,9 +17,9 @@ pub fn make_accounts() -> Vec<AwsAccount> {
     let account_cn_aws_dev_9554 = AwsAccount {
         id: "cn_aws_dev_9554".into(),
         code: "9554".into(),
-        access_key: "AKIA545RXJQZN5UDTZZZ".into(),
+        access_key: "AKIA545RXJQZANGAE744".into(),
         secret_key: "".into(),
-        comment: "".to_string(),
+        comment: "piam cn_aws_dev_9554".to_string(),
     };
     let account_cn_aws_prod_3977 = AwsAccount {
         id: "cn_aws_prod_3977".into(),
@@ -899,6 +899,15 @@ pub fn make_policy_relationships() -> Vec<PolicyRelationship> {
             group_id: Some(group_svcs_opst().id),
             role_id: None,
             account_id: "cn_aws_prod_3977".to_string(),
+            region: CN_NORTHWEST_1.to_string(),
+            policy_id: policy_os_opst_for_all().id,
+        },
+        PolicyRelationship {
+            policy_model: "ObjectStorage".to_string(),
+            user_id: None,
+            group_id: Some(group_svcs_opst().id),
+            role_id: None,
+            account_id: "cn_aws_dev_9554".to_string(),
             region: CN_NORTHWEST_1.to_string(),
             policy_id: policy_os_opst_for_all().id,
         },

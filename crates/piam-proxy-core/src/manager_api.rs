@@ -19,17 +19,7 @@ pub struct ManagerClient {
 
 impl ManagerClient {
     pub async fn get_accounts(&self) -> ProxyResult<Vec<AwsAccount>> {
-        let mut account_vec: Vec<AwsAccount> = self.get_resource("accounts").await?;
-        if dev_mode() {
-            account_vec = account_vec
-                .into_iter()
-                .map(|mut account| {
-                    account.id = account.id.replace("dev", "prod");
-                    account
-                })
-                .collect()
-        }
-        Ok(account_vec)
+        self.get_resource("accounts").await
     }
 
     pub async fn get_users(&self) -> ProxyResult<Vec<User>> {

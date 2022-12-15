@@ -16,6 +16,7 @@ use uuid::Uuid;
 pub const DEV_PROXY_HOST: &str = "s3-proxy.dev";
 pub const DEV_PROXY_ENDPOINT: &str = "http://s3-proxy.dev";
 pub const EP_AP_SHANGHAI: &str = "http://ap-shanghai.s3-proxy.patsnap.info";
+pub const EP_LOCAL: &str = "http://local.s3-proxy.patsnap.info";
 
 const REAL_ACCESS_KEY_ID: &str = "";
 const REAL_SECRET_ACCESS_KEY: &str = "";
@@ -706,45 +707,20 @@ async fn tencent_list_buckets() {
 
 #[tokio::test]
 async fn opst() {
-    let env = Env::from_slice(&[
-        ("AWS_MAX_ATTEMPTS", "1"),
-        ("AWS_REGION", AP_SHANGHAI),
-        // ("AWS_REGION", NA_ASHBURN),
-        ("AWS_ACCESS_KEY_ID", "AKIDlT7kM0dGqOwS1Y4b7fjFkDdCospljYFm"),
-        ("AWS_SECRET_ACCESS_KEY", ""),
-    ]);
-    let client = build_client_from_env(
-        env,
-        // &format!("http://{}", "cos.ap-shanghai.myqcloud.com"),
-        // &format!("http://{}", "cos.na-ashburn.myqcloud.com"),
-        &format!("http://{}", DEV_PROXY_HOST),
-    )
-    .await;
-
-    // let output = client.list_buckets().send().await.unwrap();
-    // output.buckets().unwrap().iter().for_each(|b| {
-    //     dbg!(b.name().unwrap());
-    // });
-    // data-bio-source-cn-1251949819
-    // data-bio-source-us-1251949819
+    let client = build_client_from_params(ClientParams {
+        access_key: "AKPSSVCS04OPST",
+        secret: "",
+        region: "CN_NORTHWEST_1aa",
+        endpoint: DEV_PROXY_ENDPOINT,
+    });
 
     let objects = client
         .list_objects_v2()
-        .bucket("data-bio-source-cn-1251949819")
-        // .bucket("data-bio-source-us-1251949819")
+        .bucket("ops-9554")
         .send()
         .await
         .unwrap();
     dbg!(&objects.contents().unwrap());
-
-    client
-        .get_object()
-        .bucket("data-bio-source-cn-1251949819")
-        // .bucket("data-bio-source-us-1251949819")
-        .key("asdsad")
-        .send()
-        .await
-        .unwrap();
 }
 
 #[tokio::test]
