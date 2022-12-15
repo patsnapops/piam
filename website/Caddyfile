@@ -1,0 +1,12 @@
+{
+	admin off
+	auto_https off
+}
+
+:80 {
+    handle_path /security/* {
+        file_server {
+            root security/
+        }
+    }
+}

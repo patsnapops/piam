@@ -26,7 +26,7 @@ format_macro_matchers = true
 format_macro_bodies = true
 ```
 
-### 提交前执行
+### 每次提交前执行
 
 ```bash
 cargo +nightly fmt --all

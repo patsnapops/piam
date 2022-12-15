@@ -14,17 +14,24 @@ sidebar_position: 4
 
 初始化 S3 Client 时设定 `withChunkedEncodingDisabled` 参数为 true，样例：
 ```
-BasicAWSCredentials piamCreds = new BasicAWSCredentials("`PIAM Uni Access Key`", "anything");
 AmazonS3 s3 = AmazonS3ClientBuilder.standard()
-        .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(
-                "http://internal.s3-proxy.patsnap.info", Regions.CN_NORTHWEST_1.getName()
-        ))
-        // Please disable retries when not needed
-        .withClientConfiguration(new ClientConfiguration().withMaxErrorRetry(0))
-        // Please set chunked encoding to true
-        .withChunkedEncodingDisabled(true)
-        .withCredentials(new AWSStaticCredentialsProvider(piamCreds))
-        .build();
+            .withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(
+                    endpoint, Regions.CN_NORTHWEST_1.getName()
+            ))
+            .withClientConfiguration(
+                    new ClientConfiguration()
+                            // Disable retries when not needed for budget cutting
+                            .withMaxErrorRetry(0)
+                            // Set proper timeouts due for bandwidth limitation
+                            .withClientExecutionTimeout(Integer.MAX_VALUE)
+                            .withConnectionTimeout(Integer.MAX_VALUE)
+                            .withSocketTimeout(Integer.MAX_VALUE)
+                            .withRequestTimeout(Integer.MAX_VALUE)
+            )
+            // Chunked encoding MUST be disabled
+            .withChunkedEncodingDisabled(true)
+            .withCredentials(new AWSStaticCredentialsProvider(piamCreds))
+            .build();
 ```
 
 :::
