@@ -707,13 +707,74 @@ async fn tencent_list_buckets() {
 
 #[tokio::test]
 async fn opst() {
+    // - us-east-1.s3-proxy.patsnap.info
+    // - cn-northwest-1.s3-proxy.patsnap.info
+    // - na-ashburn.s3-proxy.patsnap.info
+    // - ap-shanghai.s3-proxy.patsnap.info
+    // - local.s3-proxy.patsnap.info
+
+    // let client = build_client_from_params(ClientParams {
+    //     access_key: "AKPSSVCS04OPST",
+    //     secret: "",
+    //     region: "foo",
+    //     endpoint: "http://us-east-1.s3-proxy.patsnap.info",
+    // });
+    // let objects = client
+    //     .list_objects_v2()
+    //     .bucket("ops-9554")
+    //     .send()
+    //     .await
+    //     .unwrap();
+    // dbg!(&objects.contents().unwrap());
+
     let client = build_client_from_params(ClientParams {
         access_key: "AKPSSVCS04OPST",
         secret: "",
-        region: "CN_NORTHWEST_1aa",
-        endpoint: DEV_PROXY_ENDPOINT,
+        region: "foo",
+        endpoint: "http://cn-northwest-1.s3-proxy.patsnap.info",
     });
+    let objects = client
+        .list_objects_v2()
+        .bucket("ops-9554")
+        .send()
+        .await
+        .unwrap();
+    dbg!(&objects.contents().unwrap());
 
+    let client = build_client_from_params(ClientParams {
+        access_key: "AKPSSVCS04OPST",
+        secret: "",
+        region: "foo",
+        endpoint: "http://na-ashburn.s3-proxy.patsnap.info",
+    });
+    let objects = client
+        .list_objects_v2()
+        .bucket("ops-9554")
+        .send()
+        .await
+        .unwrap();
+    dbg!(&objects.contents().unwrap());
+
+    let client = build_client_from_params(ClientParams {
+        access_key: "AKPSSVCS04OPST",
+        secret: "",
+        region: "foo",
+        endpoint: "http://ap-shanghai.s3-proxy.patsnap.info",
+    });
+    let objects = client
+        .list_objects_v2()
+        .bucket("ops-9554")
+        .send()
+        .await
+        .unwrap();
+    dbg!(&objects.contents().unwrap());
+
+    let client = build_client_from_params(ClientParams {
+        access_key: "AKPSSVCS04OPST",
+        secret: "",
+        region: "foo",
+        endpoint: "http://local.s3-proxy.patsnap.info",
+    });
     let objects = client
         .list_objects_v2()
         .bucket("ops-9554")
