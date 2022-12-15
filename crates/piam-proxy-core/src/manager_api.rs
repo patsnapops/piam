@@ -4,7 +4,7 @@ use serde::de::DeserializeOwned;
 
 use crate::{
     account::aws::AwsAccount,
-    config::{dev_mode, PIAM_MANAGER_ADDRESS},
+    config::PIAM_MANAGER_ADDRESS,
     error::{deserialize, ProxyResult},
     group::Group,
     policy::{Policy, Statement},
