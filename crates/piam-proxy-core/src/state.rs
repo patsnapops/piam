@@ -7,8 +7,12 @@ use piam_tracing::logger::LogHandle;
 use serde::de::DeserializeOwned;
 
 use crate::{
-    config::dev_mode, container::IamContainer, error::ProxyResult, manager_api::ManagerClient,
-    policy::Statement, type_alias::HttpClient,
+    config::dev_mode,
+    container::IamContainer,
+    error::{eok, ProxyResult},
+    manager_api::ManagerClient,
+    policy::Statement,
+    type_alias::HttpClient,
 };
 
 pub type ArcState<S, C> = Arc<ArcSwap<ProxyState<S, C>>>;
@@ -63,9 +67,7 @@ impl<
     > StateManager<S, C>
 {
     pub async fn initialize() -> Self {
-        let state = Self::get_new(When::Initializing)
-            .await
-            .expect("Initializing MUST not fail");
+        let state = eok(Self::get_new(When::Initializing).await);
         StateManager {
             health_state: Default::default(),
             arc_state: Arc::new(ArcSwap::from_pointee(state)),

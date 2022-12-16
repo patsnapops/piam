@@ -7,7 +7,7 @@ use uuid::Uuid;
 
 use crate::{
     config::{CLUSTER_ENV, PROXY_TYPE},
-    error::ProxyError,
+    error::{eok, eok_context, ProxyError},
     type_alias::HttpResponse,
 };
 
@@ -26,9 +26,9 @@ impl HttpResponseExt for HttpResponse {
         );
         headers.append(
             "x-patsnap-proxy-cluster-env",
-            HeaderValue::from_str(&CLUSTER_ENV.load()).expect("CLUSTER_ENV should be valid"),
+            eok(HeaderValue::from_str(&CLUSTER_ENV.load())),
         );
-        headers.append("x-patsnap-request-id", HeaderValue::from_str(&id).unwrap());
+        headers.append("x-patsnap-request-id", eok(HeaderValue::from_str(&id)));
         self
     }
 
@@ -78,6 +78,14 @@ impl IntoResponse for ProxyError {
                 error!("{}", t);
                 r
             }
+            ProxyError::FatalError(msg) => {
+                error!("fatal error happened: {}", msg);
+                panic!("fatal error happened: {}", msg);
+            }
+            ProxyError::AssertFail(msg) => {
+                error!("assertion failed: {}", msg);
+                panic!("assertion failed: {}", msg);
+            }
         };
         res.add_piam_headers(id).into_response()
     }
@@ -92,27 +100,24 @@ pub fn rejected_by_policy() -> HttpResponse {
 }
 
 pub fn bad_request(code: &str, message: &str, request_id: &str) -> HttpResponse {
-    Response::builder()
+    eok(Response::builder()
         .status(StatusCode::BAD_REQUEST)
         .header(CONTENT_TYPE, "application/xml")
-        .body(Body::from(error_payload(code, message, request_id)))
-        .expect("build bad_request response should not fail")
+        .body(Body::from(error_payload(code, message, request_id))))
 }
 
 pub fn forbidden(code: &str, message: &str, request_id: &str) -> HttpResponse {
-    Response::builder()
+    eok(Response::builder()
         .status(StatusCode::FORBIDDEN)
         .header(CONTENT_TYPE, "application/xml")
-        .body(Body::from(error_payload(code, message, request_id)))
-        .expect("build forbidden response should not fail")
+        .body(Body::from(error_payload(code, message, request_id))))
 }
 
 pub fn internal_err(code: &str, message: &str, request_id: &str) -> HttpResponse {
-    Response::builder()
+    eok(Response::builder()
         .status(StatusCode::INTERNAL_SERVER_ERROR)
         .header(CONTENT_TYPE, "application/xml")
-        .body(Body::from(error_payload(code, message, request_id)))
-        .expect("build internal error response should not fail")
+        .body(Body::from(error_payload(code, message, request_id))))
 }
 
 fn error_payload(code: &str, message: &str, request_id: &str) -> String {
@@ -140,5 +145,8 @@ fn aws_xml_error_payload(code: &str, message: &str, request_id: &str) -> String 
         request_id: request_id.into(),
         host_id: "".into(),
     };
-    serde_xml_rs::to_string(&error).expect("ser_xml should not fail")
+    eok_context(
+        serde_xml_rs::to_string(&error),
+        "serialize error payload should not fail",
+    )
 }

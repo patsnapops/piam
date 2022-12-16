@@ -2,7 +2,7 @@ use log::debug;
 
 use crate::{
     effect::Effect,
-    error::{ProxyError, ProxyResult},
+    error::{esome_context, ProxyError, ProxyResult},
     response,
     type_alias::{HttpClient, HttpRequest, HttpResponse},
 };
@@ -32,7 +32,7 @@ impl HttpRequestExt for HttpRequest {
             ));
         };
 
-        Ok(match effects.first().expect("todo") {
+        Ok(match esome_context(effects.first(), "apply_effects todo") {
             Effect::Allow { .. } => {
                 // TODO: impl Allow stuff
                 ApplyResult::Forward(self)
@@ -67,9 +67,6 @@ pub fn from_region_to_host(region: &str) -> ProxyResult<&'static str> {
 
 pub async fn forward(new_req: HttpRequest, client: &HttpClient) -> ProxyResult<HttpResponse> {
     debug!("new_req headers {:#?}", new_req.headers());
-    let res = client
-        .request(new_req)
-        .await
-        .expect("request to s3 service should not fail");
-    Ok(res)
+    let res = client.request(new_req).await;
+    res.map_err(|e| ProxyError::OtherInternal(format!("proxy forwarding error: {}", e)))
 }

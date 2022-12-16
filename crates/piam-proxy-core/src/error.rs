@@ -1,4 +1,6 @@
-use std::fmt;
+use std::{fmt, fmt::Display};
+
+use log::error;
 
 pub type ProxyResult<T> = Result<T, ProxyError>;
 
@@ -17,6 +19,8 @@ pub enum ProxyError {
     ManagerApi(String),
     Deserialize(String),
     OtherInternal(String),
+    FatalError(String),
+    AssertFail(String),
 }
 
 impl ProxyError {
@@ -35,6 +39,8 @@ impl ProxyError {
             ProxyError::ManagerApi(_) => "ManagerApi",
             ProxyError::Deserialize(_) => "Deserialize",
             ProxyError::OtherInternal(_) => "OtherInternal",
+            ProxyError::FatalError(_) => "FatalError",
+            ProxyError::AssertFail(_) => "AssertFail",
         }
     }
 }
@@ -58,6 +64,8 @@ impl fmt::Display for ProxyError {
             ProxyError::ManagerApi(msg) => write!(f, "ManagerApi: {}", msg),
             ProxyError::Deserialize(msg) => write!(f, "Deserialize: {}", msg),
             ProxyError::OtherInternal(msg) => write!(f, "OtherInternal: {}", msg),
+            ProxyError::FatalError(msg) => write!(f, "FatalError: {}", msg),
+            ProxyError::AssertFail(msg) => write!(f, "AssertFail: {}", msg),
         }
     }
 }
@@ -71,4 +79,50 @@ impl From<reqwest::Error> for ProxyError {
 pub fn deserialize(payload: String, err: serde_yaml::Error) -> ProxyError {
     let string = format!("payload: '{}', msg from serde_yaml: {}", payload, err);
     ProxyError::Deserialize(string)
+}
+
+pub fn assert(msg: &str) -> ProxyError {
+    ProxyError::AssertFail(msg.into())
+}
+
+/// eok stands for it is expected to be [`Ok`], unexpected [`Err`] will be logged.
+pub fn eok<T, E: Display>(result: Result<T, E>) -> T {
+    match result {
+        Ok(value) => value,
+        Err(e) => {
+            error!("this should not happen: {}", e);
+            panic!("this should not happen: {}", e);
+        }
+    }
+}
+
+/// esome stands for it is expected to be [`Some`], unexpected [`None`] will be logged.
+pub fn esome<T>(option: Option<T>) -> T {
+    match option {
+        Some(value) => value,
+        None => {
+            error!("this should not happen: None");
+            panic!("this should not happen: None");
+        }
+    }
+}
+
+pub fn eok_context<T, E: Display>(result: Result<T, E>, msg: &str) -> T {
+    match result {
+        Ok(value) => value,
+        Err(e) => {
+            error!("this should not happen: {}, context: {}", e, msg);
+            panic!("this should not happen: {}, context: {}", e, msg);
+        }
+    }
+}
+
+pub fn esome_context<T>(option: Option<T>, msg: &str) -> T {
+    match option {
+        Some(value) => value,
+        None => {
+            error!("this should not happen: None, context: {}", msg);
+            panic!("this should not happen: None, context: {}", msg);
+        }
+    }
 }

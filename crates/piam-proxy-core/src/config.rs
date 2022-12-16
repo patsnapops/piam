@@ -13,7 +13,7 @@ pub static PROXY_TYPE: Lazy<ArcSwap<&'static str>> = Lazy::new(|| ArcSwap::from_
 pub static POLICY_MODEL: Lazy<ArcSwap<&'static str>> = Lazy::new(|| ArcSwap::from_pointee("Unset"));
 pub static PIAM_MANAGER_ADDRESS: Lazy<ArcSwap<String>> =
     Lazy::new(|| string_var_with_default("PIAM_MANAGER_ADDRESS", "http://localhost:8080"));
-pub const STATE_UPDATE_INTERVAL: u64 = 60;
+pub const STATE_UPDATE_INTERVAL: u64 = 10;
 
 pub fn set_constants(proxy_type: &'static str, policy_model: &'static str) {
     PROXY_TYPE.store(Arc::new(proxy_type));

@@ -11,7 +11,7 @@ pub mod aws {
 
     use crate::{
         account::aws::AwsAccount,
-        error::{ProxyError, ProxyResult},
+        error::{eok_context, esome_context, ProxyError, ProxyResult},
         signature::aws::canonical_request::header::{
             X_AMZ_CONTENT_SHA_256, X_AMZ_DATE, X_AMZ_SECURITY_TOKEN,
         },
@@ -81,11 +81,11 @@ pub mod aws {
             params: &AwsSigv4SignParams<'_>,
         ) -> Result<HttpRequest> {
             // save checksum before signing
-            let checksum = self
-                .headers()
-                .get(X_AMZ_CONTENT_SHA_256)
-                .expect("X_AMZ_CONTENT_SHA_256 not found while sign_with_amz_params")
-                .clone();
+            let checksum = esome_context(
+                self.headers().get(X_AMZ_CONTENT_SHA_256),
+                "sign_with_aws_sigv4_params miss X_AMZ_CONTENT_SHA_256",
+            )
+            .clone();
 
             // see `aws_sigv4::http_request::sign::calculate_signing_headers`
             self.headers_mut().remove(X_AMZ_DATE);
@@ -112,9 +112,11 @@ pub mod aws {
                 .settings(signing_settings)
                 .build()?;
             let signable_request = SignableRequest::from(&byte_req);
-            let (signing_instructions, _signature) = sign(signable_request, &signing_params)
-                .expect("Failed to sign request with AMZ sigV4")
-                .into_parts();
+            let (signing_instructions, _signature) = eok_context(
+                sign(signable_request, &signing_params),
+                "sign_with_aws_sigv4_params sign failed",
+            )
+            .into_parts();
             signing_instructions.apply_to_request(&mut byte_req);
 
             // restore body from bytes
