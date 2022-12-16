@@ -63,7 +63,9 @@ impl<
     > StateManager<S, C>
 {
     pub async fn initialize() -> Self {
-        let state = Self::get_new("initializing").await;
+        let state = Self::get_new(When::Initializing)
+            .await
+            .expect("Initializing MUST not fail");
         StateManager {
             health_state: Default::default(),
             arc_state: Arc::new(ArcSwap::from_pointee(state)),
@@ -71,33 +73,50 @@ impl<
     }
 
     pub async fn update_state(&self) {
-        let state = Self::get_new("updating").await;
-        self.arc_state.store(Arc::new(state));
+        match Self::get_new(When::Updating).await {
+            Ok(s) => self.arc_state.store(Arc::new(s)),
+            Err(e) => warn!("ProxyState updating failed, error: {}", e),
+        };
     }
 
-    async fn get_new(stage: &str) -> ProxyState<S, C> {
-        let mut state: ProxyState<S, C> = ProxyState::default();
-        let mut retry_interval = 10;
-        let mut max_retry_time = 3600 * 24 / retry_interval;
-        if dev_mode() {
-            retry_interval = 1;
-            max_retry_time = 1;
-        }
-        for i in 0..max_retry_time {
-            match ProxyState::new_from_manager().await {
-                Ok(s) => {
-                    state = s;
-                    break;
+    async fn get_new(when: When) -> ProxyResult<ProxyState<S, C>> {
+        let retry_interval = 5;
+        let mut retry_count = 0;
+        match when {
+            When::Initializing => loop {
+                match ProxyState::new_from_manager().await {
+                    Ok(state) => {
+                        return Ok(state);
+                    }
+                    Err(e) => {
+                        warn!(
+                            "ProxyState {} failed, error: {}, retry_count: {}",
+                            when, e, retry_count
+                        );
+                        if dev_mode() && retry_count > 1 {
+                            tokio::time::sleep(std::time::Duration::from_secs(retry_count * 5))
+                                .await;
+                        }
+                        tokio::time::sleep(std::time::Duration::from_secs(retry_interval)).await;
+                        retry_count += 1;
+                    }
                 }
-                Err(e) => {
-                    warn!(
-                        "ProxyState update failed while: {}, error: {}, retry_times: {}",
-                        stage, e, i
-                    );
-                    tokio::time::sleep(std::time::Duration::from_secs(retry_interval)).await;
-                }
-            }
+            },
+            When::Updating => ProxyState::new_from_manager().await,
         }
-        state
+    }
+}
+
+enum When {
+    Initializing,
+    Updating,
+}
+
+impl std::fmt::Display for When {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            When::Initializing => write!(f, "initialization"),
+            When::Updating => write!(f, "updating"),
+        }
     }
 }
