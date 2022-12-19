@@ -70,7 +70,7 @@ sidebar_position: 2
 
 如程序部署在 AWS us-east-1 的 VPC 上，则使用 http://us-east-1.s3-proxy.patsnap.info
 
-如在本地网络访问则使用 http://local.s3-proxy.patsnap.info
+如在本地办公室网络**开发测试**则使用 http://local.s3-proxy.patsnap.info
 
 ## 各语言配置方式
 
