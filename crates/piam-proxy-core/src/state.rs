@@ -3,7 +3,7 @@ use std::{fmt::Debug, sync::Arc, time::Instant};
 use arc_swap::ArcSwap;
 use async_trait::async_trait;
 use log::warn;
-use piam_tracing::logger::LogHandle;
+use piam_common::logger::LogHandle;
 use serde::de::DeserializeOwned;
 
 use crate::{
@@ -11,11 +11,11 @@ use crate::{
     container::IamContainer,
     error::{eok, ProxyResult},
     manager_api::ManagerClient,
-    policy::Statement,
+    policy::Modeled,
     type_alias::HttpClient,
 };
 
-pub type ArcState<S, C> = Arc<ArcSwap<ProxyState<S, C>>>;
+pub type ArcState<P, C> = Arc<ArcSwap<ProxyState<P, C>>>;
 
 #[async_trait]
 pub trait GetNewState: Sized {
@@ -29,20 +29,21 @@ pub struct Health {
 }
 
 #[derive(Debug, Default)]
-pub struct ProxyState<S: Statement + Debug, C: GetNewState> {
+pub struct ProxyState<P: Modeled, C: GetNewState> {
     pub health: Health,
     pub log_handle: Option<LogHandle>,
-    pub iam_container: IamContainer<S>,
+    pub iam_container: IamContainer<P>,
     pub extended_config: C,
     pub manager_client: ManagerClient,
     pub http_client: HttpClient,
 }
 
-impl<S: Statement + DeserializeOwned + Debug + Default + Send + Sync + 'static, C: GetNewState>
-    ProxyState<S, C>
+impl<P: Modeled + DeserializeOwned + Default + Send + Sync + 'static, C: GetNewState>
+    ProxyState<P, C>
 {
     pub async fn new_from_manager() -> ProxyResult<Self> {
         let manager_client = ManagerClient::default();
+        // TODO: do new_from_manager stuff here make sub new_from_manager state independent
         let state = ProxyState {
             health: Health::default(),
             log_handle: None,
@@ -56,18 +57,19 @@ impl<S: Statement + DeserializeOwned + Debug + Default + Send + Sync + 'static, 
 }
 
 /// StateManager updating proxy state from piam manager periodically.
-pub struct StateManager<S: Statement + Debug, C: GetNewState> {
+pub struct StateManager<P: Modeled, C: GetNewState> {
     pub health_state: Health,
-    pub arc_state: ArcState<S, C>,
+    pub arc_state: ArcState<P, C>,
 }
 
 impl<
-        S: Statement + DeserializeOwned + Debug + Default + Send + Sync + 'static,
+        P: Modeled + DeserializeOwned + Default + Send + Sync + 'static,
         C: GetNewState + Default + Send + Sync,
-    > StateManager<S, C>
+    > StateManager<P, C>
 {
     pub async fn initialize() -> Self {
-        let state = eok(Self::get_new(When::Initializing).await);
+        let get_result: ProxyResult<ProxyState<P, C>> = Self::get_new(When::Initializing).await;
+        let state = eok(get_result);
         StateManager {
             health_state: Default::default(),
             arc_state: Arc::new(ArcSwap::from_pointee(state)),
@@ -75,13 +77,14 @@ impl<
     }
 
     pub async fn update_state(&self) {
-        match Self::get_new(When::Updating).await {
+        let get_result: ProxyResult<ProxyState<P, C>> = Self::get_new(When::Updating).await;
+        match get_result {
             Ok(s) => self.arc_state.store(Arc::new(s)),
             Err(e) => warn!("ProxyState updating failed, error: {}", e),
         };
     }
 
-    async fn get_new(when: When) -> ProxyResult<ProxyState<S, C>> {
+    async fn get_new(when: When) -> ProxyResult<ProxyState<P, C>> {
         let retry_interval = 5;
         let mut retry_count = 0;
         match when {

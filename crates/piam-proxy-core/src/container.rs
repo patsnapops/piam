@@ -4,31 +4,34 @@
 use std::{collections::HashMap, fmt::Debug};
 
 use async_trait::async_trait;
+use piam_common::{manager_api::CONDITION_MODEL, ANY};
 use serde::de::DeserializeOwned;
 
 use crate::{
-    account::aws::AwsAccount,
+    account::{aws::AwsAccount, AccountId},
     config::POLICY_MODEL,
-    error::{ProxyError, ProxyResult},
+    error::{esome, ProxyError, ProxyResult},
     group::{Group, GroupId},
     manager_api::ManagerClient,
-    policy::{Policy, PolicyId, Statement},
-    principal::{Role, User, UserId},
+    policy::{condition::ConditionPolicy, Modeled, Policy, PolicyId},
+    principal::{Role, RoleId, User, UserId},
     relation_model::PolicyRelationship,
     state::GetNewState,
 };
 
 /// IamContainer store entities.
 #[derive(Debug, Default)]
-pub struct IamContainer<S: Statement + Debug> {
+pub struct IamContainer<P: Modeled> {
     /// All accounts by their code, each account one is unique
     accounts: HashMap<String, AwsAccount>,
     /// All users, each one is unique
     users: HashMap<UserId, User>,
     /// All groups, each one is unique
     groups: HashMap<GroupId, Group>,
-    /// All policies, each one is unique
-    policies: HashMap<PolicyId, Policy<S>>,
+    /// Policies for user input, each one is unique
+    user_input_policies: HashMap<PolicyId, Policy<P>>,
+    /// Policies for condition, each one is unique
+    condition_policies: HashMap<PolicyId, Policy<ConditionPolicy>>,
     /// In-memory index built from all `AccessKeyUserRelationship`s
     base_access_key_to_user_id: HashMap<String, UserId>,
     /// In-memory index built from all `UserGroupRelationship`s
@@ -41,22 +44,46 @@ pub struct IamContainer<S: Statement + Debug> {
 
 /// Struct to use when querying policies from the container.
 #[derive(Debug)]
-pub struct PolicyQueryParams<'a> {
+pub struct PolicyFilterParams<'a> {
     pub roles: Option<Vec<&'a Role>>,
     pub user: Option<&'a User>,
     pub groups: Option<Vec<&'a Group>>,
     pub account: &'a AwsAccount,
-    pub region: &'a str,
+    pub target_region: &'a str,
+}
+
+impl<'a> PolicyFilterParams<'a> {
+    pub fn new_with_default(
+        groups: Vec<&'a Group>,
+        account: &'a AwsAccount,
+        target_region: &'a str,
+    ) -> Self {
+        PolicyFilterParams {
+            roles: None,
+            user: None,
+            groups: Some(groups),
+            account,
+            target_region,
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct FoundPolicies<'a, P: Modeled> {
+    pub condition: Vec<&'a Policy<ConditionPolicy>>,
+    pub user_input: Vec<&'a Policy<P>>,
 }
 
 #[async_trait]
-impl<S: Statement + DeserializeOwned + Debug + Send> GetNewState for IamContainer<S> {
+impl<P: Modeled + DeserializeOwned + Send> GetNewState for IamContainer<P> {
     // TODO: change this to new_from_xxx for the sake of state independent unit test
     async fn new_from_manager(manager: &ManagerClient) -> ProxyResult<Self> {
         let account_vec = manager.get_accounts().await?;
         let users_vec = manager.get_users().await?;
         let groups_vec = manager.get_groups().await?;
-        let policy_vec: Vec<Policy<S>> = manager.get_policies(&POLICY_MODEL.load()).await?;
+        let user_input_policy_vec: Vec<Policy<P>> =
+            manager.get_policies_by_model(&POLICY_MODEL.load()).await?;
+        let condition_policy_vec = manager.get_policies_by_model(CONDITION_MODEL).await?;
 
         let user_group_relationships = manager.get_user_group_relationships().await?;
         let policy_relationships = manager.get_policy_relationships().await?;
@@ -74,7 +101,11 @@ impl<S: Statement + DeserializeOwned + Debug + Send> GetNewState for IamContaine
             .into_iter()
             .map(|group| (group.id.clone(), group))
             .collect();
-        let policies = policy_vec
+        let user_input_policies = user_input_policy_vec
+            .into_iter()
+            .map(|policy| (policy.id.clone(), policy))
+            .collect();
+        let condition_policies = condition_policy_vec
             .into_iter()
             .map(|policy| (policy.id.clone(), policy))
             .collect();
@@ -102,7 +133,8 @@ impl<S: Statement + DeserializeOwned + Debug + Send> GetNewState for IamContaine
             accounts,
             users,
             groups,
-            policies,
+            user_input_policies,
+            condition_policies,
             base_access_key_to_user_id,
             user_id_to_group_ids,
             policy_relationships,
@@ -110,7 +142,7 @@ impl<S: Statement + DeserializeOwned + Debug + Send> GetNewState for IamContaine
     }
 }
 
-impl<S: Statement + DeserializeOwned + Debug> IamContainer<S> {
+impl<P: Modeled> IamContainer<P> {
     pub fn find_account_by_code(&self, code: &str) -> ProxyResult<&AwsAccount> {
         self.accounts.get(code).ok_or_else(|| {
             ProxyError::InvalidAccessKey(format!(
@@ -150,50 +182,88 @@ impl<S: Statement + DeserializeOwned + Debug> IamContainer<S> {
             .collect()
     }
 
-    pub fn find_policies(&self, filter: &PolicyQueryParams) -> ProxyResult<Vec<&Policy<S>>> {
-        let policy_ids: Vec<&PolicyId> = self
+    pub fn find_policies(&self, filter: &PolicyFilterParams) -> ProxyResult<FoundPolicies<P>> {
+        let relations: Vec<&PolicyRelationship> = self
             .policy_relationships
             .iter()
-            .filter(|r| r.account_id == filter.account.id)
-            .filter(|r| r.region == filter.region)
-            .filter(|r| {
-                if let (Some(user_id), Some(user_filter)) = (&r.user_id, filter.user) {
-                    *user_id == user_filter.id
-                } else {
-                    true
-                }
-            })
-            .filter(|r| {
-                if let (Some(group_id), Some(group_filter)) = (&r.group_id, &filter.groups) {
-                    group_filter.iter().any(|gf| gf.id == *group_id)
-                } else {
-                    true
-                }
-            })
-            .filter(|r| {
-                if let (Some(role_id), Some(role_filter)) = (&r.role_id, &filter.roles) {
-                    role_filter.iter().any(|rf| rf.id == *role_id)
-                } else {
-                    true
-                }
-            })
-            .map(|r| &r.policy_id)
+            .filter(|r| Self::account_filter(&r.account_id, filter.account))
+            .filter(|r| Self::region_filter(&r.region, &filter.target_region))
+            .filter(|r| Self::user_filter(r.user_id.as_ref(), filter.user))
+            .filter(|r| Self::group_filter(r.group_id.as_ref(), filter.groups.as_ref()))
+            .filter(|r| Self::role_filter(r.role_id.as_ref(), filter.roles.as_ref()))
             .collect();
 
-        if policy_ids.is_empty() {
+        if relations.is_empty() {
             return Err(ProxyError::MissingPolicy(format!(
-                "access denied by missing policy account: {} region: {} groups: {:#?}",
-                filter.account.id, filter.region, filter.groups
+                "access denied by missing policy, account: {} region: {} groups: {:#?}",
+                filter.account.id, filter.target_region, filter.groups
             )));
         }
 
-        policy_ids
-            .into_iter()
-            .map(|policy_id| {
-                self.policies.get(policy_id).ok_or_else(|| {
-                    ProxyError::OtherInternal(format!("Policy not found by id: {}", policy_id))
-                })
-            })
-            .collect()
+        let mut condition: Vec<&Policy<ConditionPolicy>> = Vec::new();
+        let mut user_input: Vec<&Policy<P>> = Vec::new();
+        for relation in relations {
+            match relation.policy_model.as_str() {
+                CONDITION_MODEL => {
+                    let p = esome(self.condition_policies.get(&relation.policy_id));
+                    condition.push(p);
+                }
+                user_input_model if user_input_model == POLICY_MODEL.load().to_string() => {
+                    let p = esome(self.user_input_policies.get(&relation.policy_id));
+                    user_input.push(p);
+                }
+                other => {
+                    return Err(ProxyError::OtherInternal(format!(
+                        "unknown policy model found: {}",
+                        other
+                    )));
+                }
+            };
+        }
+
+        Ok(FoundPolicies {
+            condition,
+            user_input,
+        })
+    }
+
+    fn account_filter(record_id: &AccountId, param: &AwsAccount) -> bool {
+        record_id == &param.id || record_id == ANY
+    }
+
+    fn region_filter(record: &str, param: &str) -> bool {
+        record == param || record == ANY
+    }
+
+    fn user_filter(record_id: Option<&UserId>, param: Option<&User>) -> bool {
+        match param {
+            None => true,
+            Some(p) => match record_id {
+                None => true,
+                Some(rid) => (*rid == p.id) || rid == ANY,
+            },
+        }
+    }
+
+    //noinspection DuplicatedCode
+    fn group_filter(record_id: Option<&GroupId>, param: Option<&Vec<&Group>>) -> bool {
+        match param {
+            None => true,
+            Some(p) => match record_id {
+                None => true,
+                Some(rid) => p.iter().any(|pg| *rid == pg.id) || rid == ANY,
+            },
+        }
+    }
+
+    //noinspection DuplicatedCode
+    fn role_filter(record_id: Option<&RoleId>, param: Option<&Vec<&Role>>) -> bool {
+        match param {
+            None => true,
+            Some(p) => match record_id {
+                None => true,
+                Some(rid) => p.iter().any(|pr| *rid == pr.id) || rid == ANY,
+            },
+        }
     }
 }

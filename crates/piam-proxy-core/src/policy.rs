@@ -1,9 +1,10 @@
+//! Policy is an abstraction of a resource model specific policy such as `ObjectStoragePolicy`.
+
 use std::fmt::Debug;
 
-use serde::{Deserialize, Serialize};
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
 use crate::{
-    condition::ConditionRange,
     effect::Effect,
     error::{ProxyError, ProxyResult},
     input::Input,
@@ -12,19 +13,20 @@ use crate::{
 
 pub type PolicyId = IamEntityIdType;
 
+/// The policy to be applied to the request. See `Input`
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
-pub struct Policy<S: Debug> {
+pub struct Policy<P: Modeled> {
     pub kind: String,
     pub version: i32,
     pub id: PolicyId,
     pub name: String,
-    /// if condition specified, only takes effect when condition is met
-    pub conditions: Option<Vec<ConditionRange>>,
-    pub statements: Vec<S>,
+    /// A generic structure defined by user of this library
+    pub modeled_policy: Vec<P>,
 }
 
-pub trait Statement {
-    type Input;
+/// Every kind of policy should be modeled and the `Effect` can be searched from within it.
+pub trait Modeled: Debug {
+    type Input: Input;
 
     fn version(&self) -> i32;
 
@@ -33,45 +35,45 @@ pub trait Statement {
     fn find_effect_by_input(&self, input: &Self::Input) -> Option<&Effect>;
 }
 
-impl<S, I> Policy<S>
+impl<P, I> Policy<P>
 where
-    S: Statement<Input = I> + Debug,
+    P: Modeled<Input = I> + DeserializeOwned,
     I: Input,
 {
-    fn find_effects_by_input(&self, input: &I) -> ProxyResult<Vec<&Effect>> {
-        // TODO: check condition find_effects_by_input
-        let statements = &self.statements;
-        if statements.is_empty() {
+    fn find_effects(&self, input: &I) -> ProxyResult<Vec<&Effect>> {
+        let modeled_policies = &self.modeled_policy;
+        if modeled_policies.is_empty() {
             return Err(ProxyError::OtherInternal(format!(
-                "policy {} has no statements",
+                "policy {} has no model policies",
                 self.id
             )));
         }
-        let effects = statements
+
+        let model_effects: Vec<&Effect> = modeled_policies
             .iter()
-            .filter_map(|statement| statement.find_effect_by_input(input))
+            .filter_map(|policy| policy.find_effect_by_input(input))
             .collect();
-        Ok(effects)
+        Ok(model_effects)
     }
 }
 
-pub trait FindEffect<S, I>
+pub trait FindEffect<P, I>
 where
-    S: Statement<Input = I> + Debug,
+    P: Modeled<Input = I>,
     I: Input,
 {
-    fn find_effects_by_input(&self, input: &I) -> ProxyResult<Vec<&Effect>>;
+    fn find_effects(&self, input: &I) -> ProxyResult<Vec<&Effect>>;
 }
 
-impl<S, I> FindEffect<S, I> for Vec<&Policy<S>>
+impl<P, I> FindEffect<P, I> for Vec<&Policy<P>>
 where
-    S: Statement<Input = I> + Debug,
+    P: Modeled<Input = I> + DeserializeOwned,
     I: Input,
 {
-    fn find_effects_by_input(&self, input: &I) -> ProxyResult<Vec<&Effect>> {
+    fn find_effects(&self, input: &I) -> ProxyResult<Vec<&Effect>> {
         let mut all_effects = Vec::new();
         for policy in self {
-            all_effects.extend(policy.find_effects_by_input(input)?);
+            all_effects.extend(policy.find_effects(input)?);
         }
         Ok(all_effects)
     }
@@ -108,69 +110,83 @@ impl Name {
     }
 }
 
-#[cfg(feature = "object-storage-policy")]
-pub mod object_storage_policy {
+pub mod condition {
+    use std::net::Ipv4Addr;
+
+    use cidr::{AnyIpCidr, Ipv4Cidr};
     use serde::{Deserialize, Serialize};
 
-    use crate::{effect::Effect, policy::Name};
+    use crate::{condition::input::Condition, effect::Effect, policy::Modeled};
 
-    #[derive(Debug, Default, Serialize, Deserialize)]
-    pub struct ObjectStorageStatement {
+    /// If ConditionPolicy is not specified, this phase of effect finding should be skipped.
+    /// If ConditionPolicy is specified, only takes its effect when condition is matched.
+    #[derive(Clone, Debug, Default, Serialize, Deserialize)]
+    pub struct ConditionPolicy {
         pub version: i32,
         pub id: String,
-        pub input_statement: ObjectStorageInputStatement,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        pub output_statement: Option<String>,
-    }
-
-    #[derive(Debug, Default, Serialize, Deserialize)]
-    pub struct ObjectStorageInputStatement {
-        // TODO: use enum ActionName instead of String
-        #[serde(skip_serializing_if = "Option::is_none")]
-        pub actions: Option<Vec<String>>,
-        pub bucket: Bucket,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        pub control: Option<Control>,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        pub outpost: Option<Outpost>,
+        pub range: ConditionRange,
+        pub effect: Effect,
     }
 
     #[derive(Clone, Debug, Default, Serialize, Deserialize)]
-    pub struct Tag {
-        pub key_eq: Option<Vec<String>>,
+    pub struct ConditionRange {
+        pub ip_cidr_range: Option<Vec<AnyIpCidr>>,
+        pub region_range: Option<Vec<String>>,
     }
 
-    /// Default logical operator would be `or`. Any bucket name or tag matching
-    /// their corresponding field (`name`, `tag`) will trigger the execution
-    /// of the `effect`
-    #[derive(Debug, Default, Serialize, Deserialize)]
-    pub struct Bucket {
-        #[serde(skip_serializing_if = "Option::is_none")]
-        pub name: Option<Name>,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        pub tag: Option<Tag>,
-        #[serde(flatten)]
-        #[serde(skip_serializing_if = "Option::is_none")]
-        pub effect: Option<Effect>,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        pub keys: Option<Vec<Key>>,
+    impl ConditionPolicy {
+        pub fn find_effect(&self, condition: &Condition) -> Option<&Effect> {
+            match self.range.contains(condition) {
+                false => None,
+                true => Some(&self.effect),
+            }
+        }
     }
 
-    #[derive(Debug, Default, Serialize, Deserialize)]
-    pub struct Outpost;
+    impl Modeled for ConditionPolicy {
+        type Input = Condition;
 
-    #[derive(Debug, Default, Serialize, Deserialize)]
-    pub struct Control;
+        fn version(&self) -> i32 {
+            self.version
+        }
 
-    /// Default logical operator would be `or`, Same as Bucket.
-    #[derive(Clone, Debug, Default, Serialize, Deserialize)]
-    pub struct Key {
-        #[serde(skip_serializing_if = "Option::is_none")]
-        pub name: Option<Name>,
-        #[serde(skip_serializing_if = "Option::is_none")]
-        pub tag: Option<Tag>,
-        #[serde(flatten)]
-        #[serde(skip_serializing_if = "Option::is_none")]
-        pub effect: Option<Effect>,
+        fn id(&self) -> String {
+            self.id.clone()
+        }
+
+        fn find_effect_by_input(&self, condition: &Self::Input) -> Option<&Effect> {
+            match self.range.contains(condition) {
+                false => None,
+                true => Some(&self.effect),
+            }
+        }
+    }
+
+    impl ConditionRange {
+        pub fn contains(&self, condition: &Condition) -> bool {
+            match &self.ip_cidr_range {
+                None => false,
+                Some(cidr_vec) => match &condition.addr {
+                    None => false, // no addr in Condition which normally come with request
+                    Some(addr) => cidr_vec.iter().any(|ip_cidr| ip_cidr.contains(&addr.ip())),
+                },
+            }
+        }
+
+        pub fn private_ip_cidr() -> Vec<AnyIpCidr> {
+            vec![
+                AnyIpCidr::V4(Ipv4Cidr::new(Ipv4Addr::new(10, 0, 0, 0), 8).unwrap()),
+                AnyIpCidr::V4(Ipv4Cidr::new(Ipv4Addr::new(172, 16, 0, 0), 12).unwrap()),
+                AnyIpCidr::V4(Ipv4Cidr::new(Ipv4Addr::new(192, 168, 0, 0), 16).unwrap()),
+                AnyIpCidr::V4(Ipv4Cidr::new(Ipv4Addr::new(127, 0, 0, 1), 32).unwrap()),
+            ]
+        }
+    }
+
+    pub mod test {
+        #[test]
+        fn condition_range_contains() {
+            // TODO: test condition_range_contains
+        }
     }
 }

@@ -4,7 +4,13 @@ use std::net::SocketAddr;
 
 use axum::{routing::get, Router};
 use log::info;
-use piam_tracing::logger::init_logger;
+use piam_common::{
+    logger::init_logger,
+    manager_api::{
+        ACCOUNTS, CONFIG_TYPE, EXTENDED_CONFIG, GROUPS, POLICIES, POLICY_MODEL,
+        POLICY_RELATIONSHIPS, USERS, USER_GROUP_RELATIONSHIPS,
+    },
+};
 
 mod config;
 mod error;
@@ -19,20 +25,23 @@ async fn main() {
     let routes = Router::new()
         // .route("/_piam_manage_api", put(handler::manage))
         .route("/health", get(handler::health))
-        .route("/accounts", get(handler::get_accounts))
-        .route("/users", get(handler::get_users))
-        .route("/groups", get(handler::get_groups))
-        .route("/policies/:policy_model", get(handler::get_policies))
+        .route(&gen_path(ACCOUNTS), get(handler::get_accounts))
+        .route(&gen_path(USERS), get(handler::get_users))
+        .route(&gen_path(GROUPS), get(handler::get_groups))
         .route(
-            "/user_group_relationships",
+            &gen_path_with_param(POLICIES, POLICY_MODEL),
+            get(handler::get_policies),
+        )
+        .route(
+            &gen_path(USER_GROUP_RELATIONSHIPS),
             get(handler::get_user_group_relationships),
         )
         .route(
-            "/policy_relationships",
+            &gen_path(POLICY_RELATIONSHIPS),
             get(handler::get_policy_relationships),
         )
         .route(
-            "/extended_config/:config_type",
+            &gen_path_with_param(EXTENDED_CONFIG, CONFIG_TYPE),
             get(handler::extended_config),
         );
 
@@ -42,4 +51,12 @@ async fn main() {
         .serve(routes.into_make_service_with_connect_info::<SocketAddr>())
         .await
         .unwrap();
+}
+
+fn gen_path(value: &str) -> String {
+    format!("/:v/{}", value)
+}
+
+fn gen_path_with_param(value: &str, param: &str) -> String {
+    format!("/:v/{}/:{}", value, param)
 }

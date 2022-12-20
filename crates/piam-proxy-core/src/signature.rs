@@ -11,7 +11,7 @@ pub mod aws {
 
     use crate::{
         account::aws::AwsAccount,
-        error::{eok_context, esome_context, ProxyError, ProxyResult},
+        error::{eok_ctx, esome_ctx, ProxyError, ProxyResult},
         signature::aws::canonical_request::header::{
             X_AMZ_CONTENT_SHA_256, X_AMZ_DATE, X_AMZ_SECURITY_TOKEN,
         },
@@ -81,7 +81,7 @@ pub mod aws {
             params: &AwsSigv4SignParams<'_>,
         ) -> Result<HttpRequest> {
             // save checksum before signing
-            let checksum = esome_context(
+            let checksum = esome_ctx(
                 self.headers().get(X_AMZ_CONTENT_SHA_256),
                 "sign_with_aws_sigv4_params miss X_AMZ_CONTENT_SHA_256",
             )
@@ -112,7 +112,7 @@ pub mod aws {
                 .settings(signing_settings)
                 .build()?;
             let signable_request = SignableRequest::from(&byte_req);
-            let (signing_instructions, _signature) = eok_context(
+            let (signing_instructions, _signature) = eok_ctx(
                 sign(signable_request, &signing_params),
                 "sign_with_aws_sigv4_params sign failed",
             )
@@ -162,12 +162,19 @@ pub mod aws {
         pub region: &'a str,
     }
 
+    impl<'a> AwsSigv4SignParams<'a> {
+        pub fn new_with(account: &'a AwsAccount, service: &'a str, region: &'a str) -> Self {
+            AwsSigv4SignParams {
+                account,
+                service,
+                region,
+            }
+        }
+    }
+
     #[cfg(test)]
     mod test {
-        use crate::{
-            config::CN_NORTHWEST_1,
-            signature::aws::extract_aws_access_key_and_region_from_auth_header,
-        };
+        use crate::signature::aws::extract_aws_access_key_and_region_from_auth_header;
 
         #[test]
         fn test_extract_aws_access_key_and_region_from_auth_header() {
@@ -175,7 +182,7 @@ pub mod aws {
                 "AWS4-HMAC-SHA256 Credential=AKPSSVCSPROXYDEV/20221012/cn-northwest-1/s3/aws4_request ..."
             ).unwrap();
             assert_eq!(key, "AKPSSVCSPROXYDEV");
-            assert_eq!(region, CN_NORTHWEST_1);
+            assert_eq!(region, "cn-northwest-1");
         }
     }
 }

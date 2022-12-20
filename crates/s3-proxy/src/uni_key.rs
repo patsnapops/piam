@@ -5,16 +5,15 @@ use std::collections::HashMap;
 
 use aws_sdk_s3::{Client, Config, Endpoint};
 use aws_types::{region::Region, Credentials};
+use patsnap_constants::region::{AP_SHANGHAI, CN_NORTHWEST_1, NA_ASHBURN, US_EAST_1};
+use piam_object_storage::input::{ActionKind, ObjectStorageInput};
 use piam_proxy_core::{
     account::aws::AwsAccount,
-    config::{AP_SHANGHAI, CN_NORTHWEST_1, NA_ASHBURN, US_EAST_1},
     error::{ProxyError, ProxyResult},
     manager_api::ManagerClient,
     request::from_region_to_endpoint,
 };
 use serde::{Deserialize, Serialize};
-
-use crate::parser::{ActionKind, S3Input};
 
 type BucketToAccessInfo = HashMap<String, AccessInfo>;
 
@@ -32,13 +31,13 @@ pub struct AccessInfo {
 }
 
 impl UniKeyInfo {
-    pub fn find_access_info_input(&self, s3_input: &S3Input) -> ProxyResult<&AccessInfo> {
-        if s3_input.action_kind() == ActionKind::ListBuckets {
+    pub fn find_access_info_input(&self, input: &ObjectStorageInput) -> ProxyResult<&AccessInfo> {
+        if input.action_kind() == ActionKind::ListBuckets {
             return Err(ProxyError::OperationNotSupported(
                 "ListBuckets not supported due to uni-key feature".into(),
             ));
         }
-        let bucket = s3_input.bucket();
+        let bucket = input.bucket();
         let access_info = self.inner.get(bucket).ok_or_else(|| {
             ProxyError::BadRequest(format!("access info not found for bucket: {}", bucket))
         })?;
@@ -50,6 +49,7 @@ impl UniKeyInfo {
         let access_info_vec: ProxyResult<Vec<AccessInfo>> = accounts
             .into_iter()
             .map(|account| {
+                // TODO: refactor this quick and dirty solution for s3 uni-key feature
                 match &account.id {
                     id if id.starts_with("cn_aws") => Ok(AccessInfo {
                         account,
@@ -61,7 +61,6 @@ impl UniKeyInfo {
                         region: US_EAST_1.to_string(),
                         endpoint: None,
                     }),
-                    // TODO: refactor this quick and dirty solution for s3 uni-key feature
                     id if id.starts_with("cn_tencent") => Ok(AccessInfo {
                         account,
                         region: AP_SHANGHAI.to_string(),

@@ -4,7 +4,9 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-piam-tracing = { path = "../piam-tracing" }
+piam-common = { path = "../piam-common" }
+piam-proxy-core = { path = "../piam-proxy-core" }
+piam-object-storage = { path = "../piam-object-storage" }
 axum = { version = "0.6.1", features = ["tokio"] }
 hyper = { version = "0.14", features = ["full"] }
 tokio = { version = "1", features = ["full"] }
@@ -15,6 +17,6 @@ once_cell = "1.15.0"
 serde = { version = "1.0", features = ["derive"] }
 
 [dev-dependencies]
-piam-proxy-core = { path = "../piam-proxy-core", features = ["object-storage-policy", "aws-xml-response"] }
+patsnap-constants = { path = "../patsnap-constants" }
 uuid = { version = "1.1.2", features = ["v4", "fast-rng", "macro-diagnostics"] }
 serde_yaml = "0.9"

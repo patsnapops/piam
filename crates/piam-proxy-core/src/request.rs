@@ -2,46 +2,49 @@ use log::debug;
 
 use crate::{
     effect::Effect,
-    error::{esome_context, ProxyError, ProxyResult},
-    response,
+    error::{ProxyError, ProxyResult},
     type_alias::{HttpClient, HttpRequest, HttpResponse},
 };
 
-pub enum ApplyResult {
-    Forward(HttpRequest),
-    Reject(HttpResponse),
-}
-
 pub trait HttpRequestExt {
-    fn apply_effects(self, effect: Vec<&Effect>) -> ProxyResult<ApplyResult>;
+    fn apply_effects(self, effect: Vec<&Effect>) -> ProxyResult<HttpRequest>;
 }
 
 impl HttpRequestExt for HttpRequest {
-    fn apply_effects(self, effects: Vec<&Effect>) -> ProxyResult<ApplyResult> {
+    fn apply_effects(self, effects: Vec<&Effect>) -> ProxyResult<HttpRequest> {
         if effects.is_empty() {
             return Err(ProxyError::EffectNotFound(format!(
-                "Access Denied: No matching policy, user request: {:?}",
+                "access denied: no matching effects found for policy, user request: {:?}",
                 self.into_parts().0
             )));
         };
 
-        // TODO: try apply multiple effects
-        if effects.len() > 1 {
-            return Err(ProxyError::OtherInternal(
-                "Multiple effects found when apply_effects, not supported yet".into(),
-            ));
-        };
+        let mut allow_effects = Vec::new();
+        let mut deny_effects = Vec::new();
+        for effect in effects {
+            match effect {
+                Effect::Allow { .. } => allow_effects.push(effect),
+                Effect::Deny(_) => deny_effects.push(effect),
+            }
+        }
 
-        Ok(match esome_context(effects.first(), "apply_effects todo") {
-            Effect::Allow { .. } => {
-                // TODO: impl Allow stuff
-                ApplyResult::Forward(self)
-            }
-            Effect::Deny(_maybe_emit) => {
-                // TODO: impl Deny stuff
-                ApplyResult::Reject(response::rejected_by_policy())
-            }
-        })
+        if !deny_effects.is_empty() {
+            // TODO: impl Deny stuff
+            return Err(ProxyError::EffectNotFound(format!(
+                "access denied: by deny effect found in policy, user request: {:?}",
+                self.into_parts().0
+            )));
+        }
+
+        if allow_effects.is_empty() {
+            Err(ProxyError::EffectNotFound(format!(
+                "access denied: no matching allow effects found for policy, user request: {:?}",
+                self.into_parts().0
+            )))
+        } else {
+            // TODO: impl Allow stuff
+            Ok(self)
+        }
     }
 }
 

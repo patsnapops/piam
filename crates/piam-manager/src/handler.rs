@@ -14,38 +14,45 @@ pub async fn health() -> impl IntoResponse {
     "OK"
 }
 
-pub async fn get_accounts() -> ManagerResult<String> {
-    info!("get_accounts");
+pub async fn get_accounts(Path(ver): Path<String>) -> ManagerResult<String> {
+    info!("version: {} api: get_accounts", ver);
     get_resource_string("accounts").await
 }
 
-pub async fn get_users() -> ManagerResult<String> {
-    info!("get_users");
+pub async fn get_users(Path(ver): Path<String>) -> ManagerResult<String> {
+    info!("version: {} api: get_users", ver);
     get_resource_string("users").await
 }
 
-pub async fn get_groups() -> ManagerResult<String> {
-    info!("get_groups");
+pub async fn get_groups(Path(ver): Path<String>) -> ManagerResult<String> {
+    info!("version: {} api: get_groups", ver);
     get_resource_string("groups").await
 }
 
-pub async fn get_policies(Path(policy_model): Path<String>) -> ManagerResult<String> {
-    info!("get_policies: {}", policy_model);
+pub async fn get_policies(
+    Path((ver, policy_model)): Path<(String, String)>,
+) -> ManagerResult<String> {
+    info!(
+        "version: {} api: get_policies policy_model: {}",
+        ver, policy_model
+    );
     get_resource_string(format!("policies:{}", policy_model).as_str()).await
 }
 
-pub async fn get_user_group_relationships() -> ManagerResult<String> {
-    info!("get_user_group_relationships");
+pub async fn get_user_group_relationships(Path(ver): Path<String>) -> ManagerResult<String> {
+    info!("version: {} api: get_user_group_relationships", ver);
     get_resource_string("user_group_relationships").await
 }
 
-pub async fn get_policy_relationships() -> ManagerResult<String> {
-    info!("get_policy_relationships");
+pub async fn get_policy_relationships(Path(ver): Path<String>) -> ManagerResult<String> {
+    info!("version: {} api: get_policy_relationships", ver);
     get_resource_string("policy_relationships").await
 }
 
-pub async fn extended_config(Path(config_type): Path<String>) -> ManagerResult<String> {
-    info!("extended_config: {}", config_type);
+pub async fn extended_config(
+    Path((ver, config_type)): Path<(String, String)>,
+) -> ManagerResult<String> {
+    info!("version: {} api: extended_config: {}", ver, config_type);
     get_resource_string(format!("extended_config:{}", config_type).as_str()).await
 }
 

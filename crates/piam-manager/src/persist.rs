@@ -1,3 +1,4 @@
+use piam_common::manager_api::VERSION;
 use redis::Commands;
 
 use crate::{
@@ -11,7 +12,7 @@ pub async fn get_resource_string(key: &str) -> ManagerResult<String> {
     let mut con = client
         .get_connection()
         .map_err(|e| ManagerError::Internal(format!("failed to get redis connection: {}", e)))?;
-    let key = format!("piam:{}", key);
+    let key = format!("piam:{}:{}", VERSION, key);
     let string = con.get(&key).map_err(|e| {
         ManagerError::Internal(format!("failed to get redis key: {} error: {}", key, e))
     })?;

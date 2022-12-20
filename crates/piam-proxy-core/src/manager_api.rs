@@ -1,5 +1,9 @@
 use std::fmt::Debug;
 
+use piam_common::manager_api::{
+    extended_config_path, policies_path, ACCOUNTS, GROUPS, POLICY_RELATIONSHIPS, USERS,
+    USER_GROUP_RELATIONSHIPS, VERSION,
+};
 use serde::de::DeserializeOwned;
 
 use crate::{
@@ -7,7 +11,7 @@ use crate::{
     config::PIAM_MANAGER_ADDRESS,
     error::{deserialize, ProxyResult},
     group::Group,
-    policy::{Policy, Statement},
+    policy::{Modeled, Policy},
     principal::User,
     relation_model::{PolicyRelationship, UserGroupRelationship},
 };
@@ -19,50 +23,48 @@ pub struct ManagerClient {
 
 impl ManagerClient {
     pub async fn get_accounts(&self) -> ProxyResult<Vec<AwsAccount>> {
-        self.get_resource("accounts").await
+        self.get_resource(ACCOUNTS).await
     }
 
     pub async fn get_users(&self) -> ProxyResult<Vec<User>> {
-        self.get_resource("users").await
+        self.get_resource(USERS).await
     }
 
     pub async fn get_groups(&self) -> ProxyResult<Vec<Group>> {
-        self.get_resource("groups").await
+        self.get_resource(GROUPS).await
     }
 
-    pub async fn get_policies<S: Statement + DeserializeOwned + Debug>(
+    pub async fn get_policies_by_model<P: Modeled + DeserializeOwned>(
         &self,
         policy_model: &str,
-    ) -> ProxyResult<Vec<Policy<S>>> {
-        self.get_resource(&format!("policies/{}", policy_model))
-            .await
+    ) -> ProxyResult<Vec<Policy<P>>> {
+        self.get_resource(&policies_path(policy_model)).await
     }
 
     pub async fn get_user_group_relationships(&self) -> ProxyResult<Vec<UserGroupRelationship>> {
-        self.get_resource("user_group_relationships").await
+        self.get_resource(USER_GROUP_RELATIONSHIPS).await
     }
 
     pub async fn get_policy_relationships(&self) -> ProxyResult<Vec<PolicyRelationship>> {
-        self.get_resource("policy_relationships").await
+        self.get_resource(POLICY_RELATIONSHIPS).await
     }
 
     pub async fn get_extended_config<T: DeserializeOwned>(
         &self,
-        extended_config_key: &str,
+        config_type: &str,
     ) -> ProxyResult<T> {
-        self.get_resource(&format!("extended_config/{}", extended_config_key))
-            .await
+        self.get_resource(&extended_config_path(config_type)).await
     }
 
-    async fn get_resource<T: DeserializeOwned>(&self, key: &str) -> ProxyResult<T> {
-        let resource_string = self.get_resource_string(key).await?;
-        let resource =
-            serde_yaml::from_str(&resource_string).map_err(|e| deserialize(resource_string, e))?;
+    async fn get_resource<T: DeserializeOwned>(&self, path: &str) -> ProxyResult<T> {
+        let resource_string = self.get_resource_string(path).await?;
+        let resource = serde_yaml::from_str(&resource_string)
+            .map_err(|e| deserialize(path, resource_string, e))?;
         Ok(resource)
     }
 
-    async fn get_resource_string(&self, key: &str) -> ProxyResult<String> {
-        let url = format!("{}/{}", PIAM_MANAGER_ADDRESS.load(), key);
+    async fn get_resource_string(&self, path: &str) -> ProxyResult<String> {
+        let url = format!("{}/{}/{}", PIAM_MANAGER_ADDRESS.load(), VERSION, path);
         // A native-tls/rust-tls related issue:
         // default-features = false, features = ["rustls-tls"] for reqwest should be set in Cargo.toml,
         // otherwise Segmentation fault (core dumped) may occur when creating a new reqwest client.

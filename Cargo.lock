@@ -476,6 +476,9 @@ name = "cidr"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "300bccc729b1ada84523246038aad61fead689ac362bb9d44beea6f6a188c34b"
+dependencies = [
+ "serde",
+]
 
 [[package]]
 name = "combine"
@@ -1077,10 +1080,31 @@ dependencies = [
 ]
 
 [[package]]
+name = "patsnap-constants"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "strum",
+ "strum_macros",
+]
+
+[[package]]
 name = "percent-encoding"
 version = "2.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "478c572c3d73181ff3c2539045f6eb99e5491218eae919370993b890cdbdd98e"
+
+[[package]]
+name = "piam-common"
+version = "0.1.0"
+dependencies = [
+ "log",
+ "time",
+ "tracing",
+ "tracing-appender",
+ "tracing-log",
+ "tracing-subscriber",
+]
 
 [[package]]
 name = "piam-manager"
@@ -1091,13 +1115,27 @@ dependencies = [
  "hyper",
  "log",
  "once_cell",
+ "patsnap-constants",
+ "piam-common",
+ "piam-object-storage",
  "piam-proxy-core",
- "piam-tracing",
  "redis",
  "serde",
  "serde_yaml",
  "tokio",
  "uuid",
+]
+
+[[package]]
+name = "piam-object-storage"
+version = "0.1.0"
+dependencies = [
+ "http",
+ "piam-proxy-core",
+ "serde",
+ "serde_urlencoded",
+ "strum",
+ "strum_macros",
 ]
 
 [[package]]
@@ -1114,7 +1152,7 @@ dependencies = [
  "hyper",
  "log",
  "once_cell",
- "piam-tracing",
+ "piam-common",
  "reqwest",
  "serde",
  "serde-xml-rs",
@@ -1122,18 +1160,6 @@ dependencies = [
  "thiserror",
  "tokio",
  "uuid",
-]
-
-[[package]]
-name = "piam-tracing"
-version = "0.1.0"
-dependencies = [
- "log",
- "time",
- "tracing",
- "tracing-appender",
- "tracing-log",
- "tracing-subscriber",
 ]
 
 [[package]]
@@ -1388,7 +1414,6 @@ checksum = "4501abdff3ae82a1c1b477a17252eb69cee9e66eb915c1abaa4f44d873df9f09"
 name = "s3-proxy"
 version = "0.1.0"
 dependencies = [
- "anyhow",
  "arc-swap",
  "async-trait",
  "aws-config",
@@ -1401,13 +1426,11 @@ dependencies = [
  "hyper",
  "log",
  "once_cell",
+ "patsnap-constants",
+ "piam-common",
+ "piam-object-storage",
  "piam-proxy-core",
- "piam-tracing",
  "serde",
- "serde_urlencoded",
- "serde_yaml",
- "strum",
- "strum_macros",
  "tokio",
  "uuid",
 ]

@@ -1,38 +1,24 @@
-use std::net::IpAddr;
+pub mod input {
+    use std::net::SocketAddr;
 
-use serde::{Deserialize, Serialize};
+    use serde::{Deserialize, Serialize};
 
-use crate::type_alias::HttpRequest;
+    use crate::input::Input;
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct Condition {
-    pub ip_addr: Option<IpAddr>,
-    pub region: Option<Region>,
-}
+    #[derive(Clone, Debug, Serialize, Deserialize)]
+    pub struct Condition {
+        pub addr: Option<SocketAddr>,
+        pub from_region: Option<String>,
+    }
 
-#[derive(Clone, Debug, Default, Serialize, Deserialize)]
-pub struct ConditionRange {
-    pub ip_addr: Option<Vec<IpAddr>>,
-    pub region: Option<Vec<Region>>,
-}
-
-impl Condition {}
-
-pub trait ConditionExt {
-    fn condition(&self) -> Condition;
-}
-
-impl ConditionExt for HttpRequest {
-    fn condition(&self) -> Condition {
-        Condition {
-            ip_addr: None,
-            region: None,
+    impl Condition {
+        pub fn new_with_addr(addr: SocketAddr) -> Self {
+            Self {
+                addr: Some(addr),
+                from_region: None,
+            }
         }
     }
-}
 
-#[derive(Clone, Debug, Default, Serialize, Deserialize)]
-pub enum Region {
-    #[default]
-    Unknown,
+    impl Input for Condition {}
 }

@@ -34,6 +34,14 @@ impl Effect {
     pub fn deny() -> Self {
         Self::default()
     }
+
+    pub fn is_allow(&self) -> bool {
+        matches!(self, Self::Allow { .. })
+    }
+
+    pub fn is_deny(&self) -> bool {
+        matches!(self, Self::Deny(_))
+    }
 }
 
 impl Default for Effect {

@@ -1,8 +1,10 @@
 [workspace]
 
 members = [
+    "crates/patsnap-constants",
+    "crates/piam-common",
     "crates/piam-manager",
-    "crates/s3-proxy",
+    "crates/piam-object-storage",
     "crates/piam-proxy-core",
-    "crates/piam-tracing",
+    "crates/s3-proxy",
 ]

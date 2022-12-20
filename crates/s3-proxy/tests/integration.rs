@@ -10,7 +10,7 @@ use aws_sdk_s3::{
 use aws_smithy_client::{erase::DynConnector, never::NeverConnector};
 use aws_types::{os_shim_internal::Env, region::Region, Credentials};
 use futures::future;
-use piam_proxy_core::config::{AP_SHANGHAI, CN_NORTHWEST_1, NA_ASHBURN, US_EAST_1};
+use patsnap_constants::region::{AP_SHANGHAI, CN_NORTHWEST_1, NA_ASHBURN, US_EAST_1};
 use uuid::Uuid;
 
 pub const DEV_PROXY_HOST: &str = "s3-proxy.dev";
@@ -618,18 +618,13 @@ async fn shf() {
 
 #[tokio::test]
 async fn zx_new() {
-    let env = Env::from_slice(&[
-        ("AWS_MAX_ATTEMPTS", "1"),
-        ("AWS_REGION", US_EAST_1),
-        ("AWS_ACCESS_KEY_ID", "AKPSSVCS24DDATARDPROCESSINGBATCHQA"),
-        ("AWS_SECRET_ACCESS_KEY", "dummy_sk"),
-    ]);
-    let client = build_client_from_env(
-        env,
-        // &format!("http://{}", "us-east-1.s3-proxy.patsnap.info"),
-        &format!("http://{}", DEV_PROXY_HOST),
-    )
-    .await;
+    let client = build_client_from_params(ClientParams {
+        access_key: "AKPSSVCS24DDATARDPROCESSINGBATCHQA",
+        secret: "",
+        region: "foo",
+        endpoint: DEV_PROXY_ENDPOINT,
+    });
+
     let output = client
         .get_object()
         .bucket("datalake-internal.patsnap.com")
@@ -908,6 +903,25 @@ async fn system_test_local() {
     let objects = client
         .get_object()
         .bucket("patsnap-country-source-1251949819")
+        .key("HK/A/12/51/79/0/output.json")
+        .send()
+        .await
+        .unwrap();
+    objects.e_tag().unwrap();
+}
+
+#[tokio::test]
+async fn dev_test() {
+    let client = build_client_from_params(ClientParams {
+        access_key: "AKPSSVCS04OPST",
+        secret: "",
+        region: CN_NORTHWEST_1,
+        endpoint: DEV_PROXY_ENDPOINT,
+    });
+
+    let objects = client
+        .get_object()
+        .bucket("ops-9554")
         .key("HK/A/12/51/79/0/output.json")
         .send()
         .await

@@ -1,4 +1,4 @@
-#![allow(unused)]
+// #![allow(unused)]
 
 extern crate core;
 
@@ -9,11 +9,11 @@ use axum::{
     Router,
 };
 use log::info;
+use piam_common::logger::init_logger;
 use piam_proxy_core::{
     config::{server_port, set_constants, STATE_UPDATE_INTERVAL},
     state::StateManager,
 };
-use piam_tracing::logger::init_logger;
 
 use crate::{
     config::{features, S3Config},
@@ -23,8 +23,6 @@ use crate::{
 mod config;
 mod error;
 mod handler;
-mod parser;
-mod policy;
 mod request;
 #[cfg(feature = "uni-key")]
 mod uni_key;

@@ -4,11 +4,6 @@ use arc_swap::ArcSwap;
 use log::info;
 use once_cell::sync::Lazy;
 
-pub const CN_NORTHWEST_1: &str = "cn-northwest-1";
-pub const US_EAST_1: &str = "us-east-1";
-pub const AP_SHANGHAI: &str = "ap-shanghai";
-pub const NA_ASHBURN: &str = "na-ashburn";
-
 pub static PROXY_TYPE: Lazy<ArcSwap<&'static str>> = Lazy::new(|| ArcSwap::from_pointee("[Unset]"));
 pub static POLICY_MODEL: Lazy<ArcSwap<&'static str>> = Lazy::new(|| ArcSwap::from_pointee("Unset"));
 pub static PIAM_MANAGER_ADDRESS: Lazy<ArcSwap<String>> =

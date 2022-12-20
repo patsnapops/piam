@@ -7,12 +7,13 @@ use crate::{
     group::GroupId,
     policy::PolicyId,
     principal::{RoleId, UserId},
+    type_alias::IamEntityIdType,
 };
 
 /// n to n
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct UserGroupRelationship {
-    // TODO now: add id
+    pub id: IamEntityIdType,
     pub user_id: UserId,
     pub group_id: GroupId,
 }
@@ -20,7 +21,7 @@ pub struct UserGroupRelationship {
 /// Policy IDs can be filtered by data_model, group_id, user_id, role_id, account_id and region
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct PolicyRelationship {
-    // TODO now: add id
+    pub id: IamEntityIdType,
     /// example: ObjectStorage, DocumentDatabase, MessageQueue.
     pub policy_model: String,
     pub user_id: Option<UserId>,

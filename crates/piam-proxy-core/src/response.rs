@@ -7,7 +7,7 @@ use uuid::Uuid;
 
 use crate::{
     config::{CLUSTER_ENV, PROXY_TYPE},
-    error::{eok, eok_context, ProxyError},
+    error::{eok, eok_ctx, ProxyError},
     type_alias::HttpResponse,
 };
 
@@ -62,6 +62,7 @@ impl IntoResponse for ProxyError {
                 r
             }
             ProxyError::InvalidAccessKey(msg)
+            | ProxyError::ParserError(msg)
             | ProxyError::OperationNotSupported(msg)
             | ProxyError::MissingPolicy(msg)
             | ProxyError::EffectNotFound(msg) => {
@@ -122,7 +123,9 @@ pub fn internal_err(code: &str, message: &str, request_id: &str) -> HttpResponse
 
 fn error_payload(code: &str, message: &str, request_id: &str) -> String {
     #[cfg(feature = "aws-xml-response")]
-    aws_xml_error_payload(code, message, request_id)
+    return aws_xml_error_payload(code, message, request_id);
+    #[cfg(not(feature = "aws-xml-response"))]
+    "error_payload must have default impl".into()
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -137,6 +140,7 @@ pub struct AwsErrorXml {
     pub host_id: String,
 }
 
+#[cfg(feature = "aws-xml-response")]
 fn aws_xml_error_payload(code: &str, message: &str, request_id: &str) -> String {
     let error = AwsErrorXml {
         code: format!("Piam{}", code),
@@ -145,7 +149,7 @@ fn aws_xml_error_payload(code: &str, message: &str, request_id: &str) -> String 
         request_id: request_id.into(),
         host_id: "".into(),
     };
-    eok_context(
+    eok_ctx(
         serde_xml_rs::to_string(&error),
         "serialize error payload should not fail",
     )

@@ -2,6 +2,8 @@ use std::{fmt, fmt::Display};
 
 use log::error;
 
+use crate::input::ParserError;
+
 pub type ProxyResult<T> = Result<T, ProxyError>;
 
 #[derive(Debug)]
@@ -11,6 +13,7 @@ pub enum ProxyError {
     InvalidRegion(String),
     InvalidAuthorizationHeader(String),
     InvalidAccessKey(String),
+    ParserError(String),
     OperationNotSupported(String),
     UserNotFound(String),
     GroupNotFound(String),
@@ -31,6 +34,7 @@ impl ProxyError {
             ProxyError::InvalidRegion(_) => "InvalidRegion",
             ProxyError::InvalidAuthorizationHeader(_) => "InvalidAuthorizationHeader",
             ProxyError::InvalidAccessKey(_) => "InvalidAccessKey",
+            ProxyError::ParserError(_) => "ParserError",
             ProxyError::OperationNotSupported(_) => "OperationNotSupported",
             ProxyError::UserNotFound(_) => "UserNotFound",
             ProxyError::GroupNotFound(_) => "GroupNotFound",
@@ -46,7 +50,7 @@ impl ProxyError {
 }
 
 // impl Display trait for ProxyError
-impl fmt::Display for ProxyError {
+impl Display for ProxyError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             ProxyError::BadRequest(msg) => write!(f, "BadRequest: {}", msg),
@@ -56,6 +60,7 @@ impl fmt::Display for ProxyError {
                 write!(f, "InvalidAuthorizationHeader: {}", msg)
             }
             ProxyError::InvalidAccessKey(msg) => write!(f, "InvalidAccessKey: {}", msg),
+            ProxyError::ParserError(msg) => write!(f, "ParserError: {}", msg),
             ProxyError::OperationNotSupported(msg) => write!(f, "OperationNotSupported: {}", msg),
             ProxyError::UserNotFound(msg) => write!(f, "UserNotFound: {}", msg),
             ProxyError::GroupNotFound(msg) => write!(f, "GroupNotFound: {}", msg),
@@ -70,14 +75,27 @@ impl fmt::Display for ProxyError {
     }
 }
 
+impl From<ParserError> for ProxyError {
+    fn from(err: ParserError) -> Self {
+        match err {
+            ParserError::OperationNotSupported(msg) => ProxyError::OperationNotSupported(msg),
+            ParserError::InvalidEndpoint(msg) => ProxyError::InvalidEndpoint(msg),
+            ParserError::Internal(msg) => ProxyError::ParserError(msg),
+        }
+    }
+}
+
 impl From<reqwest::Error> for ProxyError {
     fn from(err: reqwest::Error) -> Self {
         ProxyError::ManagerApi(format!("reqwest error: {}", err))
     }
 }
 
-pub fn deserialize(payload: String, err: serde_yaml::Error) -> ProxyError {
-    let string = format!("payload: '{}', msg from serde_yaml: {}", payload, err);
+pub fn deserialize(from: &str, payload: String, err: serde_yaml::Error) -> ProxyError {
+    let string = format!(
+        "from: {}, payload: '{}', msg from serde_yaml: {}",
+        from, payload, err
+    );
     ProxyError::Deserialize(string)
 }
 
@@ -107,7 +125,7 @@ pub fn esome<T>(option: Option<T>) -> T {
     }
 }
 
-pub fn eok_context<T, E: Display>(result: Result<T, E>, msg: &str) -> T {
+pub fn eok_ctx<T, E: Display>(result: Result<T, E>, msg: &str) -> T {
     match result {
         Ok(value) => value,
         Err(e) => {
@@ -117,7 +135,7 @@ pub fn eok_context<T, E: Display>(result: Result<T, E>, msg: &str) -> T {
     }
 }
 
-pub fn esome_context<T>(option: Option<T>, msg: &str) -> T {
+pub fn esome_ctx<T>(option: Option<T>, msg: &str) -> T {
     match option {
         Some(value) => value,
         None => {

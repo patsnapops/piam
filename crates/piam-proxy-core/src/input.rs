@@ -1,10 +1,23 @@
-use std::fmt::Debug;
+//! A parser module can be implemented to parse the request and return a [`Input`] struct.
 
-use crate::{config::ParserConfig, error::ProxyResult, type_alias::HttpRequest};
+use std::{fmt, fmt::Debug};
 
-pub trait Input: Sized + Debug {
-    type Config: ParserConfig;
+pub type ParserResult<T> = Result<T, ParserError>;
 
-    /// Some type of request needs config to be parsed, such as s3 request, which needs host.
-    fn from_http(req: &HttpRequest, config: Option<&Self::Config>) -> ProxyResult<Self>;
+pub enum ParserError {
+    OperationNotSupported(String),
+    InvalidEndpoint(String),
+    Internal(String),
 }
+
+impl fmt::Display for ParserError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            ParserError::OperationNotSupported(msg) => write!(f, "OperationNotSupported: {}", msg),
+            ParserError::InvalidEndpoint(msg) => write!(f, "InvalidEndpoint: {}", msg),
+            ParserError::Internal(msg) => write!(f, "Internal: {}", msg),
+        }
+    }
+}
+
+pub trait Input: Sized + Debug {}

@@ -1,10 +1,21 @@
+#![allow(unused)]
+
+use patsnap_constants::{
+    account::{ANY, AWS_DATA_0066, AWS_DEV_9554, AWS_PROD_3977, AWS_PROD_7478, TENCENT_4258},
+    policy_model::OBJECT_STORAGE,
+    region::Region,
+};
+use piam_common::manager_api::{CONDITION_MODEL, VERSION};
+use piam_object_storage::{
+    parser_s3::S3HostDomains,
+    policy::{Bucket, Key, ObjectStorageInputPolicy, ObjectStoragePolicy},
+};
 use piam_proxy_core::{
     account::aws::AwsAccount,
-    config::{AP_SHANGHAI, CN_NORTHWEST_1, NA_ASHBURN, US_EAST_1},
     effect::Effect,
     group::Group,
     policy::{
-        object_storage_policy::{Bucket, Key, ObjectStorageInputStatement, ObjectStorageStatement},
+        condition::{ConditionPolicy, ConditionRange},
         Name, Policy,
     },
     principal::{User, UserKind},
@@ -13,44 +24,37 @@ use piam_proxy_core::{
 use redis::Commands;
 use serde::{ser, Deserialize, Serialize};
 
-const OBJECT_STORAGE: &str = "ObjectStorage";
-const CN_AWS_DEV_9554: &str = "cn_aws_dev_9554";
-const CN_AWS_PROD_3977: &str = "cn_aws_prod_3977";
-const US_AWS_PROD_7478: &str = "us_aws_prod_7478";
-const US_AWS_DATA_0066: &str = "us_aws_data_0066";
-const CN_TENCENT_4258: &str = "cn_tencent_4258";
-
 pub fn make_accounts() -> Vec<AwsAccount> {
     let account_cn_aws_dev_9554 = AwsAccount {
-        id: CN_AWS_DEV_9554.into(),
+        id: AWS_DEV_9554.into(),
         code: "9554".into(),
         access_key: "AKIA545RXJQZANGAE744".into(),
         secret_key: "".into(),
         comment: "piam cn_aws_dev_9554".to_string(),
     };
     let account_cn_aws_prod_3977 = AwsAccount {
-        id: CN_AWS_PROD_3977.into(),
+        id: AWS_PROD_3977.into(),
         code: "3977".into(),
         access_key: "AKIAVZG6PPVKGB77FSFI".into(),
         secret_key: "".into(),
         comment: "".to_string(),
     };
     let account_us_aws_prod_7478 = AwsAccount {
-        id: US_AWS_PROD_7478.into(),
+        id: AWS_PROD_7478.into(),
         code: "7478".into(),
         access_key: "AKIA24IGUMII4I3EGYOU".into(),
         secret_key: "".into(),
         comment: "".to_string(),
     };
     let account_us_aws_data_0066 = AwsAccount {
-        id: US_AWS_DATA_0066.into(),
+        id: AWS_DATA_0066.into(),
         code: "0066".into(),
         access_key: "AKIAQDDYEQIRTBKNVKFR".into(),
         secret_key: "".into(),
         comment: "".to_string(),
     };
     let account_cn_tencent_4258 = AwsAccount {
-        id: CN_TENCENT_4258.to_string(),
+        id: TENCENT_4258.to_string(),
         code: "4258".to_string(),
         access_key: "AKIDlT7kM0dGqOwS1Y4b7fjFkDdCospljYFm".to_string(),
         secret_key: "".to_string(),
@@ -126,6 +130,16 @@ pub fn user_3_zsz0() -> User {
     }
 }
 
+pub fn user_3_whl0() -> User {
+    User {
+        id: "e1a6a911-9785-49e0-bb81-b25c9914b5d5".to_string(),
+        name: "王海龙".to_string(),
+        base_access_key: "AKPSPERS03WHL0Z".to_string(),
+        secret: "".to_string(),
+        kind: Default::default(),
+    }
+}
+
 pub fn user_svcs_d_data_rd_processing_batch_qa() -> User {
     User {
         id: "82b52b79-4130-4846-9779-1ead6f0710dc".to_string(),
@@ -193,6 +207,7 @@ pub fn make_users() -> Vec<User> {
         user_3_qwt0(),
         user_3_fxd0(),
         user_3_zsz0(),
+        user_3_whl0(),
         user_svcs_d_data_rd_processing_batch_qa(),
         user_svcs_d_data_dwc_script(),
         user_svcs_d_data_image_sync_recover(),
@@ -237,6 +252,13 @@ pub fn group_3_zsz0() -> Group {
     }
 }
 
+pub fn group_3_whl0() -> Group {
+    Group {
+        id: "82c50056-9346-43a4-917a-f07d20a6ede9".to_string(),
+        name: "王海龙".to_string(),
+    }
+}
+
 pub fn group_team_data_services() -> Group {
     Group {
         id: "374c9ce4-0fca-4520-93c8-0a74529c07c8".to_string(),
@@ -265,6 +287,7 @@ pub fn make_groups() -> Vec<Group> {
         group_3_qwt0(),
         group_3_fxd0(),
         group_3_zsz0(),
+        group_3_whl0(),
         group_team_data_services(),
         group_svcs_opst(),
         group_data_tmp(),
@@ -287,18 +310,17 @@ fn base_s3_actions_with_delete() -> Vec<String> {
     base_s3actions
 }
 
-pub fn policy_os_7478_us_group_3_cjj0() -> Policy<ObjectStorageStatement> {
+pub fn policy_os_7478_us_group_3_cjj0() -> Policy<ObjectStoragePolicy> {
     // s3://data-processing-data/bigdata/caojinjuan
     Policy {
         kind: OBJECT_STORAGE.to_string(),
         version: 1,
         id: "c688c143-6575-4a54-b00b-e81f7dc22f3c".to_string(),
         name: "policy_os_7478_us_group_3_cjj0".to_string(),
-        conditions: None,
-        statements: vec![ObjectStorageStatement {
+        modeled_policy: vec![ObjectStoragePolicy {
             version: 1,
             id: "ca368e22-4a2b-4daa-802b-112e3b81389d".to_string(),
-            input_statement: ObjectStorageInputStatement {
+            input_policy: ObjectStorageInputPolicy {
                 actions: Some(base_s3_actions_with_delete()),
                 bucket: Bucket {
                     name: Some(Name {
@@ -316,21 +338,21 @@ pub fn policy_os_7478_us_group_3_cjj0() -> Policy<ObjectStorageStatement> {
             },
             ..Default::default()
         }],
+        ..Default::default()
     }
 }
 
-pub fn policy_os_3977_cn_group_3_shf0() -> Policy<ObjectStorageStatement> {
+pub fn policy_os_3977_cn_group_3_shf0() -> Policy<ObjectStoragePolicy> {
     // s3://datalake-internal.patsnap.com-cn-northwest-1/tmp
     Policy {
         kind: OBJECT_STORAGE.to_string(),
         version: 1,
         id: "1504a97e-bd1d-4e5a-9397-7f2f7764a188".to_string(),
         name: "policy_os_3977_cn_group_3_shf0".to_string(),
-        conditions: None,
-        statements: vec![ObjectStorageStatement {
+        modeled_policy: vec![ObjectStoragePolicy {
             version: 1,
             id: "46cfbfb7-2104-4d09-96bd-1338a94366be".to_string(),
-            input_statement: ObjectStorageInputStatement {
+            input_policy: ObjectStorageInputPolicy {
                 actions: Some(base_s3_actions_with_delete()),
                 bucket: Bucket {
                     name: Some(Name {
@@ -348,21 +370,21 @@ pub fn policy_os_3977_cn_group_3_shf0() -> Policy<ObjectStorageStatement> {
             },
             ..Default::default()
         }],
+        ..Default::default()
     }
 }
 
-pub fn policy_os_3977_cn_group_3_qwt0() -> Policy<ObjectStorageStatement> {
+pub fn policy_os_3977_cn_group_3_qwt0() -> Policy<ObjectStoragePolicy> {
     // cos://patsnap-country-source-1251949819/LEGAL/JP/REEXAM/DETAIL/
     Policy {
         kind: OBJECT_STORAGE.to_string(),
         version: 1,
         id: "d3337c4b-33df-47be-980b-6dd31a67ca1b".to_string(),
         name: "policy_os_3977_cn_group_3_qwt0".to_string(),
-        conditions: None,
-        statements: vec![ObjectStorageStatement {
+        modeled_policy: vec![ObjectStoragePolicy {
             version: 1,
             id: "8aaba6e7-0ad9-469f-9713-0c73c12b927e".to_string(),
-            input_statement: ObjectStorageInputStatement {
+            input_policy: ObjectStorageInputPolicy {
                 actions: Some(base_s3_actions()),
                 bucket: Bucket {
                     name: Some(Name {
@@ -380,21 +402,21 @@ pub fn policy_os_3977_cn_group_3_qwt0() -> Policy<ObjectStorageStatement> {
             },
             ..Default::default()
         }],
+        ..Default::default()
     }
 }
 
-pub fn policy_os_4258_us_group_3_fxd0() -> Policy<ObjectStorageStatement> {
+pub fn policy_os_4258_us_group_3_fxd0() -> Policy<ObjectStoragePolicy> {
     // cos://patsnap-country-source-1251949819/LITIGATION
     Policy {
         kind: OBJECT_STORAGE.to_string(),
         version: 1,
         id: "af6ac00e-914a-4683-9e84-04513f8c92d4".to_string(),
         name: "policy_os_4258_us_group_3_fxd0".to_string(),
-        conditions: None,
-        statements: vec![ObjectStorageStatement {
+        modeled_policy: vec![ObjectStoragePolicy {
             version: 1,
             id: "19b81e6d-ea2f-44a6-ac36-74bdbee1190f".to_string(),
-            input_statement: ObjectStorageInputStatement {
+            input_policy: ObjectStorageInputPolicy {
                 actions: Some(base_s3_actions()),
                 bucket: Bucket {
                     name: Some(Name {
@@ -412,10 +434,11 @@ pub fn policy_os_4258_us_group_3_fxd0() -> Policy<ObjectStorageStatement> {
             },
             ..Default::default()
         }],
+        ..Default::default()
     }
 }
 
-pub fn policy_os_0066_us_group_3_zsz0() -> Policy<ObjectStorageStatement> {
+pub fn policy_os_0066_us_group_3_zsz0() -> Policy<ObjectStoragePolicy> {
     // s3://patsnap-country-source
     // s3://testpatsnapus
     Policy {
@@ -423,11 +446,10 @@ pub fn policy_os_0066_us_group_3_zsz0() -> Policy<ObjectStorageStatement> {
         version: 1,
         id: "c9f3b3f1-3b1a-4b0f-8b1a-3b1a4b0f8b1a".to_string(),
         name: "policy_os_0066_us_group_3_zsz0".to_string(),
-        conditions: None,
-        statements: vec![ObjectStorageStatement {
+        modeled_policy: vec![ObjectStoragePolicy {
             version: 1,
             id: "c9c250d6-95a9-4f22-be41-78bdae330d7a".to_string(),
-            input_statement: ObjectStorageInputStatement {
+            input_policy: ObjectStorageInputPolicy {
                 actions: Some(base_s3_actions()),
                 bucket: Bucket {
                     name: Some(Name {
@@ -448,21 +470,21 @@ pub fn policy_os_0066_us_group_3_zsz0() -> Policy<ObjectStorageStatement> {
             },
             ..Default::default()
         }],
+        ..Default::default()
     }
 }
 
-pub fn policy_os_4258_us_group_3_zsz0() -> Policy<ObjectStorageStatement> {
+pub fn policy_os_4258_us_group_3_zsz0() -> Policy<ObjectStoragePolicy> {
     // cos://patsnap-country-source-1251949819
     Policy {
         kind: OBJECT_STORAGE.to_string(),
         version: 1,
         id: "b41a95b9-fbb7-41ca-9392-69fc6928f592".to_string(),
         name: "policy_os_4258_us_group_3_zsz0".to_string(),
-        conditions: None,
-        statements: vec![ObjectStorageStatement {
+        modeled_policy: vec![ObjectStoragePolicy {
             version: 1,
             id: "053e952b-a03f-453d-b9a3-a6c9d784d740".to_string(),
-            input_statement: ObjectStorageInputStatement {
+            input_policy: ObjectStorageInputPolicy {
                 actions: Some(base_s3_actions()),
                 bucket: Bucket {
                     name: Some(Name {
@@ -480,10 +502,43 @@ pub fn policy_os_4258_us_group_3_zsz0() -> Policy<ObjectStorageStatement> {
             },
             ..Default::default()
         }],
+        ..Default::default()
     }
 }
 
-pub fn policy_os_7478_us_east00000_1_group_team_data_services() -> Policy<ObjectStorageStatement> {
+pub fn policy_os_0066_us_group_3_whl0() -> Policy<ObjectStoragePolicy> {
+    // s3://testpatsnapus
+    Policy {
+        kind: OBJECT_STORAGE.to_string(),
+        version: 1,
+        id: "fca756ea-042d-40d9-857d-0861147cdae7".to_string(),
+        name: "policy_os_0066_us_group_3_whl0".to_string(),
+        modeled_policy: vec![ObjectStoragePolicy {
+            version: 1,
+            id: "60b8ac47-2e10-4410-a593-8f4805e8074f".to_string(),
+            input_policy: ObjectStorageInputPolicy {
+                actions: Some(base_s3_actions()),
+                bucket: Bucket {
+                    name: Some(Name {
+                        eq: Some(vec!["testpatsnapus".into()]),
+                        start_with: None,
+                    }),
+                    effect: Some(Effect::allow()),
+                    keys: Some(vec![Key {
+                        effect: Some(Effect::allow()),
+                        ..Default::default()
+                    }]),
+                    ..Default::default()
+                },
+                ..Default::default()
+            },
+            ..Default::default()
+        }],
+        ..Default::default()
+    }
+}
+
+pub fn policy_os_7478_us_east00000_1_group_team_data_services() -> Policy<ObjectStoragePolicy> {
     // 7478 s3://discovery-attachment-us-east-1/data/drug_approvals_v2/pmda/pdf/*.pdf
     // 7478 s3://datalake-internal.patsnap.com/dpp/rd_process/test_parser_title_CN_v1_offline/
     Policy {
@@ -491,11 +546,10 @@ pub fn policy_os_7478_us_east00000_1_group_team_data_services() -> Policy<Object
         version: 1,
         id: "9d216c69-d9db-4720-8146-c5b2be6681bb".to_string(),
         name: "policy_os_7478_us_east00000_1_group_team_data_services".to_string(),
-        conditions: None,
-        statements: vec![ObjectStorageStatement {
+        modeled_policy: vec![ObjectStoragePolicy {
             version: 0,
             id: "63ae2d4c-5165-47ef-bcd7-203fc83b130a".to_string(),
-            input_statement: ObjectStorageInputStatement {
+            input_policy: ObjectStorageInputPolicy {
                 actions: Some(base_s3_actions()),
                 bucket: Bucket {
                     name: Some(Name {
@@ -515,22 +569,22 @@ pub fn policy_os_7478_us_east00000_1_group_team_data_services() -> Policy<Object
                 },
                 ..Default::default()
             },
-            output_statement: None,
+            output_policy: None,
         }],
+        ..Default::default()
     }
 }
 
-pub fn policy_os_3977_cn_northwest_1_group_team_data_services() -> Policy<ObjectStorageStatement> {
+pub fn policy_os_3977_cn_northwest_1_group_team_data_services() -> Policy<ObjectStoragePolicy> {
     Policy {
         kind: OBJECT_STORAGE.to_string(),
         version: 1,
         id: "ba8cf2e6-ed3e-4c32-a054-48d86abee06e".to_string(),
         name: "policy_os_3977_cn_northwest_1_group_team_data_services".to_string(),
-        conditions: None,
-        statements: vec![ObjectStorageStatement {
+        modeled_policy: vec![ObjectStoragePolicy {
             version: 0,
             id: "944bf4ba-7618-4d28-9eda-52f9ef1750f0".to_string(),
-            input_statement: ObjectStorageInputStatement {
+            input_policy: ObjectStorageInputPolicy {
                 actions: Some(base_s3_actions()),
                 bucket: Bucket {
                     name: Some(Name {
@@ -557,22 +611,22 @@ pub fn policy_os_3977_cn_northwest_1_group_team_data_services() -> Policy<Object
                 },
                 ..Default::default()
             },
-            output_statement: None,
+            output_policy: None,
         }],
+        ..Default::default()
     }
 }
 
-pub fn policy_os_0066_us_east00000_1_group_team_data_services() -> Policy<ObjectStorageStatement> {
+pub fn policy_os_0066_us_east00000_1_group_team_data_services() -> Policy<ObjectStoragePolicy> {
     Policy {
         kind: OBJECT_STORAGE.to_string(),
         version: 1,
         id: "00a85912-02cc-40cd-8f0c-baed0409f23b".to_string(),
         name: "policy_os_0066_us_east00000_1_group_team_data_services".to_string(),
-        conditions: None,
-        statements: vec![ObjectStorageStatement {
+        modeled_policy: vec![ObjectStoragePolicy {
             version: 0,
             id: "1ff4803e-7745-47ad-a11e-f6c62595db49".to_string(),
-            input_statement: ObjectStorageInputStatement {
+            input_policy: ObjectStorageInputPolicy {
                 actions: Some(base_s3_actions_with_delete()),
                 bucket: Bucket {
                     tag: None,
@@ -585,22 +639,22 @@ pub fn policy_os_0066_us_east00000_1_group_team_data_services() -> Policy<Object
                 },
                 ..Default::default()
             },
-            output_statement: None,
+            output_policy: None,
         }],
+        ..Default::default()
     }
 }
 
-pub fn policy_os_4258_na_ashburn0000_group_team_data_services() -> Policy<ObjectStorageStatement> {
+pub fn policy_os_4258_na_ashburn0000_group_team_data_services() -> Policy<ObjectStoragePolicy> {
     Policy {
         kind: OBJECT_STORAGE.to_string(),
         version: 1,
         id: "8be9190d-e7b1-4398-ae62-95afc5c69b0b".to_string(),
         name: "policy_os_4258_na_ashburn0000_group_team_data_services".to_string(),
-        conditions: None,
-        statements: vec![ObjectStorageStatement {
+        modeled_policy: vec![ObjectStoragePolicy {
             version: 0,
             id: "81eec3f4-a4d4-46f0-97fe-10635a2f8632".to_string(),
-            input_statement: ObjectStorageInputStatement {
+            input_policy: ObjectStorageInputPolicy {
                 actions: Some(base_s3_actions_with_delete()),
                 bucket: Bucket {
                     name: Some(Name {
@@ -616,22 +670,22 @@ pub fn policy_os_4258_na_ashburn0000_group_team_data_services() -> Policy<Object
                 },
                 ..Default::default()
             },
-            output_statement: None,
+            output_policy: None,
         }],
+        ..Default::default()
     }
 }
 
-pub fn policy_os_opst_for_all() -> Policy<ObjectStorageStatement> {
+pub fn policy_os_opst_for_all() -> Policy<ObjectStoragePolicy> {
     Policy {
         kind: OBJECT_STORAGE.to_string(),
         version: 1,
         id: "05e75fbf-81dc-4962-9c78-9bab8d4fc926".to_string(),
         name: "policy_os_opst_for_all".to_string(),
-        conditions: None,
-        statements: vec![ObjectStorageStatement {
+        modeled_policy: vec![ObjectStoragePolicy {
             version: 0,
             id: "23b22c98-b71b-41ad-93bf-fcdb72700d98".to_string(),
-            input_statement: ObjectStorageInputStatement {
+            input_policy: ObjectStorageInputPolicy {
                 actions: Some(base_s3_actions_with_delete()),
                 bucket: Bucket {
                     tag: None,
@@ -644,22 +698,22 @@ pub fn policy_os_opst_for_all() -> Policy<ObjectStorageStatement> {
                 },
                 ..Default::default()
             },
-            output_statement: None,
+            output_policy: None,
         }],
+        ..Default::default()
     }
 }
 
-pub fn policy_os_7478_us_east00000_1_group_data_tmp() -> Policy<ObjectStorageStatement> {
+pub fn policy_os_7478_us_east00000_1_group_data_tmp() -> Policy<ObjectStoragePolicy> {
     Policy {
         kind: OBJECT_STORAGE.to_string(),
         version: 1,
         id: "bd4558d4-c0d6-4045-afd5-902d6714c021".to_string(),
         name: "policy_os_7478_us_east00000_1_group_data_tmp".to_string(),
-        conditions: None,
-        statements: vec![ObjectStorageStatement {
+        modeled_policy: vec![ObjectStoragePolicy {
             version: 0,
             id: "c114362f-aa1a-4cfc-8b5d-5eca3d37b068".to_string(),
-            input_statement: ObjectStorageInputStatement {
+            input_policy: ObjectStorageInputPolicy {
                 actions: Some(base_s3_actions()),
                 bucket: Bucket {
                     tag: None,
@@ -672,22 +726,22 @@ pub fn policy_os_7478_us_east00000_1_group_data_tmp() -> Policy<ObjectStorageSta
                 },
                 ..Default::default()
             },
-            output_statement: None,
+            output_policy: None,
         }],
+        ..Default::default()
     }
 }
 
-pub fn policy_os_3977_cn_northwest_1_group_data_tmp() -> Policy<ObjectStorageStatement> {
+pub fn policy_os_3977_cn_northwest_1_group_data_tmp() -> Policy<ObjectStoragePolicy> {
     Policy {
         kind: OBJECT_STORAGE.to_string(),
         version: 1,
         id: "35b1e920-0856-4965-aed4-7ced267ee4d5".to_string(),
         name: "policy_os_3977_cn_northwest_1_group_data_tmp".to_string(),
-        conditions: None,
-        statements: vec![ObjectStorageStatement {
+        modeled_policy: vec![ObjectStoragePolicy {
             version: 0,
             id: "238925f9-9a61-4cc1-ac04-712c42f14ff6".to_string(),
-            input_statement: ObjectStorageInputStatement {
+            input_policy: ObjectStorageInputPolicy {
                 actions: Some(base_s3_actions()),
                 bucket: Bucket {
                     tag: None,
@@ -700,12 +754,31 @@ pub fn policy_os_3977_cn_northwest_1_group_data_tmp() -> Policy<ObjectStorageSta
                 },
                 ..Default::default()
             },
-            output_statement: None,
+            output_policy: None,
+        }],
+        ..Default::default()
+    }
+}
+
+pub fn policy_allow_private_ip() -> Policy<ConditionPolicy> {
+    Policy {
+        kind: CONDITION_MODEL.to_string(),
+        version: 0,
+        id: "EA70AC12-ACB9-438A-BC3A-904FBCE4DD22".to_string(),
+        name: "policy_allow_private_ip".to_string(),
+        modeled_policy: vec![ConditionPolicy {
+            version: 0,
+            id: "A7013E3B-A225-4AF8-8747-A0745B794104".to_string(),
+            range: ConditionRange {
+                ip_cidr_range: Some(ConditionRange::private_ip_cidr()),
+                region_range: None,
+            },
+            effect: Effect::allow(),
         }],
     }
 }
 
-pub fn make_policies_object_storage() -> Vec<Policy<ObjectStorageStatement>> {
+pub fn make_policies_object_storage() -> Vec<Policy<ObjectStoragePolicy>> {
     vec![
         policy_os_7478_us_group_3_cjj0(),
         policy_os_3977_cn_group_3_shf0(),
@@ -713,6 +786,7 @@ pub fn make_policies_object_storage() -> Vec<Policy<ObjectStorageStatement>> {
         policy_os_4258_us_group_3_fxd0(),
         policy_os_0066_us_group_3_zsz0(),
         policy_os_4258_us_group_3_zsz0(),
+        policy_os_0066_us_group_3_whl0(),
         policy_os_7478_us_east00000_1_group_team_data_services(),
         policy_os_3977_cn_northwest_1_group_team_data_services(),
         policy_os_0066_us_east00000_1_group_team_data_services(),
@@ -723,6 +797,10 @@ pub fn make_policies_object_storage() -> Vec<Policy<ObjectStorageStatement>> {
     ]
 }
 
+pub fn make_policies_condition() -> Vec<Policy<ConditionPolicy>> {
+    vec![policy_allow_private_ip()]
+}
+
 pub fn make_user_group_relationships() -> Vec<UserGroupRelationship> {
     let group_team_data_services: Vec<UserGroupRelationship> = vec![
         user_svcs_d_data_rd_processing_batch_qa(),
@@ -731,42 +809,56 @@ pub fn make_user_group_relationships() -> Vec<UserGroupRelationship> {
     ]
     .into_iter()
     .map(|u| UserGroupRelationship {
+        id: "4bf47344-63b3-466a-afd0-5f9368af2816".to_string(),
         user_id: u.id,
         group_id: group_team_data_services().id,
     })
     .collect();
     let group_persons = vec![
         UserGroupRelationship {
+            id: "e0e80393-f471-4fd4-986b-1cf26d583534".to_string(),
             user_id: user_3_cjj0().id,
             group_id: group_3_cjj0().id,
         },
         UserGroupRelationship {
+            id: "7f0a03c0-5549-4416-9a05-bb1dd04eb90b".to_string(),
             user_id: user_3_shf0().id,
             group_id: group_3_shf0().id,
         },
         UserGroupRelationship {
+            id: "6850beed-4170-404b-9d21-a724de852e5b".to_string(),
             user_id: user_3_qwt0().id,
             group_id: group_3_qwt0().id,
         },
         UserGroupRelationship {
+            id: "85091850-22fe-47dd-82a3-a3f87e85bc33".to_string(),
             user_id: user_3_fxd0().id,
             group_id: group_3_fxd0().id,
         },
         UserGroupRelationship {
+            id: "50905fd4-4b1a-4470-88a4-f7acf3f5ee91".to_string(),
             user_id: user_3_zsz0().id,
             group_id: group_3_zsz0().id,
         },
+        UserGroupRelationship {
+            id: "7cd34871-7454-4bb6-b246-7f62b95cff18".to_string(),
+            user_id: user_3_whl0().id,
+            group_id: group_3_whl0().id,
+        },
     ];
     let group_opst = vec![UserGroupRelationship {
+        id: "98553c33-2f33-4820-a610-c23acce7bb6a".to_string(),
         user_id: user_svcs_opst().id,
         group_id: group_svcs_opst().id,
     }];
     let group_data_tmp = vec![
         UserGroupRelationship {
+            id: "b2e23c95-a130-4912-a28d-dcae4e19cb61".to_string(),
             user_id: user_team_data_tmp().id,
             group_id: group_data_tmp().id,
         },
         UserGroupRelationship {
+            id: "f6d0c87c-9962-45dd-ad9f-64818f75e6b4".to_string(),
             user_id: user_svcs_data_tmp().id,
             group_id: group_data_tmp().id,
         },
@@ -782,198 +874,250 @@ pub fn make_user_group_relationships() -> Vec<UserGroupRelationship> {
 pub fn make_policy_relationships() -> Vec<PolicyRelationship> {
     vec![
         PolicyRelationship {
+            id: "cff6f6d1-4d4a-4bdc-9636-4712da88962f".to_string(),
             policy_model: OBJECT_STORAGE.to_string(),
             user_id: None,
             group_id: Some(group_3_cjj0().id),
             role_id: None,
-            account_id: US_AWS_PROD_7478.to_string(),
-            region: US_EAST_1.to_string(),
+            account_id: AWS_PROD_7478.to_string(),
+            region: Region::UsEast1.into(),
             policy_id: policy_os_7478_us_group_3_cjj0().id,
+            ..Default::default()
         },
         PolicyRelationship {
+            id: "c0b0b0b0-4d4a-4bdc-9636-4712da88962f".to_string(),
             policy_model: OBJECT_STORAGE.to_string(),
             user_id: None,
             group_id: Some(group_3_shf0().id),
             role_id: None,
-            account_id: CN_AWS_PROD_3977.to_string(),
-            region: CN_NORTHWEST_1.to_string(),
+            account_id: AWS_PROD_3977.to_string(),
+            region: Region::CnNorthwest1.into(),
             policy_id: policy_os_3977_cn_group_3_shf0().id,
+            ..Default::default()
         },
         PolicyRelationship {
+            id: "ae14e161-3357-46a5-b771-31abfdf80826".to_string(),
             policy_model: OBJECT_STORAGE.to_string(),
             user_id: None,
             group_id: Some(group_3_qwt0().id),
             role_id: None,
             account_id: "us_tencent_4258".to_string(),
-            region: NA_ASHBURN.to_string(),
+            region: Region::NaAshburn.into(),
             policy_id: policy_os_3977_cn_group_3_qwt0().id,
+            ..Default::default()
         },
         PolicyRelationship {
+            id: "ae14e161-3357-46a5-b771-31abfdf80827".to_string(),
             policy_model: OBJECT_STORAGE.to_string(),
             user_id: None,
             group_id: Some(group_3_fxd0().id),
             role_id: None,
             account_id: "us_tencent_4258".to_string(),
-            region: NA_ASHBURN.to_string(),
+            region: Region::NaAshburn.into(),
             policy_id: policy_os_4258_us_group_3_fxd0().id,
+            ..Default::default()
         },
         PolicyRelationship {
+            id: "ae14e161-3357-46a5-b771-31abfdf80828".to_string(),
             policy_model: OBJECT_STORAGE.to_string(),
             user_id: None,
             group_id: Some(group_3_zsz0().id),
             role_id: None,
-            account_id: US_AWS_DATA_0066.to_string(),
-            region: US_EAST_1.to_string(),
+            account_id: AWS_DATA_0066.to_string(),
+            region: Region::UsEast1.into(),
             policy_id: policy_os_0066_us_group_3_zsz0().id,
+            ..Default::default()
         },
         PolicyRelationship {
+            id: "ae14e161-3357-46a5-b771-31abfdf80829".to_string(),
             policy_model: OBJECT_STORAGE.to_string(),
             user_id: None,
             group_id: Some(group_3_zsz0().id),
             role_id: None,
             account_id: "us_tencent_4258".to_string(),
-            region: NA_ASHBURN.to_string(),
+            region: Region::NaAshburn.into(),
             policy_id: policy_os_4258_us_group_3_zsz0().id,
+            ..Default::default()
+        },
+        PolicyRelationship {
+            id: "ae14e161-3357-46a5-b771-31abfdf80830".to_string(),
+            policy_model: OBJECT_STORAGE.to_string(),
+            user_id: None,
+            group_id: Some(group_3_whl0().id),
+            role_id: None,
+            account_id: AWS_DATA_0066.to_string(),
+            region: Region::UsEast1.into(),
+            policy_id: policy_os_0066_us_group_3_whl0().id,
+            ..Default::default()
         },
         // svcs
         PolicyRelationship {
+            id: "ae14e161-3357-46a5-b771-31abfdf80831".to_string(),
             policy_model: OBJECT_STORAGE.to_string(),
             user_id: None,
             group_id: Some(group_team_data_services().id),
             role_id: None,
-            account_id: US_AWS_PROD_7478.to_string(),
-            region: US_EAST_1.to_string(),
+            account_id: AWS_PROD_7478.to_string(),
+            region: Region::UsEast1.into(),
             policy_id: policy_os_7478_us_east00000_1_group_team_data_services().id,
+            ..Default::default()
         },
         PolicyRelationship {
+            id: "ae14e161-3357-46a5-b771-31abfdf80832".to_string(),
             policy_model: OBJECT_STORAGE.to_string(),
             user_id: None,
             group_id: Some(group_team_data_services().id),
             role_id: None,
-            account_id: CN_AWS_PROD_3977.to_string(),
-            region: CN_NORTHWEST_1.to_string(),
+            account_id: AWS_PROD_3977.to_string(),
+            region: Region::CnNorthwest1.into(),
             policy_id: policy_os_3977_cn_northwest_1_group_team_data_services().id,
+            ..Default::default()
         },
         PolicyRelationship {
+            id: "ae14e161-3357-46a5-b771-31abfdf80833".to_string(),
             policy_model: OBJECT_STORAGE.to_string(),
             user_id: None,
             group_id: Some(group_team_data_services().id),
             role_id: None,
-            account_id: US_AWS_DATA_0066.to_string(),
-            region: US_EAST_1.to_string(),
+            account_id: AWS_DATA_0066.to_string(),
+            region: Region::UsEast1.into(),
             policy_id: policy_os_0066_us_east00000_1_group_team_data_services().id,
+            ..Default::default()
         },
         PolicyRelationship {
+            id: "ae14e161-3357-46a5-b771-31abfdf80834".to_string(),
             policy_model: OBJECT_STORAGE.to_string(),
             user_id: None,
             group_id: Some(group_team_data_services().id),
             role_id: None,
             account_id: "us_tencent_4258".to_string(),
-            region: NA_ASHBURN.to_string(),
+            region: Region::NaAshburn.into(),
             policy_id: policy_os_4258_na_ashburn0000_group_team_data_services().id,
+            ..Default::default()
         },
         PolicyRelationship {
+            id: "ae14e161-3357-46a5-b771-31abfdf80835".to_string(),
             policy_model: OBJECT_STORAGE.to_string(),
             user_id: None,
             group_id: Some(group_team_data_services().id),
             role_id: None,
-            account_id: CN_TENCENT_4258.to_string(),
-            region: AP_SHANGHAI.to_string(),
+            account_id: TENCENT_4258.to_string(),
+            region: Region::ApShanghai.into(),
             policy_id: policy_os_4258_na_ashburn0000_group_team_data_services().id,
+            ..Default::default()
         },
         // opst
         PolicyRelationship {
+            id: "ae14e161-3357-46a5-b771-31abfdf80836".to_string(),
             policy_model: OBJECT_STORAGE.to_string(),
             user_id: None,
             group_id: Some(group_svcs_opst().id),
             role_id: None,
-            account_id: US_AWS_PROD_7478.to_string(),
-            region: US_EAST_1.to_string(),
+            account_id: AWS_PROD_7478.to_string(),
+            region: Region::UsEast1.into(),
             policy_id: policy_os_opst_for_all().id,
+            ..Default::default()
         },
         PolicyRelationship {
+            id: "ae14e161-3357-46a5-b771-31abfdf80837".to_string(),
             policy_model: OBJECT_STORAGE.to_string(),
             user_id: None,
             group_id: Some(group_svcs_opst().id),
             role_id: None,
-            account_id: US_AWS_DATA_0066.to_string(),
-            region: US_EAST_1.to_string(),
+            account_id: AWS_DATA_0066.to_string(),
+            region: Region::UsEast1.into(),
             policy_id: policy_os_opst_for_all().id,
+            ..Default::default()
         },
         PolicyRelationship {
+            id: "ae14e161-3357-46a5-b771-31abfdf80838".to_string(),
             policy_model: OBJECT_STORAGE.to_string(),
             user_id: None,
             group_id: Some(group_svcs_opst().id),
             role_id: None,
-            account_id: CN_AWS_PROD_3977.to_string(),
-            region: CN_NORTHWEST_1.to_string(),
+            account_id: AWS_PROD_3977.to_string(),
+            region: Region::CnNorthwest1.into(),
             policy_id: policy_os_opst_for_all().id,
+            ..Default::default()
         },
         PolicyRelationship {
+            id: "ae14e161-3357-46a5-b771-31abfdf80839".to_string(),
             policy_model: OBJECT_STORAGE.to_string(),
             user_id: None,
             group_id: Some(group_svcs_opst().id),
             role_id: None,
-            account_id: CN_AWS_DEV_9554.to_string(),
-            region: CN_NORTHWEST_1.to_string(),
+            account_id: AWS_DEV_9554.to_string(),
+            region: Region::CnNorthwest1.into(),
             policy_id: policy_os_opst_for_all().id,
+            ..Default::default()
         },
         PolicyRelationship {
+            id: "ae14e161-3357-46a5-b771-31abfdf80840".to_string(),
             policy_model: OBJECT_STORAGE.to_string(),
             user_id: None,
             group_id: Some(group_svcs_opst().id),
             role_id: None,
             account_id: "us_tencent_4258".to_string(),
-            region: AP_SHANGHAI.to_string(),
+            region: Region::ApShanghai.into(),
             policy_id: policy_os_opst_for_all().id,
-        },
-        PolicyRelationship {
-            policy_model: OBJECT_STORAGE.to_string(),
-            user_id: None,
-            group_id: Some(group_svcs_opst().id),
-            role_id: None,
-            account_id: "us_tencent_4258".to_string(),
-            region: NA_ASHBURN.to_string(),
-            policy_id: policy_os_opst_for_all().id,
+            ..Default::default()
         },
         // data tmp
         PolicyRelationship {
+            id: "ae14e161-3357-46a5-b771-31abfdf80842".to_string(),
             policy_model: OBJECT_STORAGE.to_string(),
             user_id: None,
             group_id: Some(group_data_tmp().id),
             role_id: None,
-            account_id: US_AWS_PROD_7478.to_string(),
-            region: US_EAST_1.to_string(),
+            account_id: AWS_PROD_7478.to_string(),
+            region: Region::UsEast1.into(),
             policy_id: policy_os_7478_us_east00000_1_group_data_tmp().id,
+            ..Default::default()
         },
         PolicyRelationship {
+            id: "ae14e161-3357-46a5-b771-31abfdf80843".to_string(),
             policy_model: OBJECT_STORAGE.to_string(),
             user_id: None,
             group_id: Some(group_data_tmp().id),
             role_id: None,
-            account_id: CN_AWS_PROD_3977.to_string(),
-            region: CN_NORTHWEST_1.to_string(),
+            account_id: AWS_PROD_3977.to_string(),
+            region: Region::CnNorthwest1.into(),
             policy_id: policy_os_3977_cn_northwest_1_group_data_tmp().id,
+            ..Default::default()
+        },
+        // private ip
+        PolicyRelationship {
+            id: "5DB4761D-7371-4D0F-AE41-7B16B356101C".to_string(),
+            policy_model: CONDITION_MODEL.to_string(),
+            user_id: None,
+            group_id: None,
+            role_id: None,
+            account_id: ANY.to_string(),
+            region: Region::Any.into(),
+            policy_id: policy_allow_private_ip().id,
+            ..Default::default()
         },
     ]
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Default, Serialize, Deserialize)]
 pub struct S3Config {
-    pub proxy_hosts: Vec<String>,
+    pub proxy_hosts: S3HostDomains,
 }
 
 pub fn make_s3_config() -> S3Config {
     S3Config {
-        proxy_hosts: vec![
-            "internal.s3-proxy.patsnap.info".into(),
-            "us-east-1.s3-proxy.patsnap.info".into(),
-            "cn-northwest-1.s3-proxy.patsnap.info".into(),
-            "na-ashburn.s3-proxy.patsnap.info".into(),
-            "ap-shanghai.s3-proxy.patsnap.info".into(),
-            "local.s3-proxy.patsnap.info".into(),
-            "s3-proxy.dev".into(),
-        ],
+        proxy_hosts: S3HostDomains {
+            domains: vec![
+                "internal.s3-proxy.patsnap.info".into(),
+                "us-east-1.s3-proxy.patsnap.info".into(),
+                "cn-northwest-1.s3-proxy.patsnap.info".into(),
+                "na-ashburn.s3-proxy.patsnap.info".into(),
+                "ap-shanghai.s3-proxy.patsnap.info".into(),
+                "local.s3-proxy.patsnap.info".into(),
+                "s3-proxy.dev".into(),
+            ],
+        },
     }
 }
 
@@ -987,15 +1131,17 @@ fn write_all() {
     let users = ser(&make_users());
     let groups = ser(&make_groups());
     let policies_object_storage = ser(&make_policies_object_storage());
+    let policies_condition = ser(&make_policies_condition());
 
     let user_group_relationships = ser(&make_user_group_relationships());
     let policy_relationships = ser(&make_policy_relationships());
     let s3_config = ser(&make_s3_config());
 
-    // write("accounts", _accounts);
+    write("accounts", read_last_version("accounts"));
     write("users", users);
     write("groups", groups);
     write("policies:ObjectStorage", policies_object_storage);
+    write("policies:Condition", policies_condition);
 
     write("user_group_relationships", user_group_relationships);
     write("policy_relationships", policy_relationships);
@@ -1006,6 +1152,16 @@ pub fn write(key: &str, value: String) {
     let client = redis::Client::open("redis://dev-redis.patsnap.info:30070/1").unwrap();
     let client = redis::Client::open("redis://localhost/1").unwrap();
     let mut con = client.get_connection().unwrap();
-    let key = format!("piam:{}", key);
+    let key = format!("piam:{}:{}", VERSION, key);
     con.set(key, value).unwrap()
+}
+
+pub fn read_last_version(key: &str) -> String {
+    let client = redis::Client::open("redis://dev-redis.patsnap.info:30070/1").unwrap();
+    let client = redis::Client::open("redis://localhost/1").unwrap();
+    let mut con = client.get_connection().unwrap();
+    let last_version = VERSION.replace("v", "");
+    let last_version = last_version.parse::<i32>().unwrap() - 1;
+    let key = format!("piam:v{}:{}", last_version, key);
+    con.get(key).unwrap()
 }

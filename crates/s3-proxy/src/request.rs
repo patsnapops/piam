@@ -55,7 +55,7 @@ impl S3RequestTransform for HttpRequest {
 
     fn set_actual_host(&mut self, config: &S3Config, region: &str) -> ProxyResult<()> {
         let host = self.headers().get(HOST).unwrap().to_str().unwrap();
-        let proxy_host = config.find_proxy_host(host)?;
+        let proxy_host = config.proxy_hosts.find_proxy_host(host)?;
         let bucket_dot = host.strip_suffix(proxy_host).ok_or_else(|| {
             ProxyError::InvalidEndpoint(format!("host {} should end with {}", host, proxy_host))
         })?;

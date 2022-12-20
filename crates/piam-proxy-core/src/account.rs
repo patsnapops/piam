@@ -1,4 +1,4 @@
-//! Account is an abstraction of cloud accounts such as AWS account, GCP Account, Tencent Cloud Account, etc.
+//! Account is an abstraction of cloud accounts such as [`aws::AwsAccount`], GCP Account, Tencent Cloud Account, etc.
 
 use crate::type_alias::IamEntityIdType;
 

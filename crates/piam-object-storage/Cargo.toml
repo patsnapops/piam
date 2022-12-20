@@ -1,0 +1,19 @@
+[package]
+name = "piam-object-storage"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+piam-proxy-core = { path = "../piam-proxy-core" }
+serde = { version = "1.0", features = ["derive"] }
+strum_macros = "0.24"
+strum = { version = "0.24", features = ["derive"] }
+http = "0.2.8"
+serde_urlencoded = "0.7.1"
+
+[features]
+# Special requirement for s3 proxy: Using a unified access key (without account code at the end) to
+# access buckets across multiple accounts for each user
+s3-parser = []

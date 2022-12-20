@@ -1,6 +1,7 @@
 use async_trait::async_trait;
+use piam_object_storage::parser_s3::S3HostDomains;
 use piam_proxy_core::{
-    config::{dev_mode, ParserConfig},
+    config::dev_mode,
     error::{ProxyError, ProxyResult},
     manager_api::ManagerClient,
     state::GetNewState,
@@ -12,19 +13,17 @@ pub const SERVICE: &str = "s3";
 
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct S3Config {
-    pub proxy_hosts: Vec<String>,
+    pub proxy_hosts: S3HostDomains,
     #[cfg(feature = "uni-key")]
     pub uni_key_info: Option<crate::uni_key::UniKeyInfo>,
 }
-
-impl ParserConfig for S3Config {}
 
 #[async_trait]
 impl GetNewState for S3Config {
     async fn new_from_manager(manager: &ManagerClient) -> ProxyResult<Self> {
         let mut config: S3Config = manager.get_extended_config(SERVICE).await?;
         if dev_mode() {
-            config.proxy_hosts.push(DEV_PROXY_HOST.to_string());
+            config.proxy_hosts.domains.push(DEV_PROXY_HOST.to_string());
         }
         #[cfg(feature = "uni-key")]
         let config = {
@@ -36,20 +35,6 @@ impl GetNewState for S3Config {
 }
 
 impl S3Config {
-    pub fn find_proxy_host(&self, host: &str) -> ProxyResult<&str> {
-        let s = self
-            .proxy_hosts
-            .iter()
-            .find(|&v| host.ends_with(v))
-            .ok_or_else(|| {
-                ProxyError::InvalidEndpoint(format!(
-                    "'{}' is not ending with a valid piam s3 proxy endpoint",
-                    host
-                ))
-            })?;
-        Ok(s)
-    }
-
     #[cfg(feature = "uni-key")]
     pub fn get_uni_key_info(&self) -> ProxyResult<&crate::uni_key::UniKeyInfo> {
         self.uni_key_info
@@ -78,10 +63,12 @@ pub mod test {
     #[test]
     fn find_proxy_host() {
         let config = crate::config::S3Config {
-            proxy_hosts: vec!["cn-northwest-1.s3-proxy.patsnap.info".into()],
+            proxy_hosts: piam_object_storage::parser_s3::S3HostDomains {
+                domains: vec!["cn-northwest-1.s3-proxy.patsnap.info".into()],
+            },
             uni_key_info: None,
         };
-        let result = config.find_proxy_host(
+        let result = config.proxy_hosts.find_proxy_host(
             "datalake-internal.patsnap.com-cn-northwest-1.cn-northwest-1.s3-proxy.patsnap.info",
         );
         assert!(result.is_ok())
