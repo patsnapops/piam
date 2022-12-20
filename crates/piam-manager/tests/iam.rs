@@ -1165,3 +1165,5 @@ pub fn read_last_version(key: &str) -> String {
     let key = format!("piam:v{}:{}", last_version, key);
     con.get(key).unwrap()
 }
+
+// TODO now: write local / online by arg

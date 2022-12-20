@@ -117,4 +117,23 @@ pub mod policy_model {
     pub const OBJECT_STORAGE: &str = "ObjectStorage";
 }
 
+pub mod s3_proxy_endpoint {
+    pub const EP_INTERNAL: &str = "http://internal.s3-proxy.patsnap.info";
+    pub const EP_US_EAST_1: &str = "http://us-east-1.s3-proxy.patsnap.info";
+    pub const EP_CN_NORTHWEST_1: &str = "http://cn-northwest-1.s3-proxy.patsnap.info";
+    pub const EP_NA_ASHBURN: &str = "http://na-ashburn.s3-proxy.patsnap.info";
+    pub const EP_AP_SHANGHAI: &str = "http://ap-shanghai.s3-proxy.patsnap.info";
+    pub const EP_LOCAL: &str = "http://local.s3-proxy.patsnap.info";
+    pub const EP_S3_PROXY_DEV: &str = "http://s3-proxy.dev";
+
+    pub const EPS_NON_DEV: &[&str] = &[
+        EP_INTERNAL,
+        EP_US_EAST_1,
+        EP_CN_NORTHWEST_1,
+        EP_NA_ASHBURN,
+        EP_AP_SHANGHAI,
+        EP_LOCAL,
+    ];
+}
+
 pub const ANY: &str = "any";

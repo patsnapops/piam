@@ -7,10 +7,13 @@ use aws_sdk_s3::{
     types::{ByteStream, SdkError},
     Client, Config, Endpoint,
 };
+use aws_sdk_s3::error::GetObjectError;
+use aws_sdk_s3::output::GetObjectOutput;
 use aws_smithy_client::{erase::DynConnector, never::NeverConnector};
 use aws_types::{os_shim_internal::Env, region::Region, Credentials};
 use futures::future;
 use patsnap_constants::region::{AP_SHANGHAI, CN_NORTHWEST_1, NA_ASHBURN, US_EAST_1};
+use patsnap_constants::s3_proxy_endpoint::{EPS_NON_DEV, EP_NA_ASHBURN};
 use uuid::Uuid;
 
 pub const DEV_PROXY_HOST: &str = "s3-proxy.dev";
@@ -594,18 +597,13 @@ async fn cx() {
 
 #[tokio::test]
 async fn shf() {
-    let env = Env::from_slice(&[
-        ("AWS_MAX_ATTEMPTS", "1"),
-        ("AWS_REGION", CN_NORTHWEST_1),
-        ("AWS_ACCESS_KEY_ID", "AKPSPERS03SHF0Z"),
-        ("AWS_SECRET_ACCESS_KEY", "dummy_sk"),
-    ]);
-    let client = build_client_from_env(
-        env,
-        &format!("http://{}", "cn-northwest-1.s3-proxy.patsnap.info"),
-        // &format!("http://{}", DEV_PROXY_HOST),
-    )
-    .await;
+    let client = build_client_from_params(ClientParams {
+        access_key: "AKPSPERS03SHF0Z",
+        secret: "",
+        region: "foo",
+        endpoint: EP_NA_ASHBURN,
+    });
+
     // datalake-internal.patsnap.com-cn-northwest-1.cn-northwest-1.s3-proxy.patsnap.info
     let output = client
         .get_object()
@@ -622,7 +620,7 @@ async fn zx_new() {
         access_key: "AKPSSVCS24DDATARDPROCESSINGBATCHQA",
         secret: "",
         region: "foo",
-        endpoint: DEV_PROXY_ENDPOINT,
+        endpoint: EP_NA_ASHBURN,
     });
 
     let output = client
@@ -632,6 +630,36 @@ async fn zx_new() {
         .send()
         .await
         .unwrap();
+}
+
+#[tokio::test]
+async fn system_test_by_zx() {
+    let clients: Vec<Client> = EPS_NON_DEV
+        .iter()
+        .map(|ep| {
+            build_client_from_params(ClientParams {
+                access_key: "AKPSSVCS24DDATARDPROCESSINGBATCHQA",
+                secret: "",
+                region: "foo",
+                endpoint: ep,
+            })
+        })
+        .collect();
+
+    for client in clients {
+        let result = client
+            .get_object()
+            .bucket("datalake-internal.patsnap.com")
+            .key("tmp/10w_pid.txt")
+            .send()
+            .await;
+        match result {
+            Ok(out) => {},
+            Err(e) => {
+                dbg!(e);
+            }
+        }
+    }
 }
 
 #[tokio::test]
