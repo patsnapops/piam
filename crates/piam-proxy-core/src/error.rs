@@ -108,8 +108,8 @@ pub fn eok<T, E: Display>(result: Result<T, E>) -> T {
     match result {
         Ok(value) => value,
         Err(e) => {
-            error!("this should not happen: {}", e);
-            panic!("this should not happen: {}", e);
+            error!("this should never happen: {}", e);
+            panic!("this should never happen: {}", e);
         }
     }
 }
@@ -119,8 +119,8 @@ pub fn esome<T>(option: Option<T>) -> T {
     match option {
         Some(value) => value,
         None => {
-            error!("this should not happen: None");
-            panic!("this should not happen: None");
+            error!("this should never happen: None");
+            panic!("this should never happen: None");
         }
     }
 }
@@ -129,8 +129,8 @@ pub fn eok_ctx<T, E: Display>(result: Result<T, E>, msg: &str) -> T {
     match result {
         Ok(value) => value,
         Err(e) => {
-            error!("this should not happen: {}, context: {}", e, msg);
-            panic!("this should not happen: {}, context: {}", e, msg);
+            error!("this should never happen: {}, context: {}", e, msg);
+            panic!("this should never happen: {}, context: {}", e, msg);
         }
     }
 }
@@ -139,8 +139,8 @@ pub fn esome_ctx<T>(option: Option<T>, msg: &str) -> T {
     match option {
         Some(value) => value,
         None => {
-            error!("this should not happen: None, context: {}", msg);
-            panic!("this should not happen: None, context: {}", msg);
+            error!("this should never happen: None, context: {}", msg);
+            panic!("this should never happen: None, context: {}", msg);
         }
     }
 }

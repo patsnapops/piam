@@ -80,7 +80,7 @@ pub async fn handle(
     // Get input structure by parsing the request for specific protocol.
     // Example: getting S3Input with bucket and key as its fields.
     let s3_config = &state.extended_config;
-    let input = ObjectStorageInput::from_s3(&req, Some(&s3_config.proxy_hosts))?;
+    let input = ObjectStorageInput::from_s3(&req, &s3_config.proxy_hosts)?;
 
     let iam_container = &state.iam_container;
 

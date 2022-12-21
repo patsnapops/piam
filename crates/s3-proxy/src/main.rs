@@ -12,6 +12,7 @@ use log::info;
 use piam_common::logger::init_logger;
 use piam_proxy_core::{
     config::{server_port, set_constants, STATE_UPDATE_INTERVAL},
+    error::eok,
     state::StateManager,
 };
 
@@ -58,8 +59,7 @@ async fn main() {
         addr,
         features()
     );
-    axum::Server::bind(&addr)
+    eok(axum::Server::bind(&addr)
         .serve(routes.into_make_service_with_connect_info::<SocketAddr>())
-        .await
-        .expect("Server error");
+        .await);
 }

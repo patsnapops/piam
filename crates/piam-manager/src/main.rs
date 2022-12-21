@@ -11,6 +11,7 @@ use piam_common::{
         POLICY_RELATIONSHIPS, USERS, USER_GROUP_RELATIONSHIPS,
     },
 };
+use piam_proxy_core::error::eok;
 
 mod config;
 mod error;
@@ -47,10 +48,9 @@ async fn main() {
 
     let addr = SocketAddr::from(([0, 0, 0, 0], config::port()));
     info!("piam-manager listening on {}", addr);
-    axum::Server::bind(&addr)
+    eok(axum::Server::bind(&addr)
         .serve(routes.into_make_service_with_connect_info::<SocketAddr>())
-        .await
-        .unwrap();
+        .await);
 }
 
 fn gen_path(value: &str) -> String {

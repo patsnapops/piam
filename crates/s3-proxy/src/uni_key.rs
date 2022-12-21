@@ -9,7 +9,7 @@ use patsnap_constants::region::{AP_SHANGHAI, CN_NORTHWEST_1, NA_ASHBURN, US_EAST
 use piam_object_storage::input::{ActionKind, ObjectStorageInput};
 use piam_proxy_core::{
     account::aws::AwsAccount,
-    error::{ProxyError, ProxyResult},
+    error::{esome, ProxyError, ProxyResult},
     manager_api::ManagerClient,
     request::from_region_to_endpoint,
 };
@@ -142,7 +142,7 @@ impl UniKeyInfo {
             .buckets
             .ok_or_else(|| ProxyError::OtherInternal("no buckets found".into()))?
             .into_iter()
-            .map(|b| b.name.expect("bucket should always have name"))
+            .map(|b| esome(b.name))
             .collect();
         Ok(buckets)
     }

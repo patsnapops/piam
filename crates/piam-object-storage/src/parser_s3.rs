@@ -42,13 +42,12 @@ impl S3HostDomains {
 impl Input for ObjectStorageInput {}
 
 impl ObjectStorageInput {
-    pub fn from_s3(req: &HttpRequest, config: Option<&S3HostDomains>) -> ParserResult<Self> {
+    pub fn from_s3(req: &HttpRequest, config: &S3HostDomains) -> ParserResult<Self> {
         use ObjectStorageInput::*;
         let path = req.uri().path();
         let method = req.method();
         let headers = req.headers();
         let host = headers.get(HOST).unwrap().to_str().unwrap();
-        let config = config.expect("s3_config should be set");
         let proxy_host = config.find_proxy_host(host)?;
         let bucket = host
             .strip_suffix(&format!(".{}", proxy_host))

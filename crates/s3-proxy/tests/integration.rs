@@ -2,18 +2,19 @@
 
 use aws_config::{from_env, provider_config::ProviderConfig};
 use aws_sdk_s3::{
-    error::HeadBucketErrorKind,
+    error::{GetObjectError, HeadBucketErrorKind},
     model::{CompletedMultipartUpload, CompletedPart, Object},
+    output::GetObjectOutput,
     types::{ByteStream, SdkError},
     Client, Config, Endpoint,
 };
-use aws_sdk_s3::error::GetObjectError;
-use aws_sdk_s3::output::GetObjectOutput;
 use aws_smithy_client::{erase::DynConnector, never::NeverConnector};
 use aws_types::{os_shim_internal::Env, region::Region, Credentials};
 use futures::future;
-use patsnap_constants::region::{AP_SHANGHAI, CN_NORTHWEST_1, NA_ASHBURN, US_EAST_1};
-use patsnap_constants::s3_proxy_endpoint::{EPS_NON_DEV, EP_NA_ASHBURN};
+use patsnap_constants::{
+    region::{AP_SHANGHAI, CN_NORTHWEST_1, NA_ASHBURN, US_EAST_1},
+    s3_proxy_endpoint::{EPS_NON_DEV, EP_NA_ASHBURN},
+};
 use uuid::Uuid;
 
 pub const DEV_PROXY_HOST: &str = "s3-proxy.dev";
@@ -654,7 +655,7 @@ async fn system_test_by_zx() {
             .send()
             .await;
         match result {
-            Ok(out) => {},
+            Ok(out) => {}
             Err(e) => {
                 dbg!(e);
             }
