@@ -1430,6 +1430,7 @@ dependencies = [
  "piam-common",
  "piam-object-storage",
  "piam-proxy-core",
+ "reqwest",
  "serde",
  "tokio",
  "uuid",

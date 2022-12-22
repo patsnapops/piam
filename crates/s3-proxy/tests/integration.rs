@@ -13,7 +13,7 @@ use aws_types::{os_shim_internal::Env, region::Region, Credentials};
 use futures::future;
 use patsnap_constants::{
     region::{AP_SHANGHAI, CN_NORTHWEST_1, NA_ASHBURN, US_EAST_1},
-    s3_proxy_endpoint::{EPS_NON_DEV, EP_NA_ASHBURN},
+    s3_proxy_endpoint::{EPS_NON_DEV, EP_NA_ASHBURN, EP_S3_PROXY_DEV},
 };
 use uuid::Uuid;
 
@@ -731,12 +731,6 @@ async fn tencent_list_buckets() {
 
 #[tokio::test]
 async fn opst() {
-    // - us-east-1.s3-proxy.patsnap.info
-    // - cn-northwest-1.s3-proxy.patsnap.info
-    // - na-ashburn.s3-proxy.patsnap.info
-    // - ap-shanghai.s3-proxy.patsnap.info
-    // - local.s3-proxy.patsnap.info
-
     // let client = build_client_from_params(ClientParams {
     //     access_key: "AKPSSVCS04OPST",
     //     secret: "",

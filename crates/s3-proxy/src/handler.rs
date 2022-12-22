@@ -60,7 +60,7 @@ pub async fn handle_path(
     ConnectInfo(addr): ConnectInfo<SocketAddr>,
     mut req: HttpRequest,
 ) -> ProxyResult<HttpResponse> {
-    let proxy_hosts: &Vec<String> = &state.load().extended_config.proxy_hosts.domains;
+    let proxy_hosts = &state.load().extended_config.proxy_hosts.domains;
     req.adapt_path_style(path, proxy_hosts);
     handle(State(state), ConnectInfo(addr), req).await
 }

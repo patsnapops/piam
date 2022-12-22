@@ -127,7 +127,6 @@ pub mod s3_proxy_endpoint {
     pub const EP_S3_PROXY_DEV: &str = "http://s3-proxy.dev";
 
     pub const EPS_NON_DEV: &[&str] = &[
-        EP_INTERNAL,
         EP_US_EAST_1,
         EP_CN_NORTHWEST_1,
         EP_NA_ASHBURN,
@@ -137,3 +136,5 @@ pub mod s3_proxy_endpoint {
 }
 
 pub const ANY: &str = "any";
+
+pub const IP_PROVIDER: &str = "http://cip.cc";

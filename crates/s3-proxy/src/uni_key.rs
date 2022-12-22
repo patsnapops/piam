@@ -5,7 +5,10 @@ use std::collections::HashMap;
 
 use aws_sdk_s3::{Client, Config, Endpoint};
 use aws_types::{region::Region, Credentials};
-use patsnap_constants::region::{AP_SHANGHAI, CN_NORTHWEST_1, NA_ASHBURN, US_EAST_1};
+use patsnap_constants::{
+    region::{AP_SHANGHAI, CN_NORTHWEST_1, NA_ASHBURN, US_EAST_1},
+    IP_PROVIDER,
+};
 use piam_object_storage::input::{ActionKind, ObjectStorageInput};
 use piam_proxy_core::{
     account::aws::AwsAccount,
@@ -108,16 +111,30 @@ impl UniKeyInfo {
             .collect();
 
         let mut inner = BucketToAccessInfo::new();
+
+        let ip_info = reqwest::Client::new()
+            .get(IP_PROVIDER)
+            .header("User-Agent", "curl")
+            .send()
+            .await?
+            .text()
+            .await?
+            // 20221222: remove special characters in response of cip.cc (IP_PROVIDER)
+            .replace('\n', "")
+            .replace('\t', "");
+
         for (access_info, client) in access_info_client_vec? {
             let buckets = Self::get_buckets(&access_info, &client)
                 .await
                 .map_err(|e| {
                     ProxyError::OtherInternal(format!(
-                        "failed to get buckets for account: {} access_key: {} region: {} Error: {}",
+                        "failed to get buckets for account: {} access_key: {} region: {} Error: {}, \
+                         normally it is caused by permissions not configured for the account, \
+                         try check the IP whitelist on peer, ip_info: {}",
                         access_info.account.code,
                         access_info.account.access_key,
                         access_info.region,
-                        e
+                        e, ip_info
                     ))
                 })?;
             buckets.into_iter().for_each(|bucket| {
