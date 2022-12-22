@@ -86,7 +86,7 @@ impl<
 
     async fn get_new(when: When) -> ProxyResult<ProxyState<P, C>> {
         let retry_interval = 5;
-        let mut retry_count = 0;
+        let mut retries = 0;
         match when {
             When::Initializing => loop {
                 match ProxyState::new_from_manager().await {
@@ -95,15 +95,15 @@ impl<
                     }
                     Err(e) => {
                         warn!(
-                            "ProxyState {} failed, error: {}, retry_count: {}",
-                            when, e, retry_count
+                            "ProxyState {} failed, error: {}, retries: {}",
+                            when, e, retries
                         );
-                        if dev_mode() && retry_count > 1 {
-                            tokio::time::sleep(std::time::Duration::from_secs(retry_count * 5))
+                        if dev_mode() && retries > 1 {
+                            tokio::time::sleep(std::time::Duration::from_secs(retries * 5))
                                 .await;
                         }
                         tokio::time::sleep(std::time::Duration::from_secs(retry_interval)).await;
-                        retry_count += 1;
+                        retries += 1;
                     }
                 }
             },
