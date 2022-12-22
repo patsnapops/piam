@@ -25,7 +25,7 @@ RUN cargo build --release --all-features -p ${package}
 
 # runtime stage
 #FROM alpine:3.16 as runtime
-FROM 955466075186.dkr.ecr.cn-northwest-1.amazonaws.com.cn/ops-basic/base:alpine3.16 AS runtime
+FROM 955466075186.dkr.ecr.cn-northwest-1.amazonaws.com.cn/ops-basic/base:alpine3.16-tool AS runtime
 ARG package
 ENV ENV_PACKAGE=${package}
 RUN echo "package to run: ${package}"
