@@ -1,21 +1,7 @@
-use std::env;
+use piam_common::config::{dev_mode, string_var_with_default, GlobalString};
 
-use arc_swap::ArcSwap;
-use log::info;
-use once_cell::sync::Lazy;
-
-pub static REDIS_ADDRESS: Lazy<ArcSwap<String>> = Lazy::new(|| {
-    let addr = match env::var("REDIS_ADDRESS") {
-        Ok(s) => s,
-        Err(_) => "redis://localhost/1".to_string(),
-    };
-    info!("REDIS_ADDRESS: {}", addr);
-    ArcSwap::from_pointee(addr)
-});
-
-pub fn dev_mode() -> bool {
-    env::args().nth(1) == Some("dev".into())
-}
+pub static REDIS_ADDRESS: GlobalString =
+    GlobalString::new(|| string_var_with_default("REDIS_ADDRESS", "redis://localhost/1"));
 
 pub fn port() -> u16 {
     if dev_mode() {

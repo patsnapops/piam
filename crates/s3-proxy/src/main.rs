@@ -34,6 +34,7 @@ async fn main() {
     let (_guard, _log_handle) = init_logger(&bin_name, true);
     set_constants("[Patsnap S3 Proxy]", "ObjectStorage");
 
+    // TODO: make this async
     let state_manager = StateManager::initialize().await;
     let state: S3ProxyState = state_manager.arc_state.clone();
     // TODO: move this into state::StateManager

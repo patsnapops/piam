@@ -1,7 +1,7 @@
 use async_trait::async_trait;
+use piam_common::config::dev_mode;
 use piam_object_storage::parser_s3::S3HostDomains;
 use piam_proxy_core::{
-    config::dev_mode,
     error::{ProxyError, ProxyResult},
     manager_api::ManagerClient,
     state::GetNewState,

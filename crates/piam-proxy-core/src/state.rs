@@ -3,11 +3,10 @@ use std::{fmt::Debug, sync::Arc, time::Instant};
 use arc_swap::ArcSwap;
 use async_trait::async_trait;
 use log::warn;
-use piam_common::logger::LogHandle;
+use piam_common::{config::dev_mode, logger::LogHandle};
 use serde::de::DeserializeOwned;
 
 use crate::{
-    config::dev_mode,
     container::IamContainer,
     error::{eok, ProxyResult},
     manager_api::ManagerClient,
@@ -99,8 +98,7 @@ impl<
                             when, e, retries
                         );
                         if dev_mode() && retries > 1 {
-                            tokio::time::sleep(std::time::Duration::from_secs(retries * 5))
-                                .await;
+                            tokio::time::sleep(std::time::Duration::from_secs(retries * 5)).await;
                         }
                         tokio::time::sleep(std::time::Duration::from_secs(retry_interval)).await;
                         retries += 1;

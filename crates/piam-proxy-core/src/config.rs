@@ -1,13 +1,16 @@
-use std::{env, sync::Arc};
+use std::sync::Arc;
 
 use arc_swap::ArcSwap;
 use log::info;
 use once_cell::sync::Lazy;
+use piam_common::config::{dev_mode, string_var_with_default, GlobalStaticStr, GlobalString};
 
-pub static PROXY_TYPE: Lazy<ArcSwap<&'static str>> = Lazy::new(|| ArcSwap::from_pointee("[Unset]"));
-pub static POLICY_MODEL: Lazy<ArcSwap<&'static str>> = Lazy::new(|| ArcSwap::from_pointee("Unset"));
-pub static PIAM_MANAGER_ADDRESS: Lazy<ArcSwap<String>> =
-    Lazy::new(|| string_var_with_default("PIAM_MANAGER_ADDRESS", "http://localhost:8080"));
+pub static PROXY_TYPE: GlobalStaticStr = Lazy::new(|| ArcSwap::from_pointee("[Unset]"));
+pub static POLICY_MODEL: GlobalStaticStr = Lazy::new(|| ArcSwap::from_pointee("[Unset]"));
+pub static CLUSTER_ENV: GlobalString =
+    GlobalString::new(|| string_var_with_default("CLUSTER_ENV", "Unset"));
+pub static PIAM_MANAGER_ADDRESS: GlobalString =
+    GlobalString::new(|| string_var_with_default("PIAM_MANAGER_ADDRESS", "http://localhost:8080"));
 pub const STATE_UPDATE_INTERVAL: u64 = 10;
 
 pub fn set_constants(proxy_type: &'static str, policy_model: &'static str) {
@@ -21,26 +24,9 @@ pub fn set_constants(proxy_type: &'static str, policy_model: &'static str) {
 
 pub trait ParserConfig {}
 
-// TODO: below should be moved to a more general crate
-
-pub static CLUSTER_ENV: Lazy<ArcSwap<String>> =
-    Lazy::new(|| string_var_with_default("CLUSTER_ENV", "Unset"));
-
-pub fn dev_mode() -> bool {
-    env::args().nth(1) == Some("dev".into())
-}
-
 pub fn server_port() -> u16 {
     if dev_mode() {
         return 80;
     }
     80
-}
-
-fn string_var_with_default(name: &str, default: &str) -> ArcSwap<String> {
-    let val = match env::var(name) {
-        Ok(s) => s,
-        Err(_) => default.to_string(),
-    };
-    ArcSwap::from_pointee(val)
 }

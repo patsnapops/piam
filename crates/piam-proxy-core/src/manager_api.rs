@@ -1,8 +1,11 @@
 use std::fmt::Debug;
 
-use piam_common::manager_api::{
-    extended_config_path, policies_path, ACCOUNTS, GROUPS, POLICY_RELATIONSHIPS, USERS,
-    USER_GROUP_RELATIONSHIPS, VERSION,
+use piam_common::{
+    encrypt::decrypt,
+    manager_api::{
+        extended_config_path, policies_path, ACCOUNTS, GROUPS, POLICY_RELATIONSHIPS, USERS,
+        USER_GROUP_RELATIONSHIPS, VERSION,
+    },
 };
 use serde::de::DeserializeOwned;
 
@@ -57,7 +60,8 @@ impl ManagerClient {
     }
 
     async fn get_resource<T: DeserializeOwned>(&self, path: &str) -> ProxyResult<T> {
-        let resource_string = self.get_resource_string(path).await?;
+        // manually decrypt for HTTP
+        let resource_string = decrypt(self.get_resource_string(path).await?);
         let resource = serde_yaml::from_str(&resource_string)
             .map_err(|e| deserialize(path, resource_string, e))?;
         Ok(resource)
