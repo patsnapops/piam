@@ -56,7 +56,7 @@ init_s3proxy:
     - aws
     - docker
   variables:
-    PROJECT_NAME: "piam-s3-proxy"
+    PROJECT_NAME: "s3-proxy"
     GIT_STRATEGY: none
 #  only:
 #    - master
@@ -84,7 +84,7 @@ build_s3_proxy:
     - docker
 #  when: manual
   script:
-    - export S3PROXY="${PRIVATE_DTR_URL}/${TEAM}/${PROJECT_TYPE}-${TEAM}-piam-s3-proxy:${CI_COMMIT_REF_NAME}-${CI_PIPELINE_ID}"
+    - export S3PROXY="${PRIVATE_DTR_URL}/${TEAM}/${PROJECT_TYPE}-${TEAM}-s3-proxy:${CI_COMMIT_REF_NAME}-${CI_PIPELINE_ID}"
     - docker build --build-arg package=s3-proxy -t ${S3PROXY} --target runtime .
     - docker push ${S3PROXY}
     - echo ${S3PROXY}
@@ -116,7 +116,7 @@ deploy_s3_proxy_us_aws_prod:
   when: manual
   variables:
     ENV: prod
-    PROJECT_NAME: "piam-s3-proxy"
+    PROJECT_NAME: "s3-proxy"
     REGION: us-east-1
     K8STYPE: eks
     GIT_STRATEGY: none
@@ -133,7 +133,7 @@ deploy_s3_proxy_cn_aws_qa:
   when: manual
   variables:
     ENV: qa
-    PROJECT_NAME: "piam-s3-proxy"
+    PROJECT_NAME: "s3-proxy"
     REGION: cn-northwest-1
     K8STYPE: eks
     GIT_STRATEGY: none
@@ -150,7 +150,7 @@ deploy_s3_proxy_cn_tencent_qa:
   when: manual
   variables:
     ENV: qa
-    PROJECT_NAME: "piam-s3-proxy"
+    PROJECT_NAME: "s3-proxy"
     REGION: ap-shanghai
     K8STYPE: eks
     GIT_STRATEGY: none
@@ -167,7 +167,7 @@ deploy_s3_proxy_us_tencent_data-prod:
   when: manual
   variables:
     ENV: prod
-    PROJECT_NAME: "piam-s3-proxy"
+    PROJECT_NAME: "s3-proxy"
     REGION: na-ashburn
     K8STYPE: eks
     GIT_STRATEGY: none
@@ -184,7 +184,7 @@ deploy_s3_proxy_local:
   when: manual
   variables:
     ENV: qa
-    PROJECT_NAME: "piam-s3-proxy"
+    PROJECT_NAME: "s3-proxy"
     REGION: local
     GIT_STRATEGY: none
   before_script:
