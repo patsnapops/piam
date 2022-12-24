@@ -2,15 +2,13 @@ use std::{fmt::Debug, sync::Arc, time::Instant};
 
 use arc_swap::ArcSwap;
 use async_trait::async_trait;
-use busylib::{config::dev_mode, logger::LogHandle};
+use busylib::{config::dev_mode, logger::LogHandle, prelude::eok};
 use log::warn;
 use serde::de::DeserializeOwned;
 
 use crate::{
-    container::IamContainer,
-    error::{eok, ProxyResult},
-    manager_api::ManagerClient,
     policy::Modeled,
+    proxy::{container::IamContainer, error::ProxyResult, manager_api::ManagerClient},
     type_alias::HttpClient,
 };
 

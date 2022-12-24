@@ -6,21 +6,19 @@ use patsnap_constants::{
     policy_model::OBJECT_STORAGE,
     region::Region,
 };
-use piam_object_storage::{
-    parser_s3::S3HostDomains,
-    policy::{Bucket, Key, ObjectStorageInputPolicy, ObjectStoragePolicy},
-};
 use piam_core::{
     account::aws::AwsAccount,
     effect::Effect,
     group::Group,
-    manager_api::constants::{CONDITION_MODEL, VERSION},
-    policy::{
-        condition::{ConditionPolicy, ConditionRange},
-        Name, Policy,
-    },
+    manager_api_constant::{CONDITION, VERSION},
+    policy::{Name, Policy},
     principal::{User, UserKind},
+    proxy::policy::condition::{ConditionPolicy, ConditionRange},
     relation_model::{PolicyRelationship, UserGroupRelationship},
+};
+use piam_object_storage::{
+    parser_s3::S3HostDomains,
+    policy::{Bucket, Key, ObjectStorageInputPolicy, ObjectStoragePolicy},
 };
 use redis::Commands;
 use serde::{ser, Deserialize, Serialize};
@@ -763,7 +761,7 @@ pub fn policy_os_3977_cn_northwest_1_group_data_tmp() -> Policy<ObjectStoragePol
 
 pub fn policy_allow_private_ip() -> Policy<ConditionPolicy> {
     Policy {
-        kind: CONDITION_MODEL.to_string(),
+        kind: CONDITION.to_string(),
         version: 0,
         id: "EA70AC12-ACB9-438A-BC3A-904FBCE4DD22".to_string(),
         name: "policy_allow_private_ip".to_string(),
@@ -1045,7 +1043,7 @@ pub fn make_policy_relationships() -> Vec<PolicyRelationship> {
         // private ip
         PolicyRelationship {
             id: "5DB4761D-7371-4D0F-AE41-7B16B356101C".to_string(),
-            policy_model: CONDITION_MODEL.to_string(),
+            policy_model: CONDITION.to_string(),
             user_id: None,
             group_id: None,
             role_id: None,

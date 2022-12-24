@@ -900,7 +900,7 @@ async fn test_9554() {
         access_key: "AKPSSVCS04OPST",
         secret: "",
         region: CN_NORTHWEST_1,
-        endpoint: "http://local.s3-proxy.patsnap.info",
+        endpoint: DEV_PROXY_ENDPOINT,
     });
 
     let objects = client

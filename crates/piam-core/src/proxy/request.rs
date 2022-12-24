@@ -2,7 +2,7 @@ use log::debug;
 
 use crate::{
     effect::Effect,
-    error::{ProxyError, ProxyResult},
+    proxy::error::{ProxyError, ProxyResult},
     type_alias::{HttpClient, HttpRequest, HttpResponse},
 };
 

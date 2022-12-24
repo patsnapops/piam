@@ -1,4 +1,4 @@
-use crate::error::ProxyResult;
+use crate::proxy::error::ProxyResult;
 
 pub mod aws {
     use std::time::SystemTime;
@@ -6,14 +6,15 @@ pub mod aws {
     use anyhow::Result;
     use async_trait::async_trait;
     use aws_sigv4::http_request::{sign, SignableRequest, SigningParams, SigningSettings};
+    use busylib::prelude::{eok_ctx, esome_ctx};
     use http::{header::AUTHORIZATION, Request};
     use hyper::{body, Body};
 
     use crate::{
         account::aws::AwsAccount,
-        error::{eok_ctx, esome_ctx, ProxyError, ProxyResult},
-        signature::aws::canonical_request::header::{
-            X_AMZ_CONTENT_SHA_256, X_AMZ_DATE, X_AMZ_SECURITY_TOKEN,
+        proxy::{
+            error::{ProxyError, ProxyResult},
+            signature::aws::canonical_request::header::*,
         },
         type_alias::HttpRequest,
     };
@@ -174,7 +175,7 @@ pub mod aws {
 
     #[cfg(test)]
     mod test {
-        use crate::signature::aws::extract_aws_access_key_and_region_from_auth_header;
+        use crate::proxy::signature::aws::extract_aws_access_key_and_region_from_auth_header;
 
         #[test]
         fn test_extract_aws_access_key_and_region_from_auth_header() {

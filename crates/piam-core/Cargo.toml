@@ -30,3 +30,4 @@ optional = true
 
 [features]
 aws-xml-response = ["serde-xml-rs"]
+proxy = []

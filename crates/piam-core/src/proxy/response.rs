@@ -1,4 +1,5 @@
 use axum::response::IntoResponse;
+use busylib::prelude::{eok, eok_ctx};
 use http::{header::CONTENT_TYPE, HeaderValue, Response, StatusCode};
 use hyper::Body;
 use log::{error, info, warn};
@@ -6,8 +7,10 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::{
-    config::{CLUSTER_ENV, PROXY_TYPE},
-    error::{eok, eok_ctx, ProxyError},
+    proxy::{
+        config::{CLUSTER_ENV, PROXY_TYPE},
+        error::ProxyError,
+    },
     type_alias::HttpResponse,
 };
 

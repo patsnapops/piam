@@ -3,9 +3,9 @@
 use std::net::SocketAddr;
 
 use axum::{routing::get, Router};
-use busylib::logger::init_logger;
+use busylib::{logger::init_logger, prelude::eok};
 use log::info;
-use piam_core::{error::eok, manager_api::constants::*};
+use piam_core::manager_api_constant::*;
 
 mod config;
 mod error;
@@ -24,7 +24,7 @@ async fn main() {
         .route(&gen_path(USERS), get(handler::get_users))
         .route(&gen_path(GROUPS), get(handler::get_groups))
         .route(
-            &gen_path_with_param(POLICIES, POLICY_MODEL),
+            &gen_path_with_param(POLICIES, "policy_model"),
             get(handler::get_policies),
         )
         .route(
@@ -36,7 +36,7 @@ async fn main() {
             get(handler::get_policy_relationships),
         )
         .route(
-            &gen_path_with_param(EXTENDED_CONFIG, CONFIG_TYPE),
+            &gen_path_with_param(EXTENDED_CONFIG, "config_type"),
             get(handler::extended_config),
         );
 

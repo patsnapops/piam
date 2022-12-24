@@ -3,5 +3,6 @@
 pub mod config;
 pub mod crypto;
 pub mod logger;
+pub mod prelude;
 
 pub const ANY: &str = "any";

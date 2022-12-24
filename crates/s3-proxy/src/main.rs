@@ -6,12 +6,11 @@ use axum::{
     routing::{any, get, put},
     Router,
 };
-use busylib::logger::init_logger;
+use busylib::{logger::init_logger, prelude::eok};
 use log::info;
 use patsnap_constants::policy_model::OBJECT_STORAGE;
-use piam_core::{
+use piam_core::proxy::{
     config::{server_port, set_constants, STATE_UPDATE_INTERVAL},
-    error::eok,
     state::StateManager,
 };
 

@@ -4,19 +4,23 @@
 use std::{collections::HashMap, fmt::Debug};
 
 use async_trait::async_trait;
-use busylib::ANY;
+use busylib::{prelude::esome, ANY};
 use serde::de::DeserializeOwned;
 
 use crate::{
     account::{aws::AwsAccount, AccountId},
-    config::POLICY_MODEL,
-    error::{esome, ProxyError, ProxyResult},
     group::{Group, GroupId},
-    manager_api::{constants::*, ManagerClient},
-    policy::{condition::ConditionPolicy, Modeled, Policy, PolicyId},
+    manager_api_constant::CONDITION,
+    policy::{Modeled, Policy, PolicyId},
     principal::{Role, RoleId, User, UserId},
+    proxy::{
+        config::POLICY_MODEL,
+        error::{ProxyError, ProxyResult},
+        manager_api::ManagerClient,
+        policy::condition::ConditionPolicy,
+        state::GetNewState,
+    },
     relation_model::PolicyRelationship,
-    state::GetNewState,
 };
 
 /// IamContainer store entities.
@@ -83,7 +87,7 @@ impl<P: Modeled + DeserializeOwned + Send> GetNewState for IamContainer<P> {
         let groups_vec = manager.get_groups().await?;
         let user_input_policy_vec: Vec<Policy<P>> =
             manager.get_policies_by_model(&POLICY_MODEL.load()).await?;
-        let condition_policy_vec = manager.get_policies_by_model(CONDITION_MODEL).await?;
+        let condition_policy_vec = manager.get_policies_by_model(CONDITION).await?;
 
         let user_group_relationships = manager.get_user_group_relationships().await?;
         let policy_relationships = manager.get_policy_relationships().await?;
@@ -204,7 +208,7 @@ impl<P: Modeled> IamContainer<P> {
         let mut user_input: Vec<&Policy<P>> = Vec::new();
         for relation in relations {
             match relation.policy_model.as_str() {
-                CONDITION_MODEL => {
+                CONDITION => {
                     let p = esome(self.condition_policies.get(&relation.policy_id));
                     condition.push(p);
                 }

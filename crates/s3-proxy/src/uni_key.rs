@@ -5,17 +5,20 @@ use std::collections::HashMap;
 
 use aws_sdk_s3::{Client, Config, Endpoint};
 use aws_types::{region::Region, Credentials};
+use busylib::prelude::esome;
 use patsnap_constants::{
     region::{AP_SHANGHAI, CN_NORTHWEST_1, NA_ASHBURN, US_EAST_1},
     IP_PROVIDER,
 };
-use piam_object_storage::input::{ActionKind, ObjectStorageInput};
 use piam_core::{
     account::aws::AwsAccount,
-    error::{esome, ProxyError, ProxyResult},
-    manager_api::ManagerClient,
-    request::from_region_to_endpoint,
+    proxy::{
+        error::{ProxyError, ProxyResult},
+        manager_api::ManagerClient,
+        request::from_region_to_endpoint,
+    },
 };
+use piam_object_storage::input::{ActionKind, ObjectStorageInput};
 use serde::{Deserialize, Serialize};
 
 type BucketToAccessInfo = HashMap<String, AccessInfo>;

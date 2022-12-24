@@ -1,7 +1,9 @@
 use http::{header::HOST, uri::PathAndQuery, HeaderValue, Uri};
 use piam_core::{
-    error::{ProxyError, ProxyResult},
-    request::from_region_to_host,
+    proxy::{
+        error::{ProxyError, ProxyResult},
+        request::from_region_to_host,
+    },
     type_alias::HttpRequest,
 };
 
