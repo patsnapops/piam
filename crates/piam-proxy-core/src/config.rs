@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
 use arc_swap::ArcSwap;
+use busylib::config::{dev_mode, string_var_with_default, GlobalStaticStr, GlobalString};
 use log::info;
 use once_cell::sync::Lazy;
-use piam_common::config::{dev_mode, string_var_with_default, GlobalStaticStr, GlobalString};
 
 pub static PROXY_TYPE: GlobalStaticStr = Lazy::new(|| ArcSwap::from_pointee("[Unset]"));
 pub static POLICY_MODEL: GlobalStaticStr = Lazy::new(|| ArcSwap::from_pointee("[Unset]"));
@@ -11,6 +11,8 @@ pub static CLUSTER_ENV: GlobalString =
     GlobalString::new(|| string_var_with_default("CLUSTER_ENV", "Unset"));
 pub static PIAM_MANAGER_ADDRESS: GlobalString =
     GlobalString::new(|| string_var_with_default("PIAM_MANAGER_ADDRESS", "http://localhost:8080"));
+pub static META_KEY: GlobalString =
+    GlobalString::new(|| string_var_with_default("META_KEY", "0x5F3759DF"));
 pub const STATE_UPDATE_INTERVAL: u64 = 10;
 
 pub fn set_constants(proxy_type: &'static str, policy_model: &'static str) {

@@ -6,7 +6,7 @@ description = "Patsnap IAM proxy core"
 license = "Apache-2.0 OR MIT"
 
 [dependencies]
-piam-common = { path = "../piam-common" }
+busylib = { path = "../busylib" }
 anyhow = "1.0"
 aws-sigv4 = "0.48.0"
 cidr = { version = "0.2.1", features = ["serde"] }

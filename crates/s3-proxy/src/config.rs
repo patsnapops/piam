@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use piam_common::config::dev_mode;
+use busylib::config::dev_mode;
 use piam_object_storage::parser_s3::S3HostDomains;
 use piam_proxy_core::{
     error::{ProxyError, ProxyResult},

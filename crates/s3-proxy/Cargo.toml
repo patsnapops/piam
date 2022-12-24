@@ -7,7 +7,7 @@ edition = "2021"
 patsnap-constants = { path = "../patsnap-constants", optional = true }
 piam-proxy-core = { path = "../piam-proxy-core", features = ["aws-xml-response"] }
 piam-object-storage = { path = "../piam-object-storage" }
-piam-common = { path = "../piam-common" }
+busylib = { path = "../busylib" }
 axum = { version = "0.6.1", features = ["tokio"] }
 hyper = { version = "0.14", features = ["full"] }
 tokio = { version = "1", features = ["full"] }

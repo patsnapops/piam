@@ -1,11 +1,11 @@
 #![allow(unused)]
 
+use busylib::ANY;
 use patsnap_constants::{
-    account::{ANY, AWS_DATA_0066, AWS_DEV_9554, AWS_PROD_3977, AWS_PROD_7478, TENCENT_4258},
+    account::{AWS_DATA_0066, AWS_DEV_9554, AWS_PROD_3977, AWS_PROD_7478, TENCENT_4258},
     policy_model::OBJECT_STORAGE,
     region::Region,
 };
-use piam_common::manager_api::{CONDITION_MODEL, VERSION};
 use piam_object_storage::{
     parser_s3::S3HostDomains,
     policy::{Bucket, Key, ObjectStorageInputPolicy, ObjectStoragePolicy},
@@ -14,6 +14,7 @@ use piam_proxy_core::{
     account::aws::AwsAccount,
     effect::Effect,
     group::Group,
+    manager_api::constants::{CONDITION_MODEL, VERSION},
     policy::{
         condition::{ConditionPolicy, ConditionRange},
         Name, Policy,

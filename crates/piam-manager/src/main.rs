@@ -3,15 +3,9 @@
 use std::net::SocketAddr;
 
 use axum::{routing::get, Router};
+use busylib::logger::init_logger;
 use log::info;
-use piam_common::{
-    logger::init_logger,
-    manager_api::{
-        ACCOUNTS, CONFIG_TYPE, EXTENDED_CONFIG, GROUPS, POLICIES, POLICY_MODEL,
-        POLICY_RELATIONSHIPS, USERS, USER_GROUP_RELATIONSHIPS,
-    },
-};
-use piam_proxy_core::error::eok;
+use piam_proxy_core::{error::eok, manager_api::constants::*};
 
 mod config;
 mod error;

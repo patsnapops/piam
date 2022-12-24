@@ -4,7 +4,7 @@
 use std::{collections::HashMap, fmt::Debug};
 
 use async_trait::async_trait;
-use piam_common::{manager_api::CONDITION_MODEL, ANY};
+use busylib::ANY;
 use serde::de::DeserializeOwned;
 
 use crate::{
@@ -12,7 +12,7 @@ use crate::{
     config::POLICY_MODEL,
     error::{esome, ProxyError, ProxyResult},
     group::{Group, GroupId},
-    manager_api::ManagerClient,
+    manager_api::{constants::*, ManagerClient},
     policy::{condition::ConditionPolicy, Modeled, Policy, PolicyId},
     principal::{Role, RoleId, User, UserId},
     relation_model::PolicyRelationship,

@@ -1,4 +1,4 @@
-use piam_common::config::{dev_mode, string_var_with_default, GlobalString};
+use busylib::config::{dev_mode, string_var_with_default, GlobalString};
 
 pub static REDIS_ADDRESS: GlobalString =
     GlobalString::new(|| string_var_with_default("REDIS_ADDRESS", "redis://localhost/1"));

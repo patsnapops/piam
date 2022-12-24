@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-piam-common = { path = "../piam-common" }
+busylib = { path = "../busylib" }
 piam-proxy-core = { path = "../piam-proxy-core" }
 piam-object-storage = { path = "../piam-object-storage" }
 axum = { version = "0.6.1", features = ["tokio"] }

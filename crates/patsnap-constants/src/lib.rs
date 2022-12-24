@@ -2,7 +2,7 @@ pub mod region {
     use serde::{Deserialize, Serialize};
     use strum_macros::Display;
 
-    pub const ANY: &str = "any";
+    use crate::ANY;
 
     pub const CN_NORTHWEST_1: &str = "cn-northwest-1";
     pub const US_EAST_1: &str = "us-east-1";
@@ -64,8 +64,6 @@ pub mod env {
     use serde::{Deserialize, Serialize};
     use strum_macros::Display;
 
-    pub const ANY: &str = "any";
-
     pub const CI: &str = "ci";
     pub const QA: &str = "qa";
     pub const RELEASE: &str = "release";
@@ -86,8 +84,6 @@ pub mod env {
 pub mod account {
     use serde::{Deserialize, Serialize};
     use strum_macros::Display;
-
-    pub const ANY: &str = "any";
 
     pub const AWS_DEV_9554: &str = "cn_aws_dev_9554";
     pub const AWS_PROD_3977: &str = "cn_aws_prod_3977";
@@ -113,7 +109,6 @@ pub mod account {
 }
 
 pub mod policy_model {
-    pub const ANY: &str = "any";
     pub const OBJECT_STORAGE: &str = "ObjectStorage";
 }
 

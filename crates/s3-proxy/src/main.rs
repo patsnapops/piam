@@ -1,15 +1,14 @@
 // #![allow(unused)]
 
-extern crate core;
-
 use std::net::SocketAddr;
 
 use axum::{
     routing::{any, get, put},
     Router,
 };
+use busylib::logger::init_logger;
 use log::info;
-use piam_common::logger::init_logger;
+use patsnap_constants::policy_model::OBJECT_STORAGE;
 use piam_proxy_core::{
     config::{server_port, set_constants, STATE_UPDATE_INTERVAL},
     error::eok,
@@ -32,7 +31,7 @@ mod uni_key;
 async fn main() {
     let bin_name = env!("CARGO_PKG_NAME").replace('-', "_");
     let (_guard, _log_handle) = init_logger(&bin_name, true);
-    set_constants("[Patsnap S3 Proxy]", "ObjectStorage");
+    set_constants("[Patsnap S3 Proxy]", OBJECT_STORAGE);
 
     // TODO: make this async
     let state_manager = StateManager::initialize().await;
