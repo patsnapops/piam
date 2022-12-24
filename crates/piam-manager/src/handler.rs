@@ -4,7 +4,7 @@ use axum::{
     response::{IntoResponse, Response},
 };
 use log::{error, info};
-use piam_proxy_core::crypto::encrypt;
+use piam_core::crypto::encrypt;
 
 use crate::{
     error::{ManagerError, ManagerResult},

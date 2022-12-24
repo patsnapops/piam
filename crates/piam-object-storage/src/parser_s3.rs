@@ -1,5 +1,5 @@
 use http::{header::HOST, Method};
-use piam_proxy_core::{
+use piam_core::{
     input::{Input, ParserError, ParserResult},
     type_alias::HttpRequest,
 };

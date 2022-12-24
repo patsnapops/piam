@@ -9,7 +9,7 @@ use http::{Response, StatusCode};
 use hyper::Body;
 use log::debug;
 use piam_object_storage::{input::ObjectStorageInput, policy::ObjectStoragePolicy};
-use piam_proxy_core::{
+use piam_core::{
     condition::input::Condition,
     container::PolicyFilterParams,
     error::{eok_ctx, ProxyResult},

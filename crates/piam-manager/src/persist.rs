@@ -1,4 +1,4 @@
-use piam_proxy_core::manager_api::constants::VERSION;
+use piam_core::manager_api::constants::VERSION;
 use redis::Commands;
 
 use crate::{

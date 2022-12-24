@@ -1232,37 +1232,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "478c572c3d73181ff3c2539045f6eb99e5491218eae919370993b890cdbdd98e"
 
 [[package]]
-name = "piam-manager"
-version = "0.1.0"
-dependencies = [
- "axum",
- "busylib",
- "hyper",
- "log",
- "patsnap-constants",
- "piam-object-storage",
- "piam-proxy-core",
- "redis",
- "serde",
- "serde_yaml",
- "tokio",
- "uuid",
-]
-
-[[package]]
-name = "piam-object-storage"
-version = "0.1.0"
-dependencies = [
- "http",
- "piam-proxy-core",
- "serde",
- "serde_urlencoded",
- "strum",
- "strum_macros",
-]
-
-[[package]]
-name = "piam-proxy-core"
+name = "piam-core"
 version = "0.1.0"
 dependencies = [
  "anyhow",
@@ -1283,6 +1253,36 @@ dependencies = [
  "thiserror",
  "tokio",
  "uuid",
+]
+
+[[package]]
+name = "piam-manager"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "busylib",
+ "hyper",
+ "log",
+ "patsnap-constants",
+ "piam-core",
+ "piam-object-storage",
+ "redis",
+ "serde",
+ "serde_yaml",
+ "tokio",
+ "uuid",
+]
+
+[[package]]
+name = "piam-object-storage"
+version = "0.1.0"
+dependencies = [
+ "http",
+ "piam-core",
+ "serde",
+ "serde_urlencoded",
+ "strum",
+ "strum_macros",
 ]
 
 [[package]]
@@ -1551,8 +1551,8 @@ dependencies = [
  "log",
  "once_cell",
  "patsnap-constants",
+ "piam-core",
  "piam-object-storage",
- "piam-proxy-core",
  "reqwest",
  "serde",
  "tokio",

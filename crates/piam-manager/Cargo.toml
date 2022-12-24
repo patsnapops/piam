@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 busylib = { path = "../busylib" }
-piam-proxy-core = { path = "../piam-proxy-core" }
+piam-core = { path = "../piam-core" }
 piam-object-storage = { path = "../piam-object-storage" }
 axum = { version = "0.6.1", features = ["tokio"] }
 hyper = { version = "0.14", features = ["full"] }

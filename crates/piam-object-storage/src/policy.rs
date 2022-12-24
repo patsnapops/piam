@@ -1,4 +1,4 @@
-use piam_proxy_core::{
+use piam_core::{
     effect::Effect,
     policy::{Modeled, Name},
 };
@@ -148,7 +148,7 @@ impl ObjectStorageMatches for ObjectStorageInputPolicy {
 
 #[cfg(test)]
 mod tests {
-    use piam_proxy_core::{
+    use piam_core::{
         effect::{Effect, Modify},
         policy::Name,
     };

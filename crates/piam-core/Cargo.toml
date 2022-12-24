@@ -1,5 +1,5 @@
 [package]
-name = "piam-proxy-core"
+name = "piam-core"
 version = "0.1.0"
 edition = "2021"
 description = "Patsnap IAM proxy core"

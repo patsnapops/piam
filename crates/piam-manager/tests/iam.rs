@@ -10,7 +10,7 @@ use piam_object_storage::{
     parser_s3::S3HostDomains,
     policy::{Bucket, Key, ObjectStorageInputPolicy, ObjectStoragePolicy},
 };
-use piam_proxy_core::{
+use piam_core::{
     account::aws::AwsAccount,
     effect::Effect,
     group::Group,

@@ -5,7 +5,7 @@ use std::net::SocketAddr;
 use axum::{routing::get, Router};
 use busylib::logger::init_logger;
 use log::info;
-use piam_proxy_core::{error::eok, manager_api::constants::*};
+use piam_core::{error::eok, manager_api::constants::*};
 
 mod config;
 mod error;

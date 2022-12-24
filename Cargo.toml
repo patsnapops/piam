@@ -5,6 +5,6 @@ members = [
     "crates/busylib",
     "crates/piam-manager",
     "crates/piam-object-storage",
-    "crates/piam-proxy-core",
+    "crates/piam-core",
     "crates/s3-proxy",
 ]

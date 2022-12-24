@@ -10,7 +10,7 @@ use patsnap_constants::{
     IP_PROVIDER,
 };
 use piam_object_storage::input::{ActionKind, ObjectStorageInput};
-use piam_proxy_core::{
+use piam_core::{
     account::aws::AwsAccount,
     error::{esome, ProxyError, ProxyResult},
     manager_api::ManagerClient,
