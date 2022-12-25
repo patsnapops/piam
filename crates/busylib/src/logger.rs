@@ -28,7 +28,7 @@ pub fn init_logger(bin_name: &str, debug: bool) -> (Option<WorkerGuard>, Option<
     let base_filter = Targets::new()
         .with_target(bin_name, filter::LevelFilter::DEBUG)
         // TODO: remove hardcode piam_core
-        .with_target("piam_core", filter::LevelFilter::DEBUG);
+        .with_target("piam_proxy", filter::LevelFilter::DEBUG);
     let (filter, reload_handle) = reload::Layer::new(base_filter.clone());
 
     if debug {

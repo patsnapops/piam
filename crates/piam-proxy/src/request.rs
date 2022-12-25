@@ -1,8 +1,8 @@
 use log::debug;
+use piam_core::effect::Effect;
 
 use crate::{
-    effect::Effect,
-    proxy::error::{ProxyError, ProxyResult},
+    error::{ProxyError, ProxyResult},
     type_alias::{HttpClient, HttpRequest, HttpResponse},
 };
 

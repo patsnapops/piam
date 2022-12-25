@@ -1,8 +1,7 @@
+use std::fmt;
+
 use http::{header::HOST, Method};
-use piam_core::{
-    input::{Input, ParserError, ParserResult},
-    type_alias::HttpRequest,
-};
+use piam_core::{input::Input, type_alias::HttpRequest};
 use serde::{Deserialize, Serialize};
 
 use crate::input::ObjectStorageInput;
@@ -38,6 +37,24 @@ impl S3HostDomains {
         Ok(s)
     }
 }
+
+pub enum ParserError {
+    OperationNotSupported(String),
+    InvalidEndpoint(String),
+    Internal(String),
+}
+
+impl fmt::Display for ParserError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            ParserError::OperationNotSupported(msg) => write!(f, "OperationNotSupported: {}", msg),
+            ParserError::InvalidEndpoint(msg) => write!(f, "InvalidEndpoint: {}", msg),
+            ParserError::Internal(msg) => write!(f, "Internal: {}", msg),
+        }
+    }
+}
+
+pub type ParserResult<T> = Result<T, ParserError>;
 
 impl Input for ObjectStorageInput {}
 

@@ -9,7 +9,7 @@ use axum::{
 use busylib::{logger::init_logger, prelude::eok};
 use log::info;
 use patsnap_constants::policy_model::OBJECT_STORAGE;
-use piam_core::proxy::{
+use piam_proxy::{
     config::{server_port, set_constants, STATE_UPDATE_INTERVAL},
     state::StateManager,
 };

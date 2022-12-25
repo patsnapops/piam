@@ -7,10 +7,8 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::{
-    proxy::{
-        config::{CLUSTER_ENV, PROXY_TYPE},
-        error::ProxyError,
-    },
+    config::{CLUSTER_ENV, PROXY_TYPE},
+    error::ProxyError,
     type_alias::HttpResponse,
 };
 

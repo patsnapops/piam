@@ -4,8 +4,8 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-busylib = { path = "../busylib" }
 piam-core = { path = "../piam-core" }
+busylib = { path = "../busylib" }
 axum = { version = "0.6.1", features = ["tokio"] }
 hyper = { version = "0.14", features = ["full"] }
 tokio = { version = "1", features = ["full"] }
@@ -14,8 +14,7 @@ redis = "0.21.6"
 serde = { version = "1.0", features = ["derive"] }
 
 [dev-dependencies]
-patsnap-constants = { path = "../patsnap-constants" }
-piam-core = { path = "../piam-core", features = ["proxy"] }
 piam-object-storage = { path = "../piam-object-storage" }
+patsnap-constants = { path = "../patsnap-constants" }
 uuid = { version = "1.1.2", features = ["v4", "fast-rng", "macro-diagnostics"] }
 serde_yaml = "0.9"

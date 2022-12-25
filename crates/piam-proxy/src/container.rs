@@ -5,22 +5,21 @@ use std::{collections::HashMap, fmt::Debug};
 
 use async_trait::async_trait;
 use busylib::{prelude::esome, ANY};
-use serde::de::DeserializeOwned;
-
-use crate::{
+use piam_core::{
     account::{aws::AwsAccount, AccountId},
     group::{Group, GroupId},
     manager_api_constant::CONDITION,
-    policy::{Modeled, Policy, PolicyId},
+    policy::{condition::ConditionPolicy, Modeled, Policy, PolicyId},
     principal::{Role, RoleId, User, UserId},
-    proxy::{
-        config::POLICY_MODEL,
-        error::{ProxyError, ProxyResult},
-        manager_api::ManagerClient,
-        policy::condition::ConditionPolicy,
-        state::GetNewState,
-    },
     relation_model::PolicyRelationship,
+};
+use serde::de::DeserializeOwned;
+
+use crate::{
+    config::POLICY_MODEL,
+    error::{ProxyError, ProxyResult},
+    manager_api::ManagerClient,
+    state::GetNewState,
 };
 
 /// IamContainer store entities.

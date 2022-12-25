@@ -1,11 +1,11 @@
 use async_trait::async_trait;
 use busylib::config::dev_mode;
-use piam_core::proxy::{
+use piam_object_storage::parser_s3::S3HostDomains;
+use piam_proxy::{
     error::{ProxyError, ProxyResult},
     manager_api::ManagerClient,
     state::GetNewState,
 };
-use piam_object_storage::parser_s3::S3HostDomains;
 use serde::{Deserialize, Serialize};
 
 pub const DEV_PROXY_HOST: &str = "s3-proxy.dev";

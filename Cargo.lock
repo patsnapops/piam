@@ -24,12 +24,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "anyhow"
-version = "1.0.66"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "216261ddc8289130e551ddcd5ce8a064710c0d064a4d2895c67151c92b5443f6"
-
-[[package]]
 name = "arc-swap"
 version = "1.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1235,24 +1229,11 @@ checksum = "478c572c3d73181ff3c2539045f6eb99e5491218eae919370993b890cdbdd98e"
 name = "piam-core"
 version = "0.1.0"
 dependencies = [
- "anyhow",
- "arc-swap",
- "async-trait",
- "aws-sigv4",
- "axum",
  "busylib",
  "cidr",
  "http",
  "hyper",
- "log",
- "once_cell",
- "reqwest",
  "serde",
- "serde-xml-rs",
- "serde_yaml",
- "thiserror",
- "tokio",
- "uuid",
 ]
 
 [[package]]
@@ -1283,6 +1264,28 @@ dependencies = [
  "serde_urlencoded",
  "strum",
  "strum_macros",
+]
+
+[[package]]
+name = "piam-proxy"
+version = "0.1.0"
+dependencies = [
+ "arc-swap",
+ "async-trait",
+ "aws-sigv4",
+ "axum",
+ "busylib",
+ "http",
+ "hyper",
+ "log",
+ "once_cell",
+ "piam-core",
+ "reqwest",
+ "serde",
+ "serde-xml-rs",
+ "serde_yaml",
+ "tokio",
+ "uuid",
 ]
 
 [[package]]
@@ -1553,6 +1556,7 @@ dependencies = [
  "patsnap-constants",
  "piam-core",
  "piam-object-storage",
+ "piam-proxy",
  "reqwest",
  "serde",
  "tokio",

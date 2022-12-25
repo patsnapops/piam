@@ -4,12 +4,11 @@ use arc_swap::ArcSwap;
 use async_trait::async_trait;
 use busylib::{config::dev_mode, logger::LogHandle, prelude::eok};
 use log::warn;
+use piam_core::policy::Modeled;
 use serde::de::DeserializeOwned;
 
 use crate::{
-    policy::Modeled,
-    proxy::{container::IamContainer, error::ProxyResult, manager_api::ManagerClient},
-    type_alias::HttpClient,
+    container::IamContainer, error::ProxyResult, manager_api::ManagerClient, type_alias::HttpClient,
 };
 
 pub type ArcState<P, C> = Arc<ArcSwap<ProxyState<P, C>>>;

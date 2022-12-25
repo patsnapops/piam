@@ -10,15 +10,13 @@ use patsnap_constants::{
     region::{AP_SHANGHAI, CN_NORTHWEST_1, NA_ASHBURN, US_EAST_1},
     IP_PROVIDER,
 };
-use piam_core::{
-    account::aws::AwsAccount,
-    proxy::{
-        error::{ProxyError, ProxyResult},
-        manager_api::ManagerClient,
-        request::from_region_to_endpoint,
-    },
-};
+use piam_core::account::aws::AwsAccount;
 use piam_object_storage::input::{ActionKind, ObjectStorageInput};
+use piam_proxy::{
+    error::{ProxyError, ProxyResult},
+    manager_api::ManagerClient,
+    request::from_region_to_endpoint,
+};
 use serde::{Deserialize, Serialize};
 
 type BucketToAccessInfo = HashMap<String, AccessInfo>;

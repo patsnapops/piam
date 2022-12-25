@@ -6,5 +6,6 @@ members = [
     "crates/piam-manager",
     "crates/piam-object-storage",
     "crates/piam-core",
+    "crates/piam-proxy",
     "crates/s3-proxy",
 ]

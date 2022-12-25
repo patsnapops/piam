@@ -1,7 +1,5 @@
 use std::{fmt, fmt::Display};
 
-use crate::input::ParserError;
-
 pub type ProxyResult<T> = Result<T, ProxyError>;
 
 #[derive(Debug)]
@@ -69,16 +67,6 @@ impl Display for ProxyError {
             ProxyError::OtherInternal(msg) => write!(f, "OtherInternal: {}", msg),
             ProxyError::FatalError(msg) => write!(f, "FatalError: {}", msg),
             ProxyError::AssertFail(msg) => write!(f, "AssertFail: {}", msg),
-        }
-    }
-}
-
-impl From<ParserError> for ProxyError {
-    fn from(err: ParserError) -> Self {
-        match err {
-            ParserError::OperationNotSupported(msg) => ProxyError::OperationNotSupported(msg),
-            ParserError::InvalidEndpoint(msg) => ProxyError::InvalidEndpoint(msg),
-            ParserError::Internal(msg) => ProxyError::ParserError(msg),
         }
     }
 }

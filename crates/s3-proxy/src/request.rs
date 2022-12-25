@@ -1,13 +1,11 @@
 use http::{header::HOST, uri::PathAndQuery, HeaderValue, Uri};
-use piam_core::{
-    proxy::{
-        error::{ProxyError, ProxyResult},
-        request::from_region_to_host,
-    },
+use piam_proxy::{
+    error::{ProxyError, ProxyResult},
+    request::from_region_to_host,
     type_alias::HttpRequest,
 };
 
-use crate::S3Config;
+use crate::{error::from_parser_into_proxy_error, S3Config};
 
 pub trait S3RequestTransform {
     /// convert path-style-url to virtual hosted style
@@ -57,7 +55,10 @@ impl S3RequestTransform for HttpRequest {
 
     fn set_actual_host(&mut self, config: &S3Config, region: &str) -> ProxyResult<()> {
         let host = self.headers().get(HOST).unwrap().to_str().unwrap();
-        let proxy_host = config.proxy_hosts.find_proxy_host(host)?;
+        let proxy_host = config
+            .proxy_hosts
+            .find_proxy_host(host)
+            .map_err(from_parser_into_proxy_error)?;
         let bucket_dot = host.strip_suffix(proxy_host).ok_or_else(|| {
             ProxyError::InvalidEndpoint(format!("host {} should end with {}", host, proxy_host))
         })?;

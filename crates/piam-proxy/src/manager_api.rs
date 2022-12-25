@@ -1,19 +1,19 @@
 use std::fmt::Debug;
 
-use serde::de::DeserializeOwned;
-
-use crate::{
+use piam_core::{
     account::aws::AwsAccount,
     crypto::decrypt,
     group::Group,
     manager_api_constant::*,
     policy::{Modeled, Policy},
     principal::User,
-    proxy::{
-        config::PIAM_MANAGER_ADDRESS,
-        error::{deserialize, ProxyResult},
-    },
     relation_model::{PolicyRelationship, UserGroupRelationship},
+};
+use serde::de::DeserializeOwned;
+
+use crate::{
+    config::PIAM_MANAGER_ADDRESS,
+    error::{deserialize, ProxyResult},
 };
 
 #[derive(Debug, Default)]

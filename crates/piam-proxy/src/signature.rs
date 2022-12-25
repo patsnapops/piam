@@ -1,21 +1,18 @@
-use crate::proxy::error::ProxyResult;
+use crate::error::ProxyResult;
 
 pub mod aws {
     use std::time::SystemTime;
 
-    use anyhow::Result;
     use async_trait::async_trait;
     use aws_sigv4::http_request::{sign, SignableRequest, SigningParams, SigningSettings};
     use busylib::prelude::{eok_ctx, esome_ctx};
     use http::{header::AUTHORIZATION, Request};
     use hyper::{body, Body};
+    use piam_core::account::aws::AwsAccount;
 
     use crate::{
-        account::aws::AwsAccount,
-        proxy::{
-            error::{ProxyError, ProxyResult},
-            signature::aws::canonical_request::header::*,
-        },
+        error::{ProxyError, ProxyResult},
+        signature::aws::canonical_request::header::*,
         type_alias::HttpRequest,
     };
 
@@ -58,7 +55,7 @@ pub mod aws {
         async fn sign_with_aws_sigv4_params(
             self,
             params: &AwsSigv4SignParams<'_>,
-        ) -> Result<HttpRequest>;
+        ) -> ProxyResult<HttpRequest>;
     }
 
     #[async_trait]
@@ -80,7 +77,7 @@ pub mod aws {
         async fn sign_with_aws_sigv4_params(
             mut self,
             params: &AwsSigv4SignParams<'_>,
-        ) -> Result<HttpRequest> {
+        ) -> ProxyResult<HttpRequest> {
             // save checksum before signing
             let checksum = esome_ctx(
                 self.headers().get(X_AMZ_CONTENT_SHA_256),
@@ -99,19 +96,25 @@ pub mod aws {
 
             // convert body to bytes for signing
             let (p, b) = self.into_parts();
-            let bytes = body::to_bytes(b).await?;
+            let bytes = eok_ctx(
+                body::to_bytes(b).await,
+                "sign_with_aws_sigv4_params body to bytes failed",
+            );
             let mut byte_req = Request::from_parts(p, bytes);
 
             // do signing
             let signing_settings = SigningSettings::default();
-            let signing_params = SigningParams::builder()
-                .access_key(&params.account.access_key)
-                .secret_key(&params.account.secret_key)
-                .region(params.region)
-                .service_name(params.service)
-                .time(SystemTime::now())
-                .settings(signing_settings)
-                .build()?;
+            let signing_params = eok_ctx(
+                SigningParams::builder()
+                    .access_key(&params.account.access_key)
+                    .secret_key(&params.account.secret_key)
+                    .region(params.region)
+                    .service_name(params.service)
+                    .time(SystemTime::now())
+                    .settings(signing_settings)
+                    .build(),
+                "sign_with_aws_sigv4_params build SigningParams failed",
+            );
             let signable_request = SignableRequest::from(&byte_req);
             let (signing_instructions, _signature) = eok_ctx(
                 sign(signable_request, &signing_params),
@@ -175,7 +178,7 @@ pub mod aws {
 
     #[cfg(test)]
     mod test {
-        use crate::proxy::signature::aws::extract_aws_access_key_and_region_from_auth_header;
+        use crate::signature::aws::extract_aws_access_key_and_region_from_auth_header;
 
         #[test]
         fn test_extract_aws_access_key_and_region_from_auth_header() {

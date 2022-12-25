@@ -4,9 +4,10 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-patsnap-constants = { path = "../patsnap-constants", optional = true }
-piam-core = { path = "../piam-core", features = ["proxy", "aws-xml-response"] }
+piam-core = { path = "../piam-core" }
+piam-proxy = { path = "../piam-proxy", features = ["aws-xml-response"] }
 piam-object-storage = { path = "../piam-object-storage" }
+patsnap-constants = { path = "../patsnap-constants" }
 busylib = { path = "../busylib" }
 axum = { version = "0.6.1", features = ["tokio"] }
 hyper = { version = "0.14", features = ["full"] }
@@ -30,4 +31,4 @@ uuid = { version = "1.1.2", features = ["v4", "fast-rng", "macro-diagnostics"] }
 [features]
 # Special requirement for s3 proxy: Using a unified access key (without account code at the end) to
 # access buckets across multiple accounts for each user
-uni-key = ["aws-sdk-s3", "aws-types", "patsnap-constants", "reqwest"]
+uni-key = ["aws-sdk-s3", "aws-types", "reqwest"]

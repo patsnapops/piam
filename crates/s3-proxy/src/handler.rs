@@ -8,22 +8,22 @@ use busylib::{logger::change_debug, prelude::eok_ctx};
 use http::{Response, StatusCode};
 use hyper::Body;
 use log::debug;
-use piam_core::{
-    condition::input::Condition,
-    proxy::{
-        container::PolicyFilterParams,
-        error::ProxyResult,
-        policy::FindEffect,
-        request::{forward, HttpRequestExt},
-        response::HttpResponseExt,
-        signature::aws::{AwsSigv4, AwsSigv4SignParams},
-        state::ArcState,
-    },
+use piam_core::condition::input::Condition;
+use piam_object_storage::{input::ObjectStorageInput, policy::ObjectStoragePolicy};
+use piam_proxy::{
+    container::PolicyFilterParams,
+    error::ProxyResult,
+    policy::FindEffect,
+    request::{forward, HttpRequestExt},
+    response::HttpResponseExt,
+    signature::aws::{AwsSigv4, AwsSigv4SignParams},
+    state::ArcState,
     type_alias::{HttpRequest, HttpResponse},
 };
-use piam_object_storage::{input::ObjectStorageInput, policy::ObjectStoragePolicy};
 
-use crate::{config::SERVICE, request::S3RequestTransform, S3Config};
+use crate::{
+    config::SERVICE, error::from_parser_into_proxy_error, request::S3RequestTransform, S3Config,
+};
 
 pub type S3ProxyState = ArcState<ObjectStoragePolicy, S3Config>;
 
@@ -82,7 +82,8 @@ pub async fn handle(
     // Get input structure by parsing the request for specific protocol.
     // Example: getting S3Input with bucket and key as its fields.
     let s3_config = &state.extended_config;
-    let input = ObjectStorageInput::from_s3(&req, &s3_config.proxy_hosts)?;
+    let input = ObjectStorageInput::from_s3(&req, &s3_config.proxy_hosts)
+        .map_err(from_parser_into_proxy_error)?;
 
     let iam_container = &state.iam_container;
 

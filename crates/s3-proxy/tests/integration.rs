@@ -12,10 +12,9 @@ use aws_types::{os_shim_internal::Env, region::Region, Credentials};
 use futures::future;
 use patsnap_constants::{
     region::{AP_SHANGHAI, CN_NORTHWEST_1, NA_ASHBURN, US_EAST_1},
-    s3_proxy_endpoint::{EPS_NON_DEV, EP_NA_ASHBURN},
+    s3_proxy_endpoint::{EPS_NON_DEV, EP_NA_ASHBURN, EP_S3_PROXY_DEV},
 };
 use uuid::Uuid;
-use patsnap_constants::s3_proxy_endpoint::EP_S3_PROXY_DEV;
 
 pub const DEV_PROXY_HOST: &str = "s3-proxy.dev";
 pub const DEV_PROXY_ENDPOINT: &str = "http://s3-proxy.dev";
