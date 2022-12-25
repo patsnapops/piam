@@ -139,6 +139,16 @@ pub fn user_3_whl0() -> User {
     }
 }
 
+pub fn user_dev() -> User {
+    User {
+        id: "28D536B6-35BA-4BC2-9767-7905DEBDFF1E".to_string(),
+        name: "user_dev".to_string(),
+        base_access_key: "AKPSSVCS07PIAMDEV".to_string(),
+        secret: "".to_string(),
+        kind: UserKind::Service,
+    }
+}
+
 pub fn user_svcs_d_data_rd_processing_batch_qa() -> User {
     User {
         id: "82b52b79-4130-4846-9779-1ead6f0710dc".to_string(),
@@ -207,6 +217,7 @@ pub fn make_users() -> Vec<User> {
         user_3_fxd0(),
         user_3_zsz0(),
         user_3_whl0(),
+        user_dev(),
         user_svcs_d_data_rd_processing_batch_qa(),
         user_svcs_d_data_dwc_script(),
         user_svcs_d_data_image_sync_recover(),
@@ -279,6 +290,13 @@ pub fn group_data_tmp() -> Group {
     }
 }
 
+pub fn group_allow_all() -> Group {
+    Group {
+        id: "EFF02E70-1879-4B10-A861-65313C61FD7D".to_string(),
+        name: "allow_all".to_string(),
+    }
+}
+
 pub fn make_groups() -> Vec<Group> {
     vec![
         group_3_cjj0(),
@@ -290,6 +308,7 @@ pub fn make_groups() -> Vec<Group> {
         group_team_data_services(),
         group_svcs_opst(),
         group_data_tmp(),
+        group_allow_all(),
     ]
 }
 
@@ -759,6 +778,34 @@ pub fn policy_os_3977_cn_northwest_1_group_data_tmp() -> Policy<ObjectStoragePol
     }
 }
 
+pub fn policy_os_group_allow_all() -> Policy<ObjectStoragePolicy> {
+    Policy {
+        kind: OBJECT_STORAGE.to_string(),
+        version: 1,
+        id: "5ADBA056-2EC1-4B6C-A8F4-B42245509180".to_string(),
+        name: "policy_os_group_allow_all".to_string(),
+        modeled_policy: vec![ObjectStoragePolicy {
+            version: 0,
+            id: "36EADFB4-E229-4D73-9D79-BA0BCE997DDB".to_string(),
+            input_policy: ObjectStorageInputPolicy {
+                actions: Some(base_s3_actions_with_delete()),
+                bucket: Bucket {
+                    tag: None,
+                    effect: Some(Effect::allow()),
+                    keys: Some(vec![Key {
+                        effect: Some(Effect::allow()),
+                        ..Default::default()
+                    }]),
+                    ..Default::default()
+                },
+                ..Default::default()
+            },
+            output_policy: None,
+        }],
+        ..Default::default()
+    }
+}
+
 pub fn policy_allow_private_ip() -> Policy<ConditionPolicy> {
     Policy {
         kind: CONDITION.to_string(),
@@ -793,6 +840,7 @@ pub fn make_policies_object_storage() -> Vec<Policy<ObjectStoragePolicy>> {
         policy_os_opst_for_all(),
         policy_os_7478_us_east00000_1_group_data_tmp(),
         policy_os_3977_cn_northwest_1_group_data_tmp(),
+        policy_os_group_allow_all(),
     ]
 }
 
@@ -862,11 +910,17 @@ pub fn make_user_group_relationships() -> Vec<UserGroupRelationship> {
             group_id: group_data_tmp().id,
         },
     ];
+    let group_allow_all = vec![UserGroupRelationship {
+        id: "0F3FD5AD-90D1-4956-9323-3087EE226655".to_string(),
+        user_id: user_dev().id,
+        group_id: group_allow_all().id,
+    }];
     let mut ugrs = vec![];
     ugrs.extend(group_team_data_services);
     ugrs.extend(group_persons);
     ugrs.extend(group_opst);
     ugrs.extend(group_data_tmp);
+    ugrs.extend(group_allow_all);
     ugrs
 }
 
@@ -1038,6 +1092,18 @@ pub fn make_policy_relationships() -> Vec<PolicyRelationship> {
             account_id: AWS_PROD_3977.to_string(),
             region: Region::CnNorthwest1.into(),
             policy_id: policy_os_3977_cn_northwest_1_group_data_tmp().id,
+            ..Default::default()
+        },
+        // allow all
+        PolicyRelationship {
+            id: "ae14e161-3357-46a5-b771-31abfdf80844".to_string(),
+            policy_model: OBJECT_STORAGE.to_string(),
+            user_id: None,
+            group_id: Some(group_allow_all().id),
+            role_id: None,
+            account_id: ANY.to_string(),
+            region: Region::Any.into(),
+            policy_id: policy_os_group_allow_all().id,
             ..Default::default()
         },
         // private ip

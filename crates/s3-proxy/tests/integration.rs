@@ -15,6 +15,7 @@ use patsnap_constants::{
     s3_proxy_endpoint::{EPS_NON_DEV, EP_NA_ASHBURN},
 };
 use uuid::Uuid;
+use patsnap_constants::s3_proxy_endpoint::EP_S3_PROXY_DEV;
 
 pub const DEV_PROXY_HOST: &str = "s3-proxy.dev";
 pub const DEV_PROXY_ENDPOINT: &str = "http://s3-proxy.dev";
@@ -935,7 +936,7 @@ async fn system_test_local() {
 #[tokio::test]
 async fn dev_test() {
     let client = build_client_from_params(ClientParams {
-        access_key: "AKPSSVCS04OPST",
+        access_key: "AKPSSVCS07PIAMDEV",
         secret: "",
         region: CN_NORTHWEST_1,
         endpoint: DEV_PROXY_ENDPOINT,
@@ -964,4 +965,57 @@ async fn test_list_buckets() {
 
     let output = client.list_buckets().send().await.unwrap();
     dbg!(output.buckets().unwrap().len());
+}
+
+#[tokio::test]
+async fn shanghai_big() {
+    let mut tasks = vec![];
+    for i in 0..6 {
+        println!("start {}", i);
+        let future = async move {
+            let client = build_client_from_params(ClientParams {
+                access_key: "AKPSSVCS07PIAMDEV",
+                secret: "",
+                region: CN_NORTHWEST_1,
+                endpoint: EP_AP_SHANGHAI,
+            });
+
+            const SIZE: usize = 50 * 1024 * 1024;
+            let body = ByteStream::from(vec![1; SIZE]);
+            let objects = client
+                .put_object()
+                .bucket("ops-9554")
+                .key(format!("s3-proxy-test/22021225.{}", i))
+                .body(body)
+                .send()
+                .await
+                .unwrap();
+            println!("OK {}", i);
+        };
+        tasks.push(future);
+    }
+
+    // tokio join all tasks
+    futures::future::join_all(tasks).await;
+}
+
+#[tokio::test]
+async fn shanghai_list() {
+    let client = build_client_from_params(ClientParams {
+        access_key: "AKPSSVCS04OPST",
+        secret: "",
+        region: CN_NORTHWEST_1,
+        endpoint: EP_AP_SHANGHAI,
+    });
+
+    const SIZE: usize = 5 * 1024 * 1024;
+    let body = ByteStream::from(vec![1; SIZE]);
+    let objects = client
+        .list_objects_v2()
+        .bucket("data-bio-source-cn-1251949819")
+        // .key("s3-proxy-test/22021225.txt")
+        // .body(body)
+        .send()
+        .await
+        .unwrap();
 }
