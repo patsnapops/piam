@@ -125,6 +125,23 @@ deploy_s3_proxy_us_aws_prod:
   script:
     - ops_deploy deploy
 
+deploy_s3_proxy_cn_aws_release:
+  stage: deploy
+  tags:
+    - aws
+    - docker
+  when: manual
+  variables:
+    ENV: release
+    PROJECT_NAME: "s3-proxy"
+    REGION: cn-northwest-1
+    K8STYPE: eks
+    GIT_STRATEGY: none
+  before_script:
+    - echo $image
+  script:
+    - ops_deploy deploy
+
 deploy_s3_proxy_cn_aws_qa:
   stage: deploy
   tags:
