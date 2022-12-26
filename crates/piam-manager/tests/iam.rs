@@ -11,9 +11,11 @@ use piam_core::{
     effect::Effect,
     group::Group,
     manager_api_constant::{CONDITION, VERSION},
-    policy::{Name, Policy},
+    policy::{
+        condition::{ConditionPolicy, ConditionRange},
+        Name, Policy,
+    },
     principal::{User, UserKind},
-    proxy::policy::condition::{ConditionPolicy, ConditionRange},
     relation_model::{PolicyRelationship, UserGroupRelationship},
 };
 use piam_object_storage::{
@@ -1158,7 +1160,7 @@ fn write_all() {
     let policy_relationships = ser(&make_policy_relationships());
     let s3_config = ser(&make_s3_config());
 
-    write("accounts", read_last_version("accounts"));
+    // write("accounts", read_last_version("accounts"));
     write("users", users);
     write("groups", groups);
     write("policies:ObjectStorage", policies_object_storage);
