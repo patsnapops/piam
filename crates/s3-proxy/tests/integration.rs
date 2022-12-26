@@ -9,6 +9,7 @@ use aws_sdk_s3::{
 };
 use aws_smithy_client::{erase::DynConnector, never::NeverConnector};
 use aws_types::{os_shim_internal::Env, region::Region, Credentials};
+use busylib::prelude::eok;
 use futures::future;
 use patsnap_constants::{
     region::{AP_SHANGHAI, CN_NORTHWEST_1, NA_ASHBURN, US_EAST_1},
@@ -42,14 +43,7 @@ async fn head_bucket() {
         .bucket(Uuid::new_v4().to_string())
         .send()
         .await;
-    match output.err().unwrap() {
-        SdkError::ServiceError { err, raw } => {
-            assert!(matches!(err.kind, HeadBucketErrorKind::NotFound(not_found)));
-        }
-        _ => {
-            panic!("unexpected test error");
-        }
-    }
+    assert!(output.is_err())
 }
 
 #[tokio::test]
@@ -392,7 +386,7 @@ async fn build_client_from_env(env: Env, endpoint: &str) -> Client {
                 .with_env(env)
                 .with_http_connector(DynConnector::new(NeverConnector::new())),
         )
-        .endpoint_resolver(Endpoint::immutable(endpoint.parse().expect("invalid URI")))
+        .endpoint_resolver(eok(Endpoint::immutable(endpoint)))
         .load()
         .await;
     aws_sdk_s3::Client::new(&conf)
@@ -409,9 +403,7 @@ fn build_client_from_params(params: ClientParams) -> Client {
     let creds = Credentials::from_keys(params.access_key, params.secret, None);
     let cb = Config::builder()
         .credentials_provider(creds)
-        .endpoint_resolver(Endpoint::immutable(
-            params.endpoint.parse().expect("invalid URI"),
-        ))
+        .endpoint_resolver(eok(Endpoint::immutable(params.endpoint)))
         .region(Region::new(params.region));
     Client::from_conf(cb.build())
 }
@@ -942,9 +934,10 @@ async fn dev_test() {
     });
 
     let objects = client
-        .get_object()
+        .put_object()
         .bucket("ops-9554")
-        .key("HK/A/12/51/79/0/output.json")
+        .key("s3-proxy-test/foo")
+        .body(ByteStream::from(vec![1, 2]))
         .send()
         .await
         .unwrap();

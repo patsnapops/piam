@@ -5,7 +5,7 @@ use std::collections::HashMap;
 
 use aws_sdk_s3::{Client, Config, Endpoint};
 use aws_types::{region::Region, Credentials};
-use busylib::prelude::esome;
+use busylib::prelude::{eok, esome};
 use patsnap_constants::{
     region::{AP_SHANGHAI, CN_NORTHWEST_1, NA_ASHBURN, US_EAST_1},
     IP_PROVIDER,
@@ -97,15 +97,9 @@ impl UniKeyInfo {
                 let config = match &access.endpoint {
                     // TODO: refactor this quick and dirty solution for s3 uni-key feature
                     None => cb.build(),
-                    Some(tep) => {
-                        let uri = tep.parse().map_err(|e| {
-                            ProxyError::OtherInternal(format!(
-                                "invalid URI for tencent endpoint: {}",
-                                e
-                            ))
-                        })?;
-                        cb.endpoint_resolver(Endpoint::immutable(uri)).build()
-                    }
+                    Some(tencent_ep) => cb
+                        .endpoint_resolver(eok(Endpoint::immutable(tencent_ep)))
+                        .build(),
                 };
                 Ok((access, Client::from_conf(config)))
             })
