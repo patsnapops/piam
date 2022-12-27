@@ -74,6 +74,7 @@ build_manager:
     - export http_proxy="http://10.40.40.12:8118" &&export https_proxy="http://10.40.40.12:8118"
     - export MANAGER="${PRIVATE_DTR_URL}/${TEAM}/${PROJECT_TYPE}-${TEAM}-piam-manager:${CI_COMMIT_REF_NAME}-${CI_PIPELINE_ID}"
     - docker build --build-arg package=piam-manager -t ${MANAGER} --target runtime .
+    - docker images | grep "piam-manager"
     - docker push ${MANAGER}
     - echo ${MANAGER}
 
@@ -86,6 +87,7 @@ build_s3_proxy:
   script:
     - export S3PROXY="${PRIVATE_DTR_URL}/${TEAM}/${PROJECT_TYPE}-${TEAM}-s3-proxy:${CI_COMMIT_REF_NAME}-${CI_PIPELINE_ID}"
     - docker build --build-arg package=s3-proxy -t ${S3PROXY} --target runtime .
+    - docker images | grep "s3-proxy"
     - docker push ${S3PROXY}
     - echo ${S3PROXY}
 

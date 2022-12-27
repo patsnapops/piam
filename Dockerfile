@@ -22,6 +22,7 @@ ARG package
 RUN echo "package to build: ${package}"
 COPY . .
 RUN cargo build --release --all-features -p ${package}
+RUN ls -lh ./target/release
 
 # runtime stage
 #FROM alpine:3.16 as runtime
