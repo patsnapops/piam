@@ -3,19 +3,28 @@ use std::{fmt::Debug, sync::Arc, time::Instant};
 use arc_swap::ArcSwap;
 use async_trait::async_trait;
 use busylib::{config::dev_mode, logger::LogHandle, prelude::eok};
-use log::warn;
+use log::{debug, warn};
 use piam_core::policy::Modeled;
 use serde::de::DeserializeOwned;
 
 use crate::{
-    container::IamContainer, error::ProxyResult, manager_api::ManagerClient, type_alias::HttpClient,
+    config::{CoreConfig, EXTENDED_CONFIG_TYPE},
+    container::IamContainer,
+    error::ProxyResult,
+    manager_api::ManagerClient,
+    type_alias::HttpClient,
 };
 
 pub type ArcState<P, C> = Arc<ArcSwap<ProxyState<P, C>>>;
 
+pub trait CoreState<C>: Sized {
+    fn new_from(config: C) -> ProxyResult<Self>;
+}
+
 #[async_trait]
-pub trait GetNewState: Sized {
-    async fn new_from_manager(manager: &ManagerClient) -> ProxyResult<Self>;
+pub trait ExtendedState<C, P: Modeled>: Sized {
+    fn new_from(extended_config: C) -> ProxyResult<Self>;
+    async fn with_core_config(self, core_config: &CoreConfig<P>) -> ProxyResult<Self>;
 }
 
 #[derive(Debug, Default)]
@@ -25,7 +34,7 @@ pub struct Health {
 }
 
 #[derive(Debug, Default)]
-pub struct ProxyState<P: Modeled, C: GetNewState> {
+pub struct ProxyState<P: Modeled, C: ExtendedState<C, P>> {
     pub health: Health,
     pub log_handle: Option<LogHandle>,
     pub iam_container: IamContainer<P>,
@@ -34,17 +43,31 @@ pub struct ProxyState<P: Modeled, C: GetNewState> {
     pub http_client: HttpClient,
 }
 
-impl<P: Modeled + DeserializeOwned + Default + Send + Sync + 'static, C: GetNewState>
-    ProxyState<P, C>
+impl<
+        P: Modeled + DeserializeOwned + Default + Send + Sync + 'static,
+        C: ExtendedState<C, P> + DeserializeOwned,
+    > ProxyState<P, C>
 {
     pub async fn new_from_manager() -> ProxyResult<Self> {
         let manager_client = ManagerClient::default();
-        // TODO: do new_from_manager stuff here make sub new_from_manager state independent
+        debug!("start fetching config");
+        let core_config = manager_client.get_core_config().await?;
+        let extended_config = manager_client
+            .get_extended_config(&EXTENDED_CONFIG_TYPE.load())
+            .await?;
+        debug!("end fetching config");
+
+        let extended_config = C::new_from(extended_config)?
+            .with_core_config(&core_config)
+            .await?;
+
+        let iam_container = IamContainer::new_from(core_config)?;
+
         let state = ProxyState {
             health: Health::default(),
             log_handle: None,
-            iam_container: IamContainer::new_from_manager(&manager_client).await?,
-            extended_config: C::new_from_manager(&manager_client).await?,
+            iam_container,
+            extended_config,
             manager_client,
             http_client: Default::default(),
         };
@@ -53,14 +76,14 @@ impl<P: Modeled + DeserializeOwned + Default + Send + Sync + 'static, C: GetNewS
 }
 
 /// StateManager updating proxy state from piam manager periodically.
-pub struct StateManager<P: Modeled, C: GetNewState> {
+pub struct StateManager<P: Modeled, C: ExtendedState<C, P>> {
     pub health_state: Health,
     pub arc_state: ArcState<P, C>,
 }
 
 impl<
         P: Modeled + DeserializeOwned + Default + Send + Sync + 'static,
-        C: GetNewState + Default + Send + Sync,
+        C: ExtendedState<C, P> + Debug + DeserializeOwned + Default + Send + Sync,
     > StateManager<P, C>
 {
     pub async fn initialize() -> Self {

@@ -14,7 +14,6 @@ use piam_core::account::aws::AwsAccount;
 use piam_object_storage::input::{ActionKind, ObjectStorageInput};
 use piam_proxy::{
     error::{ProxyError, ProxyResult},
-    manager_api::ManagerClient,
     request::from_region_to_endpoint,
 };
 use serde::{Deserialize, Serialize};
@@ -48,9 +47,9 @@ impl UniKeyInfo {
         Ok(access_info)
     }
 
-    pub async fn new_from(manager: &ManagerClient) -> ProxyResult<Self> {
-        let accounts = manager.get_accounts().await?;
+    pub async fn new_from(accounts: &Vec<AwsAccount>) -> ProxyResult<Self> {
         let access_info_vec: ProxyResult<Vec<AccessInfo>> = accounts
+            .clone()
             .into_iter()
             .map(|account| {
                 // TODO: refactor this quick and dirty solution for s3 uni-key feature

@@ -22,7 +22,7 @@ use piam_object_storage::{
     parser_s3::S3HostDomains,
     policy::{Bucket, Key, ObjectStorageInputPolicy, ObjectStoragePolicy},
 };
-use redis::Commands;
+use redis::{Client, Commands};
 use serde::{ser, Deserialize, Serialize};
 
 pub fn make_accounts() -> Vec<AwsAccount> {
@@ -141,6 +141,26 @@ pub fn user_3_whl0() -> User {
     }
 }
 
+pub fn user_3_wwt0() -> User {
+    User {
+        id: "127BEAD6-78BC-4776-AAF9-07C363E6193C".to_string(),
+        name: "吴文涛".to_string(),
+        base_access_key: "AKPSPERS03WWT0Z".to_string(),
+        secret: "".to_string(),
+        kind: Default::default(),
+    }
+}
+
+pub fn user_3_cyy0() -> User {
+    User {
+        id: "FDCFC151-D052-4074-BCEC-83ED5D49F3B4".to_string(),
+        name: "陈亚运".to_string(),
+        base_access_key: "AKPSPERS03CYY0Z".to_string(),
+        secret: "".to_string(),
+        kind: Default::default(),
+    }
+}
+
 pub fn user_dev() -> User {
     User {
         id: "28D536B6-35BA-4BC2-9767-7905DEBDFF1E".to_string(),
@@ -219,6 +239,8 @@ pub fn make_users() -> Vec<User> {
         user_3_fxd0(),
         user_3_zsz0(),
         user_3_whl0(),
+        user_3_wwt0(),
+        user_3_cyy0(),
         user_dev(),
         user_svcs_d_data_rd_processing_batch_qa(),
         user_svcs_d_data_dwc_script(),
@@ -271,6 +293,13 @@ pub fn group_3_whl0() -> Group {
     }
 }
 
+pub fn group_sa_dev() -> Group {
+    Group {
+        id: "59946274-7B3F-4DE8-9BC5-B18F26E0F224".to_string(),
+        name: "group_sa_dev".to_string(),
+    }
+}
+
 pub fn group_team_data_services() -> Group {
     Group {
         id: "374c9ce4-0fca-4520-93c8-0a74529c07c8".to_string(),
@@ -307,6 +336,7 @@ pub fn make_groups() -> Vec<Group> {
         group_3_fxd0(),
         group_3_zsz0(),
         group_3_whl0(),
+        group_sa_dev(),
         group_team_data_services(),
         group_svcs_opst(),
         group_data_tmp(),
@@ -553,6 +583,72 @@ pub fn policy_os_0066_us_group_3_whl0() -> Policy<ObjectStoragePolicy> {
                 ..Default::default()
             },
             ..Default::default()
+        }],
+        ..Default::default()
+    }
+}
+
+pub fn policy_os_7478_us_east00000_1_group_sa_dev() -> Policy<ObjectStoragePolicy> {
+    // 7478 s3://pdf-patsnap-us-east-1/US/A1/20/20/03/29/65/5/US_20200329655_A1.pdf
+    Policy {
+        kind: OBJECT_STORAGE.to_string(),
+        version: 1,
+        id: "357DD2B7-268D-49D2-858F-1CA574739CE0".to_string(),
+        name: "policy_os_7478_us_east00000_1_group_sa_dev".to_string(),
+        modeled_policy: vec![ObjectStoragePolicy {
+            version: 0,
+            id: "A158CB2A-D56D-4F1B-9A87-635D2B789149".to_string(),
+            input_policy: ObjectStorageInputPolicy {
+                actions: Some(base_s3_actions()),
+                bucket: Bucket {
+                    name: Some(Name {
+                        eq: Some(vec!["pdf-patsnap-us-east-1".into()]),
+                        start_with: None,
+                    }),
+                    tag: None,
+                    effect: Some(Effect::allow()),
+                    keys: Some(vec![Key {
+                        name: None,
+                        tag: None,
+                        effect: Some(Effect::allow()),
+                    }]),
+                },
+                ..Default::default()
+            },
+            output_policy: None,
+        }],
+        ..Default::default()
+    }
+}
+
+pub fn policy_os_3977_cn_northwest_1_group_sa_dev() -> Policy<ObjectStoragePolicy> {
+    // 3977 s3://data-pdf-cn-northwest-1/CN/A/11/50/67/44/8/CN_115067448_A.pdf
+    Policy {
+        kind: OBJECT_STORAGE.to_string(),
+        version: 1,
+        id: "B64AC16F-D9AA-47AD-9DDD-30055FC0DD9C".to_string(),
+        name: "policy_os_3977_cn_northwest_1_group_sa_dev".to_string(),
+        modeled_policy: vec![ObjectStoragePolicy {
+            version: 0,
+            id: "04DD8391-A013-405C-A3CD-2BC490DC6C27".to_string(),
+            input_policy: ObjectStorageInputPolicy {
+                actions: Some(base_s3_actions()),
+                bucket: Bucket {
+                    name: Some(Name {
+                        eq: Some(vec!["data-pdf-cn-northwest-1".into()]),
+                        start_with: None,
+                    }),
+                    tag: None,
+                    effect: Some(Effect::allow()),
+                    keys: Some(vec![Key {
+                        name: None,
+                        tag: None,
+                        effect: Some(Effect::allow()),
+                    }]),
+                },
+                ..Default::default()
+            },
+            output_policy: None,
         }],
         ..Default::default()
     }
@@ -826,6 +922,9 @@ pub fn policy_allow_private_ip() -> Policy<ConditionPolicy> {
     }
 }
 
+// TODO now: policy_allow_from_local: ip, env, region
+// pub fn policy_allow_private_ip()
+
 pub fn make_policies_object_storage() -> Vec<Policy<ObjectStoragePolicy>> {
     vec![
         policy_os_7478_us_group_3_cjj0(),
@@ -835,6 +934,8 @@ pub fn make_policies_object_storage() -> Vec<Policy<ObjectStoragePolicy>> {
         policy_os_0066_us_group_3_zsz0(),
         policy_os_4258_us_group_3_zsz0(),
         policy_os_0066_us_group_3_whl0(),
+        policy_os_7478_us_east00000_1_group_sa_dev(),
+        policy_os_3977_cn_northwest_1_group_sa_dev(),
         policy_os_7478_us_east00000_1_group_team_data_services(),
         policy_os_3977_cn_northwest_1_group_team_data_services(),
         policy_os_0066_us_east00000_1_group_team_data_services(),
@@ -858,11 +959,20 @@ pub fn make_user_group_relationships() -> Vec<UserGroupRelationship> {
     ]
     .into_iter()
     .map(|u| UserGroupRelationship {
+        // TODO now: avoid id issue
         id: "4bf47344-63b3-466a-afd0-5f9368af2816".to_string(),
         user_id: u.id,
         group_id: group_team_data_services().id,
     })
     .collect();
+    let group_sa_dev: Vec<UserGroupRelationship> = vec![user_3_wwt0(), user_3_cyy0()]
+        .into_iter()
+        .map(|u| UserGroupRelationship {
+            id: "27653BFF-6A3D-488D-B95E-8FC93EF3B79F".to_string(),
+            user_id: u.id,
+            group_id: group_sa_dev().id,
+        })
+        .collect();
     let group_persons = vec![
         UserGroupRelationship {
             id: "e0e80393-f471-4fd4-986b-1cf26d583534".to_string(),
@@ -919,6 +1029,7 @@ pub fn make_user_group_relationships() -> Vec<UserGroupRelationship> {
     }];
     let mut ugrs = vec![];
     ugrs.extend(group_team_data_services);
+    ugrs.extend(group_sa_dev);
     ugrs.extend(group_persons);
     ugrs.extend(group_opst);
     ugrs.extend(group_data_tmp);
@@ -1003,6 +1114,29 @@ pub fn make_policy_relationships() -> Vec<PolicyRelationship> {
             account_id: AWS_DATA_0066.to_string(),
             region: Region::UsEast1.into(),
             policy_id: policy_os_0066_us_group_3_whl0().id,
+            ..Default::default()
+        },
+        // team devs
+        PolicyRelationship {
+            id: "D62CFB11-A8B9-4036-A5B0-52AF279F08E3".to_string(),
+            policy_model: OBJECT_STORAGE.to_string(),
+            user_id: None,
+            group_id: Some(group_sa_dev().id),
+            role_id: None,
+            account_id: AWS_PROD_7478.to_string(),
+            region: Region::UsEast1.into(),
+            policy_id: policy_os_7478_us_east00000_1_group_sa_dev().id,
+            ..Default::default()
+        },
+        PolicyRelationship {
+            id: "35318B88-38A0-4FAB-8C5A-7CF9EBA0A6E9".to_string(),
+            policy_model: OBJECT_STORAGE.to_string(),
+            user_id: None,
+            group_id: Some(group_sa_dev().id),
+            role_id: None,
+            account_id: AWS_PROD_3977.to_string(),
+            region: Region::CnNorthwest1.into(),
+            policy_id: policy_os_3977_cn_northwest_1_group_sa_dev().id,
             ..Default::default()
         },
         // svcs
@@ -1171,18 +1305,19 @@ fn write_all() {
     write("extended_config:s3", s3_config);
 }
 
+fn build_client() -> Client {
+    redis::Client::open("redis://dev-redis.patsnap.info:30070/1").unwrap()
+    // redis::Client::open("redis://localhost/1").unwrap()
+}
+
 pub fn write(key: &str, value: String) {
-    let client = redis::Client::open("redis://dev-redis.patsnap.info:30070/1").unwrap();
-    let client = redis::Client::open("redis://localhost/1").unwrap();
-    let mut con = client.get_connection().unwrap();
+    let mut con = build_client().get_connection().unwrap();
     let key = format!("piam:{}:{}", VERSION, key);
     con.set(key, value).unwrap()
 }
 
 pub fn read_last_version(key: &str) -> String {
-    let client = redis::Client::open("redis://dev-redis.patsnap.info:30070/1").unwrap();
-    let client = redis::Client::open("redis://localhost/1").unwrap();
-    let mut con = client.get_connection().unwrap();
+    let mut con = build_client().get_connection().unwrap();
     let last_version = VERSION.replace("v", "");
     let last_version = last_version.parse::<i32>().unwrap() - 1;
     let key = format!("piam:v{}:{}", last_version, key);

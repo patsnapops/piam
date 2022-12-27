@@ -499,27 +499,54 @@ async fn cjj_us_east() {
 }
 
 #[tokio::test]
-async fn wwt_test() {
-    let env = Env::from_slice(&[
-        ("AWS_MAX_ATTEMPTS", "1"),
-        ("AWS_REGION", US_EAST_1),
-        ("AWS_ACCESS_KEY_ID", "AKPSSVCSPROXYDEV"),
-        ("AWS_SECRET_ACCESS_KEY", "dummy_sk"),
-    ]);
-    let client = build_client_from_env(
-        env,
-        &format!("http://{}", "us-east-1.s3-proxy.patsnap.info"),
-        // &format!("http://{}", DEV_PROXY_HOST),
-    )
-    .await;
+async fn wwt_dev() {
+    let client = build_client_from_params(ClientParams {
+        access_key: "AKPSPERS03WWT0Z",
+        secret: "",
+        region: CN_NORTHWEST_1,
+        endpoint: EP_S3_PROXY_DEV,
+    });
     let output = client
         .head_object()
-        .bucket("autodeploy-patsnap-us-east-1")
-        .key("aes_key.txt")
+        .bucket("ops-9554")
+        .key("US/A1/20/20/03/29/65/5/US_20200329655_A1.pdf")
         .send()
         .await
         .unwrap();
     // assert!(output.content_length() > 1);
+}
+
+#[tokio::test]
+async fn wwt_online() {
+    let client = build_client_from_params(ClientParams {
+        access_key: "AKPSPERS03WWT0Z",
+        secret: "",
+        region: CN_NORTHWEST_1,
+        endpoint: EP_LOCAL,
+    });
+    let output = client
+        .head_object()
+        .bucket("data-pdf-cn-northwest-1")
+        .key("CN/A/11/50/67/44/8/CN_115067448_A.pdf")
+        .send()
+        .await
+        .unwrap();
+    println!("file size: {:?}", output.content_length());
+    let output = client
+        .list_objects_v2()
+        .bucket("data-pdf-cn-northwest-1")
+        .send()
+        .await
+        .unwrap();
+    println!(
+        "file names: {:?}",
+        output
+            .contents()
+            .unwrap()
+            .iter()
+            .map(|x| x.key().unwrap())
+            .collect::<Vec<_>>()
+    );
 }
 
 #[tokio::test]
@@ -941,7 +968,7 @@ async fn dev_test() {
         .send()
         .await
         .unwrap();
-    objects.e_tag().unwrap();
+    dbg!(&objects.e_tag().unwrap());
 }
 
 #[tokio::test]
@@ -1010,4 +1037,43 @@ async fn shanghai_list() {
         .send()
         .await
         .unwrap();
+}
+
+#[tokio::test]
+async fn fool_dev() {
+    let client = build_client_from_params(ClientParams {
+        access_key: "AKPSSVCS07PIAMDEV",
+        secret: "",
+        region: CN_NORTHWEST_1,
+        endpoint: DEV_PROXY_ENDPOINT,
+    });
+
+    let objects = client
+        .put_object()
+        .bucket("ops-9554")
+        .key("s3-proxy-test/foo")
+        .body(ByteStream::from(vec![1, 2]))
+        .send()
+        .await
+        .unwrap();
+    dbg!(&objects.e_tag().unwrap());
+}
+
+#[tokio::test]
+async fn fool_qa() {
+    let client = build_client_from_params(ClientParams {
+        access_key: "AKPSPERS03NA20Z",
+        secret: "",
+        region: CN_NORTHWEST_1,
+        endpoint: EP_LOCAL,
+    });
+
+    let objects = client
+        .head_object()
+        .bucket("data-pdf-cn-northwest-1")
+        .key("CN/A/11/50/67/44/8/CN_115067448_A.pdf")
+        .send()
+        .await
+        .unwrap();
+    dbg!(&objects.e_tag().unwrap());
 }

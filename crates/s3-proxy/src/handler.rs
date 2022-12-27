@@ -72,7 +72,6 @@ pub async fn handle(
     ConnectInfo(addr): ConnectInfo<SocketAddr>,
     req: HttpRequest,
 ) -> ProxyResult<HttpResponse> {
-    debug!("addr {}", addr);
     debug!("req.uri '{}'", req.uri());
     debug!("req.method {}", req.method());
     debug!("req.headers {:#?}", req.headers());

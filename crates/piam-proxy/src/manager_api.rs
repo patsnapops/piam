@@ -12,7 +12,7 @@ use piam_core::{
 use serde::de::DeserializeOwned;
 
 use crate::{
-    config::PIAM_MANAGER_ADDRESS,
+    config::{CoreConfig, PIAM_MANAGER_ADDRESS, POLICY_MODEL},
     error::{deserialize, ProxyResult},
 };
 
@@ -47,6 +47,30 @@ impl ManagerClient {
 
     pub async fn get_policy_relationships(&self) -> ProxyResult<Vec<PolicyRelationship>> {
         self.get_resource(POLICY_RELATIONSHIPS).await
+    }
+
+    pub async fn get_core_config<P: Modeled + DeserializeOwned>(
+        &self,
+    ) -> ProxyResult<CoreConfig<P>> {
+        let accounts = self.get_accounts().await?;
+        let users = self.get_users().await?;
+        let groups = self.get_groups().await?;
+        let user_input_policies: Vec<Policy<P>> =
+            self.get_policies_by_model(&POLICY_MODEL.load()).await?;
+        let condition_policies = self.get_policies_by_model(CONDITION).await?;
+
+        let user_group_relationships = self.get_user_group_relationships().await?;
+        let policy_relationships = self.get_policy_relationships().await?;
+
+        Ok(CoreConfig {
+            accounts,
+            users,
+            groups,
+            user_input_policies,
+            condition_policies,
+            user_group_relationships,
+            policy_relationships,
+        })
     }
 
     pub async fn get_extended_config<T: DeserializeOwned>(

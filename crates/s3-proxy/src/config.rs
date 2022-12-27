@@ -1,10 +1,10 @@
 use async_trait::async_trait;
 use busylib::config::dev_mode;
-use piam_object_storage::parser_s3::S3HostDomains;
+use piam_object_storage::{parser_s3::S3HostDomains, policy::ObjectStoragePolicy};
 use piam_proxy::{
+    config::CoreConfig,
     error::{ProxyError, ProxyResult},
-    manager_api::ManagerClient,
-    state::GetNewState,
+    state::ExtendedState,
 };
 use serde::{Deserialize, Serialize};
 
@@ -19,18 +19,29 @@ pub struct S3Config {
 }
 
 #[async_trait]
-impl GetNewState for S3Config {
-    async fn new_from_manager(manager: &ManagerClient) -> ProxyResult<Self> {
-        let mut config: S3Config = manager.get_extended_config(SERVICE).await?;
+impl ExtendedState<S3Config, ObjectStoragePolicy> for S3Config {
+    fn new_from(mut extended_config: S3Config) -> ProxyResult<Self> {
         if dev_mode() {
-            config.proxy_hosts.domains.push(DEV_PROXY_HOST.to_string());
+            extended_config
+                .proxy_hosts
+                .domains
+                .push(DEV_PROXY_HOST.to_string());
         }
+        Ok(extended_config)
+    }
+
+    async fn with_core_config(
+        mut self,
+        core_config: &CoreConfig<ObjectStoragePolicy>,
+    ) -> ProxyResult<Self> {
         #[cfg(feature = "uni-key")]
-        let config = {
-            config.uni_key_info = Some(crate::uni_key::UniKeyInfo::new_from(manager).await?);
-            config
+        {
+            self.uni_key_info =
+                Some(crate::uni_key::UniKeyInfo::new_from(&core_config.accounts).await?);
+            return Ok(self);
         };
-        Ok(config)
+        #[cfg(not(feature = "uni-key"))]
+        Ok(self)
     }
 }
 

@@ -3,7 +3,6 @@
 
 use std::{collections::HashMap, fmt::Debug};
 
-use async_trait::async_trait;
 use busylib::{prelude::esome, ANY};
 use piam_core::{
     account::{aws::AwsAccount, AccountId},
@@ -16,10 +15,9 @@ use piam_core::{
 use serde::de::DeserializeOwned;
 
 use crate::{
-    config::POLICY_MODEL,
+    config::{CoreConfig, POLICY_MODEL},
     error::{ProxyError, ProxyResult},
-    manager_api::ManagerClient,
-    state::GetNewState,
+    state::CoreState,
 };
 
 /// IamContainer store entities.
@@ -77,49 +75,43 @@ pub struct FoundPolicies<'a, P: Modeled> {
     pub user_input: Vec<&'a Policy<P>>,
 }
 
-#[async_trait]
-impl<P: Modeled + DeserializeOwned + Send> GetNewState for IamContainer<P> {
-    // TODO: change this to new_from_xxx for the sake of state independent unit test
-    async fn new_from_manager(manager: &ManagerClient) -> ProxyResult<Self> {
-        let account_vec = manager.get_accounts().await?;
-        let users_vec = manager.get_users().await?;
-        let groups_vec = manager.get_groups().await?;
-        let user_input_policy_vec: Vec<Policy<P>> =
-            manager.get_policies_by_model(&POLICY_MODEL.load()).await?;
-        let condition_policy_vec = manager.get_policies_by_model(CONDITION).await?;
-
-        let user_group_relationships = manager.get_user_group_relationships().await?;
-        let policy_relationships = manager.get_policy_relationships().await?;
-
-        let accounts = account_vec
+impl<P: Modeled + DeserializeOwned + Send> CoreState<CoreConfig<P>> for IamContainer<P> {
+    fn new_from(config: CoreConfig<P>) -> ProxyResult<Self> {
+        let accounts = config
+            .accounts
             .into_iter()
             .map(|account| (account.code.clone(), account))
             .collect();
-        let users = users_vec
+        let users = config
+            .users
             .clone()
             .into_iter()
             .map(|user| (user.id.clone(), user))
             .collect();
-        let groups = groups_vec
+        let groups = config
+            .groups
             .into_iter()
             .map(|group| (group.id.clone(), group))
             .collect();
-        let user_input_policies = user_input_policy_vec
+        let user_input_policies = config
+            .user_input_policies
             .into_iter()
             .map(|policy| (policy.id.clone(), policy))
             .collect();
-        let condition_policies = condition_policy_vec
+        let condition_policies = config
+            .condition_policies
             .into_iter()
             .map(|policy| (policy.id.clone(), policy))
             .collect();
 
-        let base_access_key_to_user_id = users_vec
+        let base_access_key_to_user_id = config
+            .users
             .into_iter()
             .map(|user| (user.base_access_key, user.id))
             .collect();
 
         let mut user_id_to_group_ids: HashMap<UserId, Vec<GroupId>> = HashMap::default();
-        for rel in user_group_relationships {
+        for rel in config.user_group_relationships {
             let user_id = rel.user_id;
             let group_id = rel.group_id;
             match user_id_to_group_ids.get_mut(&user_id) {
@@ -140,7 +132,7 @@ impl<P: Modeled + DeserializeOwned + Send> GetNewState for IamContainer<P> {
             condition_policies,
             base_access_key_to_user_id,
             user_id_to_group_ids,
-            policy_relationships,
+            policy_relationships: config.policy_relationships,
         })
     }
 }

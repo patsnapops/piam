@@ -15,7 +15,7 @@ use piam_proxy::{
 };
 
 use crate::{
-    config::{features, S3Config},
+    config::{features, S3Config, SERVICE},
     handler::S3ProxyState,
 };
 
@@ -30,7 +30,7 @@ mod uni_key;
 async fn main() {
     let bin_name = env!("CARGO_PKG_NAME").replace('-', "_");
     let (_guard, _log_handle) = init_logger(&bin_name, true);
-    set_constants("[Patsnap S3 Proxy]", OBJECT_STORAGE);
+    set_constants("[Patsnap S3 Proxy]", OBJECT_STORAGE, SERVICE);
 
     // TODO: make this async
     let state_manager = StateManager::initialize().await;
