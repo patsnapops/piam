@@ -50,7 +50,7 @@ impl S3Config {
     pub fn get_uni_key_info(&self) -> ProxyResult<&crate::uni_key::UniKeyInfo> {
         self.uni_key_info
             .as_ref()
-            .ok_or_else(|| ProxyError::OtherInternal("UniKeyInfo not found".into()))
+            .ok_or_else(|| ProxyError::AssertFail("UniKeyInfo not found".into()))
     }
 }
 
@@ -70,7 +70,8 @@ pub fn features() -> String {
     list
 }
 
-pub mod test {
+#[cfg(test)]
+mod test {
     #[test]
     fn find_proxy_host() {
         let config = crate::config::S3Config {

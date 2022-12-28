@@ -10,7 +10,7 @@ pub fn dev_mode() -> bool {
     env::args().nth(1) == Some("dev".into())
 }
 
-pub fn string_var_with_default(name: &str, default: &str) -> ArcSwap<String> {
+pub fn env_var_with_default(name: &str, default: &str) -> ArcSwap<String> {
     let val = match env::var(name) {
         Ok(s) => s,
         Err(_) => default.to_string(),

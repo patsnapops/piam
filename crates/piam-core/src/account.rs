@@ -9,7 +9,7 @@ pub mod aws {
 
     use serde::{Deserialize, Serialize};
 
-    use crate::account::AccountId;
+    use crate::{account::AccountId, IamIdentity};
 
     /// currently only aws sigv4 compatible
     #[derive(Clone, Default, Eq, Hash, PartialEq, Serialize, Deserialize)]
@@ -19,6 +19,12 @@ pub mod aws {
         pub access_key: String,
         pub secret_key: String,
         pub comment: String,
+    }
+
+    impl IamIdentity for AwsAccount {
+        fn id_str(&self) -> &str {
+            &self.id
+        }
     }
 
     impl Debug for AwsAccount {

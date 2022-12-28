@@ -16,24 +16,29 @@ use tracing_subscriber::{
     Layer, Registry,
 };
 
+use crate::{config::dev_mode, prelude::EnhancedExpect};
+
 pub type LogHandle = Handle<Targets, Registry>;
 
-pub fn init_logger(bin_name: &str, debug: bool) -> (Option<WorkerGuard>, Option<LogHandle>) {
+pub fn init_logger(
+    bin_name: &str,
+    crates_to_log: &[&str],
+    debug: bool,
+) -> (Option<WorkerGuard>, Option<LogHandle>) {
     let timer = OffsetTime::new(
-        UtcOffset::from_hms(8, 0, 0).unwrap(),
+        UtcOffset::from_hms(8, 0, 0).ex("UtcOffset::from_hms should work"),
         time::format_description::well_known::Rfc3339,
     );
     let stdout_log = tracing_subscriber::fmt::layer().with_timer(timer.clone());
     let reg = tracing_subscriber::registry();
-    let base_filter = Targets::new()
-        .with_target(bin_name, filter::LevelFilter::DEBUG)
-        // TODO: remove hardcode piam_core
-        .with_target("piam_proxy", filter::LevelFilter::DEBUG);
+    let mut base_filter = Targets::new().with_target(bin_name, filter::LevelFilter::DEBUG);
+    for crate_name in crates_to_log {
+        base_filter = base_filter.with_target(*crate_name, filter::LevelFilter::DEBUG);
+    }
     let (filter, reload_handle) = reload::Layer::new(base_filter.clone());
 
     if debug {
-        let file_appender =
-            tracing_appender::rolling::daily(log_path(), format!("{}.log", bin_name));
+        let file_appender = tracing_appender::rolling::daily(log_path(), format!("{bin_name}.log"));
         let (non_blocking, guard) = tracing_appender::non_blocking(file_appender);
         let file_filter = tracing_subscriber::fmt::layer()
             .with_timer(timer)
@@ -42,7 +47,7 @@ pub fn init_logger(bin_name: &str, debug: bool) -> (Option<WorkerGuard>, Option<
 
         reg.with(stdout_log.with_filter(filter).and_then(file_filter))
             .init();
-        debug!("Debug mode is on");
+        debug!("Debug logging is on");
         return (Some(guard), Some(reload_handle));
     } else {
         reg.with(stdout_log.with_filter(filter::LevelFilter::INFO))
@@ -72,8 +77,4 @@ fn log_path() -> PathBuf {
     }
     // TODO: log_path read from env
     PathBuf::from(r"/opt/logs/apps/")
-}
-
-fn dev_mode() -> bool {
-    env::args().nth(1) == Some("dev".into())
 }

@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::type_alias::IamEntityIdType;
+use crate::{type_alias::IamEntityIdType, IamIdentity};
 
 pub type UserId = IamEntityIdType;
 pub type RoleId = IamEntityIdType;
@@ -13,6 +13,12 @@ pub struct User {
     pub base_access_key: String,
     pub secret: String,
     pub kind: UserKind,
+}
+
+impl IamIdentity for User {
+    fn id_str(&self) -> &str {
+        &self.id
+    }
 }
 
 #[derive(Clone, Debug, Default, Eq, Hash, PartialEq, Serialize, Deserialize)]
@@ -34,4 +40,10 @@ pub enum UserKind {
 pub struct Role {
     pub id: RoleId,
     pub name: String,
+}
+
+impl IamIdentity for Role {
+    fn id_str(&self) -> &str {
+        &self.id
+    }
 }

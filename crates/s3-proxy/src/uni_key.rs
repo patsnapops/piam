@@ -5,7 +5,7 @@ use std::collections::HashMap;
 
 use aws_sdk_s3::{Client, Config, Endpoint};
 use aws_types::{region::Region, Credentials};
-use busylib::prelude::{eok, esome};
+use busylib::prelude::{EnhancedExpect, EnhancedUnwrap};
 use patsnap_constants::{
     region::{AP_SHANGHAI, CN_NORTHWEST_1, NA_ASHBURN, US_EAST_1},
     IP_PROVIDER,
@@ -42,16 +42,16 @@ impl UniKeyInfo {
         }
         let bucket = input.bucket();
         let access_info = self.inner.get(bucket).ok_or_else(|| {
-            ProxyError::BadRequest(format!("access info not found for bucket: {}", bucket))
+            ProxyError::BadRequest(format!("access info not found for bucket: {bucket}"))
         })?;
         Ok(access_info)
     }
 
-    pub async fn new_from(accounts: &Vec<AwsAccount>) -> ProxyResult<Self> {
+    pub async fn new_from(accounts: &[AwsAccount]) -> ProxyResult<Self> {
         let access_info_vec: ProxyResult<Vec<AccessInfo>> = accounts
-            .clone()
-            .into_iter()
+            .iter()
             .map(|account| {
+                let account = account.clone();
                 // TODO: refactor this quick and dirty solution for s3 uni-key feature
                 match &account.id {
                     id if id.starts_with("cn_aws") => Ok(AccessInfo {
@@ -74,7 +74,7 @@ impl UniKeyInfo {
                         region: NA_ASHBURN.to_string(),
                         endpoint: Some(from_region_to_endpoint(NA_ASHBURN)?),
                     }),
-                    _ => Err(ProxyError::OtherInternal(format!(
+                    _ => Err(ProxyError::AssertFail(format!(
                         "match region failed, unsupported account id: {}",
                         &account.code
                     )))?,
@@ -97,7 +97,7 @@ impl UniKeyInfo {
                     // TODO: refactor this quick and dirty solution for s3 uni-key feature
                     None => cb.build(),
                     Some(tencent_ep) => cb
-                        .endpoint_resolver(eok(Endpoint::immutable(tencent_ep)))
+                        .endpoint_resolver(Endpoint::immutable(tencent_ep).unwp())
                         .build(),
                 };
                 Ok((access, Client::from_conf(config)))
@@ -114,8 +114,7 @@ impl UniKeyInfo {
             .text()
             .await?
             // 20221222: remove special characters in response of cip.cc (IP_PROVIDER)
-            .replace('\n', "")
-            .replace('\t', "");
+            .replace(['\n', '\t'], "");
 
         for (access_info, client) in access_info_client_vec? {
             let buckets = Self::get_buckets(&access_info, &client)
@@ -151,9 +150,9 @@ impl UniKeyInfo {
                 ))
             })?
             .buckets
-            .ok_or_else(|| ProxyError::OtherInternal("no buckets found".into()))?
+            .ok_or_else(|| ProxyError::AssertFail("no buckets found".into()))?
             .into_iter()
-            .map(|b| esome(b.name))
+            .map(|b| b.name.ex("bucket must have a name"))
             .collect();
         Ok(buckets)
     }

@@ -4,7 +4,7 @@ use std::fmt::Debug;
 
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
-use crate::{effect::Effect, input::Input, type_alias::IamEntityIdType};
+use crate::{effect::Effect, input::Input, type_alias::IamEntityIdType, IamIdentity};
 
 pub type PolicyId = IamEntityIdType;
 
@@ -28,6 +28,12 @@ pub trait Modeled: Debug {
     fn id(&self) -> String;
 
     fn find_effect_by_input(&self, input: &Self::Input) -> Option<&Effect>;
+}
+
+impl<P: Modeled> IamIdentity for Policy<P> {
+    fn id_str(&self) -> &str {
+        &self.id
+    }
 }
 
 impl<P, I> Policy<P>
@@ -78,10 +84,16 @@ impl Name {
 pub mod condition {
     use std::net::Ipv4Addr;
 
+    use busylib::prelude::EnhancedUnwrap;
     use cidr::{AnyIpCidr, Ipv4Cidr};
     use serde::{Deserialize, Serialize};
 
-    use crate::{condition::input::Condition, effect::Effect, policy::Modeled};
+    use crate::{
+        condition::input::{Condition, ConditionCtx},
+        effect::Effect,
+        group::GroupId,
+        policy::Modeled,
+    };
 
     /// If ConditionPolicy is not specified, this phase of effect finding should be skipped.
     /// If ConditionPolicy is specified, only takes its effect when condition is matched.
@@ -93,15 +105,25 @@ pub mod condition {
         pub effect: Effect,
     }
 
+    /// If the optional Range is [`None`], it means any Condition matches
     #[derive(Clone, Debug, Default, Serialize, Deserialize)]
     pub struct ConditionRange {
-        pub ip_cidr_range: Option<Vec<AnyIpCidr>>,
-        pub region_range: Option<Vec<String>>,
+        pub group_ids: Option<Vec<GroupId>>,
+        pub from: Option<Range>,
+        pub proxy: Option<Range>,
+        pub to: Option<Range>,
+    }
+
+    #[derive(Clone, Debug, Default, Serialize, Deserialize)]
+    pub struct Range {
+        pub ip_cidr: Option<Vec<AnyIpCidr>>,
+        pub region: Option<Vec<String>>,
+        pub env: Option<Vec<String>>,
     }
 
     impl ConditionPolicy {
-        pub fn find_effect(&self, condition: &Condition) -> Option<&Effect> {
-            match self.range.contains(condition) {
+        pub fn find_effect(&self, condition_ctx: &ConditionCtx) -> Option<&Effect> {
+            match self.range.matches(condition_ctx) {
                 false => None,
                 true => Some(&self.effect),
             }
@@ -109,7 +131,7 @@ pub mod condition {
     }
 
     impl Modeled for ConditionPolicy {
-        type Input = Condition;
+        type Input = ConditionCtx;
 
         fn version(&self) -> i32 {
             self.version
@@ -119,8 +141,8 @@ pub mod condition {
             self.id.clone()
         }
 
-        fn find_effect_by_input(&self, condition: &Self::Input) -> Option<&Effect> {
-            match self.range.contains(condition) {
+        fn find_effect_by_input(&self, condition_ctx: &Self::Input) -> Option<&Effect> {
+            match self.range.matches(condition_ctx) {
                 false => None,
                 true => Some(&self.effect),
             }
@@ -128,30 +150,66 @@ pub mod condition {
     }
 
     impl ConditionRange {
-        pub fn contains(&self, condition: &Condition) -> bool {
-            match &self.ip_cidr_range {
-                None => false,
-                Some(cidr_vec) => match &condition.addr {
-                    None => false, // no addr in Condition which normally come with request
-                    Some(addr) => cidr_vec.iter().any(|ip_cidr| ip_cidr.contains(&addr.ip())),
-                },
-            }
-        }
-
-        pub fn private_ip_cidr() -> Vec<AnyIpCidr> {
-            vec![
-                AnyIpCidr::V4(Ipv4Cidr::new(Ipv4Addr::new(10, 0, 0, 0), 8).unwrap()),
-                AnyIpCidr::V4(Ipv4Cidr::new(Ipv4Addr::new(172, 16, 0, 0), 12).unwrap()),
-                AnyIpCidr::V4(Ipv4Cidr::new(Ipv4Addr::new(192, 168, 0, 0), 16).unwrap()),
-                AnyIpCidr::V4(Ipv4Cidr::new(Ipv4Addr::new(127, 0, 0, 1), 32).unwrap()),
-            ]
+        pub fn matches(&self, condition_ctx: &ConditionCtx) -> bool {
+            let from_matched = match &self.from {
+                None => true,
+                Some(range) => range.matches(&condition_ctx.from),
+            };
+            let proxy_matched = match &self.proxy {
+                None => true,
+                Some(range) => range.matches(&condition_ctx.proxy),
+            };
+            let to_matched = match &self.to {
+                None => true,
+                Some(range) => range.matches(&condition_ctx.to),
+            };
+            from_matched && proxy_matched && to_matched
         }
     }
 
-    pub mod test {
+    impl Range {
+        pub fn matches(&self, condition: &Condition) -> bool {
+            let ip_cidr_matched = match &self.ip_cidr {
+                None => true,
+                Some(vec) => match condition.addr {
+                    None => false,
+                    Some(addr) => vec.iter().any(|cidr| cidr.contains(&addr.ip())),
+                },
+            };
+            let region_matched = match &self.region {
+                None => true,
+                Some(vec) => match &condition.region {
+                    None => false,
+                    Some(region) => vec.contains(region),
+                },
+            };
+            let env_matched = match &self.env {
+                None => true,
+                Some(vec) => match &condition.env {
+                    None => false,
+                    Some(env) => vec.contains(env),
+                },
+            };
+            ip_cidr_matched && region_matched && env_matched
+        }
+    }
+
+    pub fn private_ip_cidr() -> Vec<AnyIpCidr> {
+        vec![
+            AnyIpCidr::V4(Ipv4Cidr::new(Ipv4Addr::new(10, 0, 0, 0), 8).unwp()),
+            AnyIpCidr::V4(Ipv4Cidr::new(Ipv4Addr::new(172, 16, 0, 0), 12).unwp()),
+            AnyIpCidr::V4(Ipv4Cidr::new(Ipv4Addr::new(192, 168, 0, 0), 16).unwp()),
+            AnyIpCidr::V4(Ipv4Cidr::new(Ipv4Addr::new(127, 0, 0, 1), 32).unwp()),
+        ]
+    }
+
+    #[cfg(test)]
+    mod test {
         #[test]
         fn condition_range_contains() {
-            // TODO: test condition_range_contains
+            let vec = &vec!["a".to_string(), "b".to_string()];
+            let val = &"b".to_string();
+            assert!(vec.contains(val))
         }
     }
 }

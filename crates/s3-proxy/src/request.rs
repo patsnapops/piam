@@ -35,7 +35,7 @@ impl S3RequestTransform for HttpRequest {
                 .path_and_query()
                 .expect("path_and_query should not be None")
                 .as_str()
-                .strip_prefix(&format!("/{}", bucket))
+                .strip_prefix(&format!("/{bucket}"))
                 .expect("uri should start with /{bucket}");
             if uri_without_bucket.is_empty() {
                 uri_without_bucket = "/";
@@ -48,7 +48,7 @@ impl S3RequestTransform for HttpRequest {
             // add bucket to host
             self.headers_mut().insert(
                 HOST,
-                HeaderValue::from_str(format!("{}.{}", bucket, host).as_str()).unwrap(),
+                HeaderValue::from_str(format!("{bucket}.{host}").as_str()).unwrap(),
             );
         }
     }
@@ -60,10 +60,10 @@ impl S3RequestTransform for HttpRequest {
             .find_proxy_host(host)
             .map_err(from_parser_into_proxy_error)?;
         let bucket_dot = host.strip_suffix(proxy_host).ok_or_else(|| {
-            ProxyError::InvalidEndpoint(format!("host {} should end with {}", host, proxy_host))
+            ProxyError::InvalidEndpoint(format!("host {host} should end with {proxy_host}"))
         })?;
         let actual_host = from_region_to_host(region)?;
-        let host = format!("{}{}", bucket_dot, actual_host);
+        let host = format!("{bucket_dot}{actual_host}");
         self.headers_mut()
             .insert(HOST, HeaderValue::from_str(&host).unwrap());
 

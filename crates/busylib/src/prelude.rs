@@ -1,47 +1,110 @@
-use std::fmt::Display;
+use std::{backtrace::Backtrace, fmt::Display};
 
 use log::error;
 
-/// eok stands for it is expected to be [`Ok`], unexpected [`Err`] will be logged.
-pub fn eok<T, E: Display>(result: Result<T, E>) -> T {
+trait DisplayBackTrace {
+    fn to_simple_string(&self) -> String;
+}
+
+impl DisplayBackTrace for Backtrace {
+    fn to_simple_string(&self) -> String {
+        let full = format!("{self}");
+        let split = full.split('\n');
+        let mut trimmed = String::new();
+        for (i, line) in split.enumerate() {
+            if (8..32).contains(&i) {
+                trimmed.push_str(line);
+                trimmed.push('\n');
+            }
+        }
+        trimmed
+    }
+}
+
+pub trait EnhancedUnwrap<T> {
+    /// Equivalent to [`Option::unwrap`] & [`Result::unwrap`] with additional logging
+    fn unwp(self) -> T;
+}
+
+pub trait EnhancedExpect<T, E: Display> {
+    /// Equivalent to [`Option::expect`] & [`Result::expect`] with additional logging.
+    /// [`ex`] stands for Expect, Extra(logging), Exception, Enhanced
+    fn ex(self, msg: &str) -> T;
+}
+
+impl<T, E: Display> EnhancedUnwrap<T> for Result<T, E> {
+    #[inline]
+    fn unwp(self) -> T {
+        ok(self)
+    }
+}
+
+impl<T, E: Display> EnhancedExpect<T, E> for Result<T, E> {
+    #[inline]
+    fn ex(self, msg: &str) -> T {
+        ok_ctx(self, msg)
+    }
+}
+
+impl<T> EnhancedUnwrap<T> for Option<T> {
+    #[inline]
+    fn unwp(self) -> T {
+        some(self)
+    }
+}
+
+impl<T> EnhancedExpect<T, String> for Option<T> {
+    #[inline]
+    fn ex(self, msg: &str) -> T {
+        some_ctx(self, msg)
+    }
+}
+
+#[inline]
+pub fn ok<T, E: Display>(result: Result<T, E>) -> T {
+    ok_ctx(result, "")
+}
+
+#[inline]
+pub fn some<T>(option: Option<T>) -> T {
+    some_ctx(option, "")
+}
+
+/// [`Result`] should be ok with custom context
+#[inline]
+pub fn ok_ctx<T, E: Display>(result: Result<T, E>, msg: &str) -> T {
     match result {
         Ok(value) => value,
         Err(e) => {
-            error!("this should never happen: {}", e);
-            panic!("this should never happen: {}", e);
+            log_and_panic(Some(e), msg);
         }
     }
 }
 
-/// esome stands for it is expected to be [`Some`], unexpected [`None`] will be logged.
-pub fn esome<T>(option: Option<T>) -> T {
+/// [`Option`] should be some with custom context
+#[inline]
+pub fn some_ctx<T>(option: Option<T>, msg: &str) -> T {
     match option {
         Some(value) => value,
         None => {
-            error!("this should never happen: None");
-            panic!("this should never happen: None");
+            log_and_panic::<String>(None, msg);
         }
     }
 }
 
-/// eok with custom context
-pub fn eok_ctx<T, E: Display>(result: Result<T, E>, msg: &str) -> T {
-    match result {
-        Ok(value) => value,
-        Err(e) => {
-            error!("this should never happen: {}, context: {}", e, msg);
-            panic!("this should never happen: {}, context: {}", e, msg);
-        }
-    }
-}
+#[inline]
+fn log_and_panic<E: Display>(err: Option<E>, msg: &str) -> ! {
+    let err_msg = match err {
+        Some(e) => format!("{e}"),
+        None => "".to_string(),
+    };
 
-/// esome with custom context
-pub fn esome_ctx<T>(option: Option<T>, msg: &str) -> T {
-    match option {
-        Some(value) => value,
-        None => {
-            error!("this should never happen: None, context: {}", msg);
-            panic!("this should never happen: None, context: {}", msg);
-        }
-    }
+    let info = format!(
+        "this should never happen: {}, context: {}, back_trace: {}",
+        err_msg,
+        msg,
+        Backtrace::force_capture().to_simple_string()
+    );
+    error!("{}", info);
+    panic!("{}", info);
 }

@@ -16,13 +16,15 @@
 
 # builder stage
 FROM 955466075186.dkr.ecr.cn-northwest-1.amazonaws.com.cn/ops-basic/base:cargo-cached AS builder
-#// TODO now: push builder-cached-${package} to ecr for each build, use it next time
+#// TODO: push builder-cached-${package} to ecr for each build, use it next time
 #FROM builder-cached AS builder
 ARG package
 RUN echo "package to build: ${package}"
 COPY . .
-RUN cargo build --release --all-features -p ${package}
-RUN ls -lh ./target/release
+RUN rustc --version
+RUN cargo --version
+RUN cargo build --profile=release-with-debug --all-features -p ${package}
+RUN ls -lh ./target/release-with-debug
 
 # runtime stage
 #FROM alpine:3.16 as runtime
@@ -30,7 +32,7 @@ FROM 955466075186.dkr.ecr.cn-northwest-1.amazonaws.com.cn/ops-basic/base:alpine3
 ARG package
 ENV ENV_PACKAGE=${package}
 RUN echo "package to run: ${package}"
-COPY --from=builder ./target/release/${package} /opt/${package}
+COPY --from=builder ./target/release-with-debug/${package} /opt/${package}
 RUN ls /opt/
 WORKDIR /opt/logs/apps/
 CMD ["/bin/sh", "-c", "/opt/${ENV_PACKAGE}"]

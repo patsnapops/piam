@@ -30,8 +30,7 @@ impl S3HostDomains {
             .find(|&v| host.ends_with(v))
             .ok_or_else(|| {
                 ParserError::InvalidEndpoint(format!(
-                    "'{}' is not ending with a valid piam s3 proxy endpoint",
-                    host
+                    "'{host}' is not ending with a valid piam s3 proxy endpoint"
                 ))
             })?;
         Ok(s)
@@ -47,9 +46,9 @@ pub enum ParserError {
 impl fmt::Display for ParserError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            ParserError::OperationNotSupported(msg) => write!(f, "OperationNotSupported: {}", msg),
-            ParserError::InvalidEndpoint(msg) => write!(f, "InvalidEndpoint: {}", msg),
-            ParserError::Internal(msg) => write!(f, "Internal: {}", msg),
+            ParserError::OperationNotSupported(msg) => write!(f, "OperationNotSupported: {msg}"),
+            ParserError::InvalidEndpoint(msg) => write!(f, "InvalidEndpoint: {msg}"),
+            ParserError::Internal(msg) => write!(f, "Internal: {msg}"),
         }
     }
 }
@@ -67,7 +66,7 @@ impl ObjectStorageInput {
         let host = headers.get(HOST).unwrap().to_str().unwrap();
         let proxy_host = config.find_proxy_host(host)?;
         let bucket = host
-            .strip_suffix(&format!(".{}", proxy_host))
+            .strip_suffix(&format!(".{proxy_host}"))
             .ok_or_else(|| {
                 ParserError::OperationNotSupported(
                     "ListBuckets not supported due to uni-key feature".into(),
@@ -161,7 +160,6 @@ fn parse_error(msg: &str, req: &HttpRequest) -> ParserResult<ObjectStorageInput>
     let method = req.method().to_string();
     let headers = req.headers().to_owned();
     Err(ParserError::OperationNotSupported(format!(
-        "{} uri: {} method: {} headers: {:#?} ",
-        msg, uri, method, headers
+        "{msg} uri: {uri} method: {method} headers: {headers:#?} "
     )))
 }

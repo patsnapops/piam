@@ -2,14 +2,12 @@
 
 use aws_config::{from_env, provider_config::ProviderConfig};
 use aws_sdk_s3::{
-    error::HeadBucketErrorKind,
     model::{CompletedMultipartUpload, CompletedPart, Object},
-    types::{ByteStream, SdkError},
+    types::ByteStream,
     Client, Config, Endpoint,
 };
 use aws_smithy_client::{erase::DynConnector, never::NeverConnector};
 use aws_types::{os_shim_internal::Env, region::Region, Credentials};
-use busylib::prelude::eok;
 use futures::future;
 use patsnap_constants::{
     region::{AP_SHANGHAI, CN_NORTHWEST_1, NA_ASHBURN, US_EAST_1},
@@ -157,7 +155,7 @@ async fn copy_object() {
         .copy_object()
         .bucket(bucket)
         .key(format!("patsnap-s3-proxy/{}", "dst_key_for_copy_test"))
-        .copy_source(format!("{}/{}", bucket, key))
+        .copy_source(format!("{bucket}/{key}"))
         .send()
         .await
         .unwrap();
@@ -322,7 +320,7 @@ async fn put_object_random_key(bucket: impl Into<std::string::String>) -> String
 }
 
 async fn put_object_with_key(key: &str) -> String {
-    do_put_object("qa-ops-test-s3", format!("patsnap-s3-proxy/{}", key)).await;
+    do_put_object("qa-ops-test-s3", format!("patsnap-s3-proxy/{key}")).await;
     key.to_string()
 }
 
@@ -366,7 +364,7 @@ async fn build_fake_key_to_us_east_client_dev() -> Client {
         ("AWS_ACCESS_KEY_ID", "AKPSSVCSDATALAKE"),
         ("AWS_SECRET_ACCESS_KEY", "dummy_sk"),
     ]);
-    build_client_from_env(env, &format!("http://{}", DEV_PROXY_HOST)).await
+    build_client_from_env(env, &format!("http://{DEV_PROXY_HOST}")).await
 }
 
 async fn build_fake_key_to_cn_northwest_client_dev() -> Client {
@@ -376,7 +374,7 @@ async fn build_fake_key_to_cn_northwest_client_dev() -> Client {
         ("AWS_ACCESS_KEY_ID", "AKPSSVCSPROXYDEV"),
         ("AWS_SECRET_ACCESS_KEY", "dummy_sk"),
     ]);
-    build_client_from_env(env, &format!("http://{}", DEV_PROXY_HOST)).await
+    build_client_from_env(env, &format!("http://{DEV_PROXY_HOST}")).await
 }
 
 async fn build_client_from_env(env: Env, endpoint: &str) -> Client {
@@ -386,7 +384,7 @@ async fn build_client_from_env(env: Env, endpoint: &str) -> Client {
                 .with_env(env)
                 .with_http_connector(DynConnector::new(NeverConnector::new())),
         )
-        .endpoint_resolver(eok(Endpoint::immutable(endpoint)))
+        .endpoint_resolver(Endpoint::immutable(endpoint).unwrap())
         .load()
         .await;
     aws_sdk_s3::Client::new(&conf)
@@ -403,7 +401,7 @@ fn build_client_from_params(params: ClientParams) -> Client {
     let creds = Credentials::from_keys(params.access_key, params.secret, None);
     let cb = Config::builder()
         .credentials_provider(creds)
-        .endpoint_resolver(eok(Endpoint::immutable(params.endpoint)))
+        .endpoint_resolver(Endpoint::immutable(params.endpoint).unwrap())
         .region(Region::new(params.region));
     Client::from_conf(cb.build())
 }
@@ -446,7 +444,7 @@ async fn build_cjj_us_east_client() -> Client {
     build_client_from_env(
         env,
         // &format!("http://{}", "s-ops-s3-proxy-us-aws.patsnap.info"),
-        &format!("http://{}", DEV_PROXY_HOST),
+        &format!("http://{DEV_PROXY_HOST}"),
     )
     .await
 }
@@ -589,7 +587,7 @@ async fn cx() {
     let client = build_client_from_env(
         env,
         // &format!("http://{}", "us-east-1.s3-proxy.patsnap.info"),
-        &format!("http://{}", DEV_PROXY_HOST),
+        &format!("http://{DEV_PROXY_HOST}"),
     )
     .await;
 
@@ -649,6 +647,29 @@ async fn zx_new() {
         .send()
         .await
         .unwrap();
+
+    let client = build_client_from_params(ClientParams {
+        access_key: "AKPSSVCS24DDATARDPROCESSINGBATCHQA",
+        secret: "",
+        region: "foo",
+        endpoint: EP_S3_PROXY_DEV,
+    });
+
+    let result = client
+        .get_object()
+        .bucket("patsnap-country-source-1251949819")
+        .key("whatever")
+        .send()
+        .await;
+    let should_be = match result {
+        Ok(_) => false,
+        Err(e) => e
+            .into_service_error()
+            .message()
+            .unwrap()
+            .contains("check proxy_region_env"),
+    };
+    assert!(should_be)
 }
 
 #[tokio::test]
@@ -692,7 +713,7 @@ async fn zx_old() {
     let client = build_client_from_env(
         env,
         // &format!("http://{}", "us-east-1.s3-proxy.patsnap.info"),
-        &format!("http://{}", DEV_PROXY_HOST),
+        &format!("http://{DEV_PROXY_HOST}"),
     )
     .await;
     let output = client
@@ -717,7 +738,7 @@ async fn tencent_list_buckets() {
         env,
         // &format!("http://{}", "cos.ap-shanghai.myqcloud.com"),
         // &format!("http://{}", "cos.na-ashburn.myqcloud.com"),
-        &format!("http://{}", DEV_PROXY_HOST),
+        &format!("http://{DEV_PROXY_HOST}"),
     )
     .await;
 
@@ -954,7 +975,8 @@ async fn system_test_local() {
 #[tokio::test]
 async fn dev_test() {
     let client = build_client_from_params(ClientParams {
-        access_key: "AKPSSVCS07PIAMDEV",
+        // access_key: "AKPSSVCS07PIAMDEV",
+        access_key: "AKPSPERS03ZSZ0Z",
         secret: "",
         region: CN_NORTHWEST_1,
         endpoint: DEV_PROXY_ENDPOINT,
@@ -962,7 +984,7 @@ async fn dev_test() {
 
     let objects = client
         .put_object()
-        .bucket("ops-9554")
+        .bucket("patsnap-country-source-1251949819")
         .key("s3-proxy-test/foo")
         .body(ByteStream::from(vec![1, 2]))
         .send()
@@ -990,7 +1012,7 @@ async fn test_list_buckets() {
 async fn shanghai_big() {
     let mut tasks = vec![];
     for i in 0..6 {
-        println!("start {}", i);
+        println!("start {i}");
         let future = async move {
             let client = build_client_from_params(ClientParams {
                 access_key: "AKPSSVCS07PIAMDEV",
@@ -1004,12 +1026,12 @@ async fn shanghai_big() {
             let objects = client
                 .put_object()
                 .bucket("ops-9554")
-                .key(format!("s3-proxy-test/22021225.{}", i))
+                .key(format!("s3-proxy-test/22021225.{i}"))
                 .body(body)
                 .send()
                 .await
                 .unwrap();
-            println!("OK {}", i);
+            println!("OK {i}");
         };
         tasks.push(future);
     }
@@ -1060,7 +1082,7 @@ async fn fool_dev() {
 }
 
 #[tokio::test]
-async fn fool_qa() {
+async fn fool_prod() {
     let client = build_client_from_params(ClientParams {
         access_key: "AKPSPERS03NA20Z",
         secret: "",

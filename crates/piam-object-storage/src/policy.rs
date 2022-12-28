@@ -147,7 +147,7 @@ impl ObjectStorageMatches for ObjectStorageInputPolicy {
 }
 
 #[cfg(test)]
-mod tests {
+mod test {
     use piam_core::{
         effect::{Effect, Modify},
         policy::Name,

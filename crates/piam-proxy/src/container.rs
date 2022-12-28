@@ -1,21 +1,26 @@
 //! IamContainer is a container of IAM domain entities.
 //! It is used to store and query IAM domain entities in memory.
 
-use std::{collections::HashMap, fmt::Debug};
+use std::{
+    collections::HashMap,
+    fmt::{Debug, Display, Formatter},
+};
 
-use busylib::{prelude::esome, ANY};
+use busylib::{prelude::EnhancedUnwrap, ANY};
 use piam_core::{
-    account::{aws::AwsAccount, AccountId},
+    account::aws::AwsAccount,
+    condition::input::Condition,
     group::{Group, GroupId},
     manager_api_constant::CONDITION,
     policy::{condition::ConditionPolicy, Modeled, Policy, PolicyId},
-    principal::{Role, RoleId, User, UserId},
+    principal::{Role, User, UserId},
     relation_model::PolicyRelationship,
+    IamIdentity,
 };
 use serde::de::DeserializeOwned;
 
 use crate::{
-    config::{CoreConfig, POLICY_MODEL},
+    config::{CoreConfig, POLICY_MODEL, PROXY_ENV, PROXY_REGION},
     error::{ProxyError, ProxyResult},
     state::CoreState,
 };
@@ -29,10 +34,10 @@ pub struct IamContainer<P: Modeled> {
     users: HashMap<UserId, User>,
     /// All groups, each one is unique
     groups: HashMap<GroupId, Group>,
-    /// Policies for user input, each one is unique
-    user_input_policies: HashMap<PolicyId, Policy<P>>,
     /// Policies for condition, each one is unique
     condition_policies: HashMap<PolicyId, Policy<ConditionPolicy>>,
+    /// Policies for user input, each one is unique
+    user_input_policies: HashMap<PolicyId, Policy<P>>,
     /// In-memory index built from all `AccessKeyUserRelationship`s
     base_access_key_to_user_id: HashMap<String, UserId>,
     /// In-memory index built from all `UserGroupRelationship`s
@@ -46,26 +51,57 @@ pub struct IamContainer<P: Modeled> {
 /// Struct to use when querying policies from the container.
 #[derive(Debug)]
 pub struct PolicyFilterParams<'a> {
-    pub roles: Option<Vec<&'a Role>>,
-    pub user: Option<&'a User>,
-    pub groups: Option<Vec<&'a Group>>,
-    pub account: &'a AwsAccount,
-    pub target_region: &'a str,
+    roles: Option<&'a Vec<&'a Role>>,
+    user: Option<&'a User>,
+    groups: Option<&'a Vec<&'a Group>>,
+    account: &'a AwsAccount,
+    target_region: &'a str,
+}
+
+impl<'a> Display for PolicyFilterParams<'a> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "PolicyFilterParams account: {:?} target_region: {:?} group: {:?}",
+            self.account, self.target_region, self.groups
+        )
+    }
 }
 
 impl<'a> PolicyFilterParams<'a> {
-    pub fn new_with_default(
-        groups: Vec<&'a Group>,
-        account: &'a AwsAccount,
-        target_region: &'a str,
-    ) -> Self {
-        PolicyFilterParams {
-            roles: None,
-            user: None,
-            groups: Some(groups),
+    pub fn new_with(account: &'a AwsAccount, target_region: &'a str) -> Self {
+        Self {
             account,
             target_region,
+            roles: None,
+            user: None,
+            groups: None,
         }
+    }
+
+    pub fn roles(mut self, roles: &'a Vec<&'a Role>) -> Self {
+        self.roles = Some(roles);
+        self
+    }
+
+    pub fn user(mut self, user: &'a User) -> Self {
+        self.user = Some(user);
+        self
+    }
+
+    pub fn groups(mut self, groups: &'a Vec<&'a Group>) -> Self {
+        self.groups = Some(groups);
+        self
+    }
+
+    pub fn account(mut self, account: &'a AwsAccount) -> Self {
+        self.account = account;
+        self
+    }
+
+    pub fn target_region(mut self, target_region: &'a str) -> Self {
+        self.target_region = target_region;
+        self
     }
 }
 
@@ -103,6 +139,26 @@ impl<P: Modeled + DeserializeOwned + Send> CoreState<CoreConfig<P>> for IamConta
             .into_iter()
             .map(|policy| (policy.id.clone(), policy))
             .collect();
+        let policy_relationships = config.policy_relationships;
+
+        #[cfg(feature = "prefilter")]
+        let prefilter::GroupsContent {
+            condition_policies,
+            user_group_relationships,
+            groups,
+            policy_relationships,
+            user_input_policies,
+        } = prefilter::GroupsContent {
+            condition_policies,
+            user_group_relationships: config.user_group_relationships,
+            groups,
+            policy_relationships,
+            user_input_policies,
+        }
+        .filter_by_proxy_condition(Condition::new_with_region_env(
+            &PROXY_REGION.load(),
+            &PROXY_ENV.load(),
+        ));
 
         let base_access_key_to_user_id = config
             .users
@@ -111,15 +167,13 @@ impl<P: Modeled + DeserializeOwned + Send> CoreState<CoreConfig<P>> for IamConta
             .collect();
 
         let mut user_id_to_group_ids: HashMap<UserId, Vec<GroupId>> = HashMap::default();
-        for rel in config.user_group_relationships {
-            let user_id = rel.user_id;
-            let group_id = rel.group_id;
-            match user_id_to_group_ids.get_mut(&user_id) {
+        for rel in user_group_relationships {
+            match user_id_to_group_ids.get_mut(&rel.user_id) {
                 None => {
-                    user_id_to_group_ids.insert(user_id, vec![group_id]);
+                    user_id_to_group_ids.insert(rel.user_id, vec![rel.group_id]);
                 }
                 Some(group_ids) => {
-                    group_ids.push(group_id);
+                    group_ids.push(rel.group_id);
                 }
             }
         }
@@ -128,12 +182,106 @@ impl<P: Modeled + DeserializeOwned + Send> CoreState<CoreConfig<P>> for IamConta
             accounts,
             users,
             groups,
-            user_input_policies,
             condition_policies,
+            user_input_policies,
             base_access_key_to_user_id,
             user_id_to_group_ids,
-            policy_relationships: config.policy_relationships,
+            policy_relationships,
         })
+    }
+}
+
+#[cfg(feature = "prefilter")]
+pub mod prefilter {
+    use std::collections::HashMap;
+
+    use itertools::Itertools;
+    use piam_core::{
+        condition::input::Condition,
+        group::{Group, GroupId},
+        policy::{condition::ConditionPolicy, Modeled, Policy, PolicyId},
+        relation_model::{PolicyRelationship, UserGroupRelationship},
+    };
+
+    pub struct GroupsContent<P: Modeled> {
+        pub condition_policies: HashMap<PolicyId, Policy<ConditionPolicy>>,
+        pub user_group_relationships: Vec<UserGroupRelationship>,
+        pub groups: HashMap<GroupId, Group>,
+        pub policy_relationships: Vec<PolicyRelationship>,
+        pub user_input_policies: HashMap<PolicyId, Policy<P>>,
+    }
+
+    /// Sometimes it is needed to filter out groups and there related content
+    /// that are not applicable to the current proxy condition
+    impl<P: Modeled> GroupsContent<P> {
+        pub fn filter_by_proxy_condition(self, condition: Condition) -> Self {
+            let (keep, drop) = self
+                .condition_policies
+                .into_iter()
+                .partition(|(_, policy)| {
+                    policy
+                        .modeled_policy
+                        .iter()
+                        .any(|cp| match &cp.range.proxy {
+                            None => true,
+                            Some(r) => r.matches(&condition),
+                        })
+                });
+            let condition_policies: HashMap<PolicyId, Policy<ConditionPolicy>> = keep;
+
+            let condition_policy_ids_to_drop: Vec<PolicyId> = drop.clone().into_keys().collect();
+            #[allow(clippy::needless_collect)]
+            let policy_relationships: Vec<PolicyRelationship> = self
+                .policy_relationships
+                .into_iter()
+                .filter(|r| !condition_policy_ids_to_drop.contains(&r.policy_id))
+                .collect();
+
+            let group_ids_to_drop = drop
+                .into_iter()
+                .flat_map(|(_, policy)| {
+                    policy
+                        .modeled_policy
+                        .into_iter()
+                        .filter_map(|cp| cp.range.group_ids)
+                        .flatten()
+                })
+                .unique()
+                .collect::<Vec<_>>();
+            let user_group_relationships = self
+                .user_group_relationships
+                .into_iter()
+                .filter(|r| !group_ids_to_drop.contains(&r.group_id))
+                .collect();
+            let groups = self
+                .groups
+                .into_iter()
+                .filter(|(id, _)| !group_ids_to_drop.contains(id))
+                .collect();
+
+            let (keep, drop) = policy_relationships
+                .into_iter()
+                .partition(|r| match &r.group_id {
+                    None => true,
+                    Some(id) => !group_ids_to_drop.contains(id),
+                });
+            let policy_relationships: Vec<PolicyRelationship> = keep;
+
+            let policy_ids_to_drop: Vec<PolicyId> = drop.into_iter().map(|r| r.policy_id).collect();
+            let user_input_policies = self
+                .user_input_policies
+                .into_iter()
+                .filter(|(id, _)| !policy_ids_to_drop.contains(id))
+                .collect();
+
+            Self {
+                condition_policies,
+                user_group_relationships,
+                groups,
+                policy_relationships,
+                user_input_policies,
+            }
+        }
     }
 }
 
@@ -141,8 +289,7 @@ impl<P: Modeled> IamContainer<P> {
     pub fn find_account_by_code(&self, code: &str) -> ProxyResult<&AwsAccount> {
         self.accounts.get(code).ok_or_else(|| {
             ProxyError::InvalidAccessKey(format!(
-                "Account not found for access key with code: {}",
-                code
+                "Account not found for access key with code: {code}"
             ))
         })
     }
@@ -153,45 +300,55 @@ impl<P: Modeled> IamContainer<P> {
             .get(base_access_key)
             .ok_or_else(|| {
                 ProxyError::InvalidAccessKey(format!(
-                    "User not found for base access key id: '{}'",
-                    base_access_key
+                    "User not found for base access key id: '{base_access_key}'"
                 ))
             })?;
         self.users
             .get(user_id)
-            .ok_or_else(|| ProxyError::UserNotFound(format!("User not found by id: {}", user_id)))
+            .ok_or_else(|| ProxyError::UserNotFound(format!("User not found by id: {user_id}")))
     }
 
     pub fn find_groups_by_user(&self, user: &User) -> ProxyResult<Vec<&Group>> {
         let group_ids = self.user_id_to_group_ids.get(&user.id).ok_or_else(|| {
-            ProxyError::GroupNotFound(format!("Groups not found for user id: {}", user.id))
+            ProxyError::GroupNotFound(format!(
+                "Groups not found for user id: {}, check proxy_region_env",
+                user.id
+            ))
         })?;
 
         group_ids
             .iter()
             .map(|group_id| {
                 self.groups.get(group_id).ok_or_else(|| {
-                    ProxyError::GroupNotFound(format!("Group not found by id: {}", group_id))
+                    ProxyError::AssertFail(format!("Group not found by id: {group_id}"))
                 })
             })
             .collect()
     }
 
-    pub fn find_policies(&self, filter: &PolicyFilterParams) -> ProxyResult<FoundPolicies<P>> {
+    pub fn find_policies(&self, f: &PolicyFilterParams) -> ProxyResult<FoundPolicies<P>> {
         let relations: Vec<&PolicyRelationship> = self
             .policy_relationships
             .iter()
-            .filter(|r| Self::account_filter(&r.account_id, filter.account))
-            .filter(|r| Self::region_filter(&r.region, &filter.target_region))
-            .filter(|r| Self::user_filter(r.user_id.as_ref(), filter.user))
-            .filter(|r| Self::group_filter(r.group_id.as_ref(), filter.groups.as_ref()))
-            .filter(|r| Self::role_filter(r.role_id.as_ref(), filter.roles.as_ref()))
+            .filter(|r| filter_one(Some(&f.account.id), Some(&r.account_id)))
+            .filter(|r| filter_one(Some(f.target_region), Some(&r.region)))
+            .filter(|r| {
+                let user_id = f.user.map(|u| u.id_str());
+                filter_one(user_id, r.user_id.as_deref())
+            })
+            .filter(|r| {
+                let group_ids = f.groups.map(|v| v.iter().map(|g| g.id_str()));
+                filter_many(group_ids, r.group_id.as_deref())
+            })
+            .filter(|r| {
+                let role_ids = f.roles.map(|v| v.iter().map(|r| r.id_str()));
+                filter_many(role_ids, r.role_id.as_deref())
+            })
             .collect();
 
         if relations.is_empty() {
             return Err(ProxyError::MissingPolicy(format!(
-                "access denied by missing policy, account: {} region: {} groups: {:#?}",
-                filter.account.id, filter.target_region, filter.groups
+                "access denied by missing policy, PolicyFilterParams: {f}"
             )));
         }
 
@@ -200,17 +357,16 @@ impl<P: Modeled> IamContainer<P> {
         for relation in relations {
             match relation.policy_model.as_str() {
                 CONDITION => {
-                    let p = esome(self.condition_policies.get(&relation.policy_id));
+                    let p = self.condition_policies.get(&relation.policy_id).unwp();
                     condition.push(p);
                 }
                 user_input_model if user_input_model == POLICY_MODEL.load().to_string() => {
-                    let p = esome(self.user_input_policies.get(&relation.policy_id));
+                    let p = self.user_input_policies.get(&relation.policy_id).unwp();
                     user_input.push(p);
                 }
                 other => {
-                    return Err(ProxyError::OtherInternal(format!(
-                        "unknown policy model found: {}",
-                        other
+                    return Err(ProxyError::AssertFail(format!(
+                        "unknown policy model found: {other}"
                     )));
                 }
             };
@@ -221,44 +377,88 @@ impl<P: Modeled> IamContainer<P> {
             user_input,
         })
     }
+}
 
-    fn account_filter(record_id: &AccountId, param: &AwsAccount) -> bool {
-        record_id == &param.id || record_id == ANY
+#[inline]
+fn filter_one(query_param: Option<&str>, record: Option<&str>) -> bool {
+    match query_param {
+        None => true,
+        Some(q) => match record {
+            None => false,
+            Some(r) => equals_or_any(q, r),
+        },
+    }
+}
+
+#[inline]
+fn filter_many<'a>(
+    query_params: Option<impl Iterator<Item = &'a str>>,
+    record: Option<&str>,
+) -> bool {
+    match query_params {
+        None => true,
+        Some(mut i) => match record {
+            None => false,
+            Some(r) => i.any(|p| equals_or_any(p, r)),
+        },
+    }
+}
+
+#[inline]
+fn equals_or_any(query_param: &str, record: &str) -> bool {
+    record == query_param || record == ANY
+}
+
+#[cfg(test)]
+mod test {
+    use busylib::ANY;
+
+    use crate::container::{filter_many, filter_one};
+
+    #[test]
+    fn test_filter_one() {
+        assert!(filter_one(None, None));
+        assert!(filter_one(None, Some("val")));
+        assert!(filter_one(None, Some(ANY)));
+
+        assert!(filter_one(Some("val"), Some("val")));
+        assert!(filter_one(Some("val"), Some(ANY)));
+        assert!(filter_one(Some(ANY), Some(ANY)));
+        assert!(!filter_one(Some("val"), None));
+        assert!(!filter_one(Some("val"), Some("val2")));
     }
 
-    fn region_filter(record: &str, param: &str) -> bool {
-        record == param || record == ANY
-    }
+    #[test]
+    fn test_filter_many() {
+        // TODO: satisfy compiler
+        // assert!(filter_many(None, None));
+        // assert!(filter_many(None, Some("val")));
+        // assert!(filter_many(None, Some(ANY)));
 
-    fn user_filter(record_id: Option<&UserId>, param: Option<&User>) -> bool {
-        match param {
-            None => true,
-            Some(p) => match record_id {
-                None => true,
-                Some(rid) => (*rid == p.id) || rid == ANY,
-            },
-        }
-    }
+        assert!(filter_many(Some(vec!["val"].into_iter()), Some("val")));
+        assert!(filter_many(Some(vec!["val"].into_iter()), Some(ANY)));
+        assert!(filter_many(Some(vec![ANY].into_iter()), Some(ANY)));
+        assert!(!filter_many(Some(vec!["val"].into_iter()), None));
+        assert!(!filter_many(Some(vec!["val"].into_iter()), Some("val2")));
+        assert!(!filter_many(Some(vec![ANY].into_iter()), Some("val2")));
 
-    //noinspection DuplicatedCode
-    fn group_filter(record_id: Option<&GroupId>, param: Option<&Vec<&Group>>) -> bool {
-        match param {
-            None => true,
-            Some(p) => match record_id {
-                None => true,
-                Some(rid) => p.iter().any(|pg| *rid == pg.id) || rid == ANY,
-            },
-        }
-    }
-
-    //noinspection DuplicatedCode
-    fn role_filter(record_id: Option<&RoleId>, param: Option<&Vec<&Role>>) -> bool {
-        match param {
-            None => true,
-            Some(p) => match record_id {
-                None => true,
-                Some(rid) => p.iter().any(|pr| *rid == pr.id) || rid == ANY,
-            },
-        }
+        assert!(filter_many(
+            Some(vec!["val", "val2"].into_iter()),
+            Some("val")
+        ));
+        assert!(filter_many(
+            Some(vec!["val", "val2"].into_iter()),
+            Some("val2")
+        ));
+        assert!(filter_many(
+            Some(vec!["val", "val2"].into_iter()),
+            Some(ANY)
+        ));
+        assert!(filter_many(Some(vec!["val", ANY].into_iter()), Some("val")));
+        assert!(filter_many(Some(vec!["val", ANY].into_iter()), Some(ANY)));
+        assert!(!filter_many(
+            Some(vec!["val", ANY].into_iter()),
+            Some("val2")
+        ));
     }
 }

@@ -11,8 +11,8 @@ pub enum ManagerError {
 impl fmt::Display for ManagerError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            ManagerError::BadRequest(msg) => write!(f, "BadRequest: {}", msg),
-            ManagerError::Internal(msg) => write!(f, "Internal: {}", msg),
+            ManagerError::BadRequest(msg) => write!(f, "BadRequest: {msg}"),
+            ManagerError::Internal(msg) => write!(f, "Internal: {msg}"),
         }
     }
 }

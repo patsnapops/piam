@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::type_alias::IamEntityIdType;
+use crate::{type_alias::IamEntityIdType, IamIdentity};
 
 pub type GroupId = IamEntityIdType;
 
@@ -8,4 +8,10 @@ pub type GroupId = IamEntityIdType;
 pub struct Group {
     pub id: GroupId,
     pub name: String,
+}
+
+impl IamIdentity for Group {
+    fn id_str(&self) -> &str {
+        &self.id
+    }
 }

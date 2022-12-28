@@ -17,11 +17,11 @@ http = "0.2.8"
 hyper = "0.14"
 serde = { version = "1.0", features = ["derive"] }
 serde_yaml = "0.9"
-#thiserror = "1.0.35"
 tokio = { version = "1", features = ["full"] }
 log = "0.4.17"
 axum = { version = "0.6.1", features = ["tokio"]}
 async-trait = "0.1"
+itertools = { version = "0.10.5", optional = true }
 
 [dependencies.serde-xml-rs]
 version = "0.6.0"
@@ -29,3 +29,4 @@ optional = true
 
 [features]
 aws-xml-response = ["serde-xml-rs"]
+prefilter = ["itertools"]

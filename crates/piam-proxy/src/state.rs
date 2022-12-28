@@ -2,7 +2,7 @@ use std::{fmt::Debug, sync::Arc, time::Instant};
 
 use arc_swap::ArcSwap;
 use async_trait::async_trait;
-use busylib::{config::dev_mode, logger::LogHandle, prelude::eok};
+use busylib::{config::dev_mode, logger::LogHandle, prelude::EnhancedUnwrap};
 use log::{debug, warn};
 use piam_core::policy::Modeled;
 use serde::de::DeserializeOwned;
@@ -50,12 +50,16 @@ impl<
 {
     pub async fn new_from_manager() -> ProxyResult<Self> {
         let manager_client = ManagerClient::default();
-        debug!("start fetching config");
+        if !dev_mode() {
+            debug!("start fetching config");
+        }
         let core_config = manager_client.get_core_config().await?;
         let extended_config = manager_client
             .get_extended_config(&EXTENDED_CONFIG_TYPE.load())
             .await?;
-        debug!("end fetching config");
+        if !dev_mode() {
+            debug!("end fetching config");
+        }
 
         let extended_config = C::new_from(extended_config)?
             .with_core_config(&core_config)
@@ -87,8 +91,7 @@ impl<
     > StateManager<P, C>
 {
     pub async fn initialize() -> Self {
-        let get_result: ProxyResult<ProxyState<P, C>> = Self::get_new(When::Initializing).await;
-        let state = eok(get_result);
+        let state = Self::get_new(When::Initializing).await.unwp();
         StateManager {
             health_state: Default::default(),
             arc_state: Arc::new(ArcSwap::from_pointee(state)),

@@ -1,5 +1,5 @@
 use axum::response::IntoResponse;
-use busylib::prelude::{eok, eok_ctx};
+use busylib::prelude::{EnhancedExpect, EnhancedUnwrap};
 use http::{header::CONTENT_TYPE, HeaderValue, Response, StatusCode};
 use hyper::Body;
 use log::{error, info, warn};
@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::{
-    config::{CLUSTER_ENV, PROXY_TYPE},
+    config::{proxy_region_env, PROXY_TYPE},
     error::ProxyError,
     type_alias::HttpResponse,
 };
@@ -26,10 +26,10 @@ impl HttpResponseExt for HttpResponse {
             HeaderValue::from_static(&PROXY_TYPE.load()),
         );
         headers.append(
-            "x-patsnap-proxy-cluster-env",
-            eok(HeaderValue::from_str(&CLUSTER_ENV.load())),
+            "x-patsnap-proxy-region-env",
+            HeaderValue::from_str(&proxy_region_env()).unwp(),
         );
-        headers.append("x-patsnap-request-id", eok(HeaderValue::from_str(&id)));
+        headers.append("x-patsnap-request-id", HeaderValue::from_str(&id).unwp());
         self
     }
 
@@ -43,10 +43,10 @@ impl IntoResponse for ProxyError {
         let id = Uuid::new_v4().to_string();
         let r_t = |resp_fn: fn(&str, &str, &str) -> HttpResponse, msg, err_type| {
             let trace_info = format!(
-                "proxy_type: {}, proxy_cluster_env: {}, \
+                "proxy_type: {}, proxy_region_env: {}, \
                 error_type: {}, message: {}, x-patsnap-request-id: {}",
                 PROXY_TYPE.load(),
-                CLUSTER_ENV.load(),
+                proxy_region_env(),
                 err_type,
                 msg,
                 id
@@ -65,6 +65,7 @@ impl IntoResponse for ProxyError {
             ProxyError::InvalidAccessKey(msg)
             | ProxyError::ParserError(msg)
             | ProxyError::OperationNotSupported(msg)
+            | ProxyError::GroupNotFound(msg)
             | ProxyError::MissingPolicy(msg)
             | ProxyError::EffectNotFound(msg) => {
                 let (r, t) = r_t(forbidden, msg, self.name());
@@ -74,19 +75,18 @@ impl IntoResponse for ProxyError {
             ProxyError::OtherInternal(msg)
             | ProxyError::ManagerApi(msg)
             | ProxyError::Deserialize(msg)
-            | ProxyError::UserNotFound(msg)
-            | ProxyError::GroupNotFound(msg) => {
+            | ProxyError::UserNotFound(msg) => {
                 let (r, t) = r_t(internal_err, msg, self.name());
                 error!("{}", t);
                 r
             }
             ProxyError::FatalError(msg) => {
                 error!("fatal error happened: {}", msg);
-                panic!("fatal error happened: {}", msg);
+                panic!("fatal error happened: {msg}");
             }
             ProxyError::AssertFail(msg) => {
                 error!("assertion failed: {}", msg);
-                panic!("assertion failed: {}", msg);
+                panic!("assertion failed: {msg}");
             }
         };
         res.add_piam_headers(id).into_response()
@@ -102,24 +102,27 @@ pub fn rejected_by_policy() -> HttpResponse {
 }
 
 pub fn bad_request(code: &str, message: &str, request_id: &str) -> HttpResponse {
-    eok(Response::builder()
+    Response::builder()
         .status(StatusCode::BAD_REQUEST)
         .header(CONTENT_TYPE, "application/xml")
-        .body(Body::from(error_payload(code, message, request_id))))
+        .body(Body::from(error_payload(code, message, request_id)))
+        .unwp()
 }
 
 pub fn forbidden(code: &str, message: &str, request_id: &str) -> HttpResponse {
-    eok(Response::builder()
+    Response::builder()
         .status(StatusCode::FORBIDDEN)
         .header(CONTENT_TYPE, "application/xml")
-        .body(Body::from(error_payload(code, message, request_id))))
+        .body(Body::from(error_payload(code, message, request_id)))
+        .unwp()
 }
 
 pub fn internal_err(code: &str, message: &str, request_id: &str) -> HttpResponse {
-    eok(Response::builder()
+    Response::builder()
         .status(StatusCode::INTERNAL_SERVER_ERROR)
         .header(CONTENT_TYPE, "application/xml")
-        .body(Body::from(error_payload(code, message, request_id))))
+        .body(Body::from(error_payload(code, message, request_id)))
+        .unwp()
 }
 
 fn error_payload(code: &str, message: &str, request_id: &str) -> String {
@@ -144,14 +147,11 @@ pub struct AwsErrorXml {
 #[cfg(feature = "aws-xml-response")]
 fn aws_xml_error_payload(code: &str, message: &str, request_id: &str) -> String {
     let error = AwsErrorXml {
-        code: format!("Piam{}", code),
-        message: format!("PIAM {}", message),
+        code: format!("Piam{code}"),
+        message: format!("PIAM {message}"),
         aws_access_key: "".into(),
         request_id: request_id.into(),
         host_id: "".into(),
     };
-    eok_ctx(
-        serde_xml_rs::to_string(&error),
-        "serialize error payload should not fail",
-    )
+    serde_xml_rs::to_string(&error).ex("aws_xml_error_payload should not fail")
 }

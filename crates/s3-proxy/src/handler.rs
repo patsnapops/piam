@@ -4,11 +4,11 @@ use axum::{
     extract::{ConnectInfo, Path, Query, State},
     response::IntoResponse,
 };
-use busylib::{logger::change_debug, prelude::eok_ctx};
+use busylib::{logger::change_debug, prelude::EnhancedExpect};
 use http::{Response, StatusCode};
 use hyper::Body;
 use log::debug;
-use piam_core::condition::input::Condition;
+use piam_core::condition::input::{Condition, ConditionCtx};
 use piam_object_storage::{input::ObjectStorageInput, policy::ObjectStoragePolicy};
 use piam_proxy::{
     container::PolicyFilterParams,
@@ -105,16 +105,17 @@ pub async fn handle(
         (account, base_access_key)
     };
 
-    // Find matching policies by base_access_key in the request
+    // Find matching policies
     let user = iam_container.find_user_by_base_access_key(base_access_key)?;
     let groups = iam_container.find_groups_by_user(user)?;
-    let policy_filter_param = PolicyFilterParams::new_with_default(groups, account, region);
+    let policy_filter_param = PolicyFilterParams::new_with(account, region).groups(&groups);
     let policies = iam_container.find_policies(&policy_filter_param)?;
 
     // Apply conditional effects that finding in policies
-    let condition = Condition::new_with_addr(addr);
-    let condition_effects = policies.condition.find_effects(&condition)?;
+    let condition_ctx = ConditionCtx::default().from(Condition::new_with_addr(addr));
+    let condition_effects = policies.condition.find_effects(&condition_ctx)?;
     let req = req.apply_effects(condition_effects)?;
+
     // Apply user input effects that finding in policies
     let user_input_effects = policies.user_input.find_effects(&input)?;
     let mut raw_req = req.apply_effects(user_input_effects)?;
@@ -122,10 +123,10 @@ pub async fn handle(
     // Sign and forward
     raw_req.set_actual_host(s3_config, region)?;
     let sign_params = AwsSigv4SignParams::new_with(account, SERVICE, region);
-    let signed_req = eok_ctx(
-        raw_req.sign_with_aws_sigv4_params(&sign_params).await,
-        "sign_with_aws_sigv4_params in handler",
-    );
+    let signed_req = raw_req
+        .sign_with_aws_sigv4_params(&sign_params)
+        .await
+        .ex("sign should not fail");
     let res = forward(signed_req, &state.http_client).await?;
 
     // add tracing info

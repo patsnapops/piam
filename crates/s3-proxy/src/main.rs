@@ -6,7 +6,7 @@ use axum::{
     routing::{any, get, put},
     Router,
 };
-use busylib::{logger::init_logger, prelude::eok};
+use busylib::{logger::init_logger, prelude::EnhancedUnwrap};
 use log::info;
 use patsnap_constants::policy_model::OBJECT_STORAGE;
 use piam_proxy::{
@@ -29,7 +29,8 @@ mod uni_key;
 #[tokio::main]
 async fn main() {
     let bin_name = env!("CARGO_PKG_NAME").replace('-', "_");
-    let (_guard, _log_handle) = init_logger(&bin_name, true);
+    let enable_logging = &["busylib", "piam-core", "piam_proxy", "piam-object-storage"];
+    let (_guard, _log_handle) = init_logger(&bin_name, enable_logging, true);
     set_constants("[Patsnap S3 Proxy]", OBJECT_STORAGE, SERVICE);
 
     // TODO: make this async
@@ -58,7 +59,8 @@ async fn main() {
         addr,
         features()
     );
-    eok(axum::Server::bind(&addr)
+    axum::Server::bind(&addr)
         .serve(routes.into_make_service_with_connect_info::<SocketAddr>())
-        .await);
+        .await
+        .unwp();
 }

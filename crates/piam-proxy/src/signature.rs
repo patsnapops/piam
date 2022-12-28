@@ -5,7 +5,7 @@ pub mod aws {
 
     use async_trait::async_trait;
     use aws_sigv4::http_request::{sign, SignableRequest, SigningParams, SigningSettings};
-    use busylib::prelude::{eok_ctx, esome_ctx};
+    use busylib::prelude::EnhancedExpect;
     use http::{header::AUTHORIZATION, Request};
     use hyper::{body, Body};
     use piam_core::account::aws::AwsAccount;
@@ -67,8 +67,7 @@ pub mod aws {
             let auth_str = auth.to_str().map_err(|_| {
                 ProxyError::InvalidAuthorizationHeader(format!(
                     "Malformed authorization header, only visible ASCII chars allowed. \
-                The authorization header: {:#?}",
-                    auth
+                The authorization header: {auth:#?}"
                 ))
             })?;
             extract_aws_access_key_and_region_from_auth_header(auth_str)
@@ -79,11 +78,11 @@ pub mod aws {
             params: &AwsSigv4SignParams<'_>,
         ) -> ProxyResult<HttpRequest> {
             // save checksum before signing
-            let checksum = esome_ctx(
-                self.headers().get(X_AMZ_CONTENT_SHA_256),
-                "sign_with_aws_sigv4_params miss X_AMZ_CONTENT_SHA_256",
-            )
-            .clone();
+            let checksum = self
+                .headers()
+                .get(X_AMZ_CONTENT_SHA_256)
+                .ex("X_AMZ_CONTENT_SHA_256 should be set")
+                .clone();
 
             // see `aws_sigv4::http_request::sign::calculate_signing_headers`
             self.headers_mut().remove(X_AMZ_DATE);
@@ -96,31 +95,24 @@ pub mod aws {
 
             // convert body to bytes for signing
             let (p, b) = self.into_parts();
-            let bytes = eok_ctx(
-                body::to_bytes(b).await,
-                "sign_with_aws_sigv4_params body to bytes failed",
-            );
+            let bytes = body::to_bytes(b).await.ex("body to bytes should work");
             let mut byte_req = Request::from_parts(p, bytes);
 
             // do signing
             let signing_settings = SigningSettings::default();
-            let signing_params = eok_ctx(
-                SigningParams::builder()
-                    .access_key(&params.account.access_key)
-                    .secret_key(&params.account.secret_key)
-                    .region(params.region)
-                    .service_name(params.service)
-                    .time(SystemTime::now())
-                    .settings(signing_settings)
-                    .build(),
-                "sign_with_aws_sigv4_params build SigningParams failed",
-            );
+            let signing_params = SigningParams::builder()
+                .access_key(&params.account.access_key)
+                .secret_key(&params.account.secret_key)
+                .region(params.region)
+                .service_name(params.service)
+                .time(SystemTime::now())
+                .settings(signing_settings)
+                .build()
+                .ex("build signing_params should work");
             let signable_request = SignableRequest::from(&byte_req);
-            let (signing_instructions, _signature) = eok_ctx(
-                sign(signable_request, &signing_params),
-                "sign_with_aws_sigv4_params sign failed",
-            )
-            .into_parts();
+            let (signing_instructions, _signature) = sign(signable_request, &signing_params)
+                .ex("sign should work")
+                .into_parts();
             signing_instructions.apply_to_request(&mut byte_req);
 
             // restore body from bytes
@@ -144,16 +136,14 @@ pub mod aws {
             .ok_or_else(|| {
                 ProxyError::InvalidAuthorizationHeader(format!(
                     "Malformed authorization header found when extract access_key\
-                    (not a valid AMZ sigV4 authorization header): {}",
-                    auth_str
+                    (not a valid AMZ sigV4 authorization header): {auth_str}"
                 ))
             })?
             .1;
         let region = split.nth(1).ok_or_else(|| {
             ProxyError::InvalidAuthorizationHeader(format!(
                 "Malformed authorization header found when extract region\
-                (not a valid AMZ sigV4 authorization header): {}",
-                auth_str
+                (not a valid AMZ sigV4 authorization header): {auth_str}"
             ))
         })?;
         Ok((access_key, region))

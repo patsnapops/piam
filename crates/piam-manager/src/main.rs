@@ -3,7 +3,7 @@
 use std::net::SocketAddr;
 
 use axum::{routing::get, Router};
-use busylib::{logger::init_logger, prelude::eok};
+use busylib::{logger::init_logger, prelude::EnhancedUnwrap};
 use log::info;
 use piam_core::manager_api_constant::*;
 
@@ -15,7 +15,8 @@ mod persist;
 #[tokio::main]
 async fn main() {
     let bin_name = env!("CARGO_PKG_NAME").replace('-', "_");
-    let (_guard, _log_handle) = init_logger(&bin_name, true);
+    let enable_logging = &["busylib", "piam-core"];
+    let (_guard, _log_handle) = init_logger(&bin_name, enable_logging, true);
 
     let routes = Router::new()
         // .route("/_piam_manage_api", put(handler::manage))
@@ -42,15 +43,16 @@ async fn main() {
 
     let addr = SocketAddr::from(([0, 0, 0, 0], config::port()));
     info!("piam-manager listening on {}", addr);
-    eok(axum::Server::bind(&addr)
+    axum::Server::bind(&addr)
         .serve(routes.into_make_service_with_connect_info::<SocketAddr>())
-        .await);
+        .await
+        .unwp();
 }
 
 fn gen_path(value: &str) -> String {
-    format!("/:v/{}", value)
+    format!("/:v/{value}")
 }
 
 fn gen_path_with_param(value: &str, param: &str) -> String {
-    format!("/:v/{}/:{}", value, param)
+    format!("/:v/{value}/:{param}")
 }

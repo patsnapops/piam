@@ -1,22 +1,14 @@
 ---
 
 variables:
-  #以下两个是容器仓库地址，写死
   AWS_DTR_URL: "955466075186.dkr.ecr.cn-northwest-1.amazonaws.com.cn"
   PRIVATE_DTR_URL: ${AWS_DTR_URL}
-  #组名, 示例是rd，根据实际修改
   TEAM: "ops"
-  #服务类型，内部服务为s外服服务为w前端为f"
   PROJECT_TYPE: "s"
-  #服务名 
   PROJECT_NAME: "piam"
-  #健康检查端口
   HC_PORT: "80"
-  #健康检查路径
   HC_HTTP_REQUEST_PATH: "/health"
-  #服务发布与更新后的健康检查延迟检测时间
   HC_PER_SEC: "60"
-  #新增发到生产跳过审批
   PRIVILEGE: "yes"
 
 # TODO: add test stage for automatic system test and etc.

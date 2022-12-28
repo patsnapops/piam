@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 piam-core = { path = "../piam-core" }
-piam-proxy = { path = "../piam-proxy", features = ["aws-xml-response"] }
+piam-proxy = { path = "../piam-proxy", features = ["aws-xml-response", "prefilter"] }
 piam-object-storage = { path = "../piam-object-storage" }
 patsnap-constants = { path = "../patsnap-constants" }
 busylib = { path = "../busylib" }

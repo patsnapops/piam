@@ -62,8 +62,7 @@ pub fn from_region_to_host(region: &str) -> ProxyResult<&'static str> {
         "ap-shanghai" => Ok("cos.ap-shanghai.myqcloud.com"),
         "na-ashburn" => Ok("cos.na-ashburn.myqcloud.com"),
         _ => Err(ProxyError::InvalidRegion(format!(
-            "unsupported region: {}",
-            region,
+            "unsupported region: {region}",
         ))),
     }
 }
@@ -71,5 +70,5 @@ pub fn from_region_to_host(region: &str) -> ProxyResult<&'static str> {
 pub async fn forward(new_req: HttpRequest, client: &HttpClient) -> ProxyResult<HttpResponse> {
     debug!("new_req headers {:#?}", new_req.headers());
     let res = client.request(new_req).await;
-    res.map_err(|e| ProxyError::OtherInternal(format!("proxy forwarding error: {}", e)))
+    res.map_err(|e| ProxyError::OtherInternal(format!("proxy forwarding error: {e}")))
 }
