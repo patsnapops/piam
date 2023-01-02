@@ -76,7 +76,7 @@ pub mod aws {
         async fn sign_with_aws_sigv4_params(
             mut self,
             params: &AwsSigv4SignParams<'_>,
-        ) -> ProxyResult<HttpRequest> {
+        ) -> ProxyResult<Self> {
             // save checksum before signing
             let checksum = self
                 .headers()
@@ -117,7 +117,7 @@ pub mod aws {
 
             // restore body from bytes
             let (p, b) = byte_req.into_parts();
-            self = Request::from_parts(p, Body::from(b));
+            self = Self::from_parts(p, Body::from(b));
 
             // restore checksum after signing
             self.headers_mut().insert(X_AMZ_CONTENT_SHA_256, checksum);
@@ -157,7 +157,7 @@ pub mod aws {
     }
 
     impl<'a> AwsSigv4SignParams<'a> {
-        pub fn new_with(account: &'a AwsAccount, service: &'a str, region: &'a str) -> Self {
+        pub const fn new_with(account: &'a AwsAccount, service: &'a str, region: &'a str) -> Self {
             AwsSigv4SignParams {
                 account,
                 service,

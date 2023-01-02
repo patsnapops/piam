@@ -54,37 +54,37 @@ impl IntoResponse for ProxyError {
             (resp_fn(err_type, &trace_info, &id), trace_info)
         };
         let res = match &self {
-            ProxyError::BadRequest(msg)
-            | ProxyError::InvalidEndpoint(msg)
-            | ProxyError::InvalidRegion(msg)
-            | ProxyError::InvalidAuthorizationHeader(msg) => {
+            Self::BadRequest(msg)
+            | Self::InvalidEndpoint(msg)
+            | Self::InvalidRegion(msg)
+            | Self::InvalidAuthorizationHeader(msg) => {
                 let (r, t) = r_t(bad_request, msg, self.name());
                 info!("{}", t);
                 r
             }
-            ProxyError::InvalidAccessKey(msg)
-            | ProxyError::ParserError(msg)
-            | ProxyError::OperationNotSupported(msg)
-            | ProxyError::GroupNotFound(msg)
-            | ProxyError::MissingPolicy(msg)
-            | ProxyError::EffectNotFound(msg) => {
+            Self::InvalidAccessKey(msg)
+            | Self::ParserError(msg)
+            | Self::OperationNotSupported(msg)
+            | Self::GroupNotFound(msg)
+            | Self::MissingPolicy(msg)
+            | Self::EffectNotFound(msg) => {
                 let (r, t) = r_t(forbidden, msg, self.name());
                 warn!("{}", t);
                 r
             }
-            ProxyError::OtherInternal(msg)
-            | ProxyError::ManagerApi(msg)
-            | ProxyError::Deserialize(msg)
-            | ProxyError::UserNotFound(msg) => {
+            Self::OtherInternal(msg)
+            | Self::ManagerApi(msg)
+            | Self::Deserialize(msg)
+            | Self::UserNotFound(msg) => {
                 let (r, t) = r_t(internal_err, msg, self.name());
                 error!("{}", t);
                 r
             }
-            ProxyError::FatalError(msg) => {
+            Self::FatalError(msg) => {
                 error!("fatal error happened: {}", msg);
                 panic!("fatal error happened: {msg}");
             }
-            ProxyError::AssertFail(msg) => {
+            Self::AssertFail(msg) => {
                 error!("assertion failed: {}", msg);
                 panic!("assertion failed: {msg}");
             }

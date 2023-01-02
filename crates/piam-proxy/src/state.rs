@@ -67,7 +67,7 @@ impl<
 
         let iam_container = IamContainer::new_from(core_config)?;
 
-        let state = ProxyState {
+        let state = Self {
             health: Health::default(),
             log_handle: None,
             iam_container,
@@ -92,7 +92,7 @@ impl<
 {
     pub async fn initialize() -> Self {
         let state = Self::get_new(When::Initializing).await.unwp();
-        StateManager {
+        Self {
             health_state: Default::default(),
             arc_state: Arc::new(ArcSwap::from_pointee(state)),
         }
@@ -141,8 +141,8 @@ enum When {
 impl std::fmt::Display for When {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            When::Initializing => write!(f, "initialization"),
-            When::Updating => write!(f, "updating"),
+            Self::Initializing => write!(f, "initialization"),
+            Self::Updating => write!(f, "updating"),
         }
     }
 }

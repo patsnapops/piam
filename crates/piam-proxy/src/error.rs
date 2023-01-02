@@ -23,24 +23,24 @@ pub enum ProxyError {
 }
 
 impl ProxyError {
-    pub fn name(&self) -> &str {
+    pub const fn name(&self) -> &str {
         match self {
-            ProxyError::BadRequest(_) => "BadRequest",
-            ProxyError::InvalidEndpoint(_) => "InvalidEndpoint",
-            ProxyError::InvalidRegion(_) => "InvalidRegion",
-            ProxyError::InvalidAuthorizationHeader(_) => "InvalidAuthorizationHeader",
-            ProxyError::InvalidAccessKey(_) => "InvalidAccessKey",
-            ProxyError::ParserError(_) => "ParserError",
-            ProxyError::OperationNotSupported(_) => "OperationNotSupported",
-            ProxyError::UserNotFound(_) => "UserNotFound",
-            ProxyError::GroupNotFound(_) => "GroupNotFound",
-            ProxyError::MissingPolicy(_) => "MissingPolicy",
-            ProxyError::EffectNotFound(_) => "EffectNotFound",
-            ProxyError::ManagerApi(_) => "ManagerApi",
-            ProxyError::Deserialize(_) => "Deserialize",
-            ProxyError::OtherInternal(_) => "OtherInternal",
-            ProxyError::FatalError(_) => "FatalError",
-            ProxyError::AssertFail(_) => "AssertFail",
+            Self::BadRequest(_) => "BadRequest",
+            Self::InvalidEndpoint(_) => "InvalidEndpoint",
+            Self::InvalidRegion(_) => "InvalidRegion",
+            Self::InvalidAuthorizationHeader(_) => "InvalidAuthorizationHeader",
+            Self::InvalidAccessKey(_) => "InvalidAccessKey",
+            Self::ParserError(_) => "ParserError",
+            Self::OperationNotSupported(_) => "OperationNotSupported",
+            Self::UserNotFound(_) => "UserNotFound",
+            Self::GroupNotFound(_) => "GroupNotFound",
+            Self::MissingPolicy(_) => "MissingPolicy",
+            Self::EffectNotFound(_) => "EffectNotFound",
+            Self::ManagerApi(_) => "ManagerApi",
+            Self::Deserialize(_) => "Deserialize",
+            Self::OtherInternal(_) => "OtherInternal",
+            Self::FatalError(_) => "FatalError",
+            Self::AssertFail(_) => "AssertFail",
         }
     }
 }
@@ -48,31 +48,31 @@ impl ProxyError {
 impl Display for ProxyError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            ProxyError::BadRequest(msg) => write!(f, "BadRequest: {msg}"),
-            ProxyError::InvalidEndpoint(_) => write!(f, "InvalidEndpoint"),
-            ProxyError::InvalidRegion(msg) => write!(f, "InvalidRegion: {msg}"),
-            ProxyError::InvalidAuthorizationHeader(msg) => {
+            Self::BadRequest(msg) => write!(f, "BadRequest: {msg}"),
+            Self::InvalidEndpoint(_) => write!(f, "InvalidEndpoint"),
+            Self::InvalidRegion(msg) => write!(f, "InvalidRegion: {msg}"),
+            Self::InvalidAuthorizationHeader(msg) => {
                 write!(f, "InvalidAuthorizationHeader: {msg}")
             }
-            ProxyError::InvalidAccessKey(msg) => write!(f, "InvalidAccessKey: {msg}"),
-            ProxyError::ParserError(msg) => write!(f, "ParserError: {msg}"),
-            ProxyError::OperationNotSupported(msg) => write!(f, "OperationNotSupported: {msg}"),
-            ProxyError::UserNotFound(msg) => write!(f, "UserNotFound: {msg}"),
-            ProxyError::GroupNotFound(msg) => write!(f, "GroupNotFound: {msg}"),
-            ProxyError::MissingPolicy(msg) => write!(f, "MissingPolicy: {msg}"),
-            ProxyError::EffectNotFound(msg) => write!(f, "EffectNotFound: {msg}"),
-            ProxyError::ManagerApi(msg) => write!(f, "ManagerApi: {msg}"),
-            ProxyError::Deserialize(msg) => write!(f, "Deserialize: {msg}"),
-            ProxyError::OtherInternal(msg) => write!(f, "OtherInternal: {msg}"),
-            ProxyError::FatalError(msg) => write!(f, "FatalError: {msg}"),
-            ProxyError::AssertFail(msg) => write!(f, "AssertFail: {msg}"),
+            Self::InvalidAccessKey(msg) => write!(f, "InvalidAccessKey: {msg}"),
+            Self::ParserError(msg) => write!(f, "ParserError: {msg}"),
+            Self::OperationNotSupported(msg) => write!(f, "OperationNotSupported: {msg}"),
+            Self::UserNotFound(msg) => write!(f, "UserNotFound: {msg}"),
+            Self::GroupNotFound(msg) => write!(f, "GroupNotFound: {msg}"),
+            Self::MissingPolicy(msg) => write!(f, "MissingPolicy: {msg}"),
+            Self::EffectNotFound(msg) => write!(f, "EffectNotFound: {msg}"),
+            Self::ManagerApi(msg) => write!(f, "ManagerApi: {msg}"),
+            Self::Deserialize(msg) => write!(f, "Deserialize: {msg}"),
+            Self::OtherInternal(msg) => write!(f, "OtherInternal: {msg}"),
+            Self::FatalError(msg) => write!(f, "FatalError: {msg}"),
+            Self::AssertFail(msg) => write!(f, "AssertFail: {msg}"),
         }
     }
 }
 
 impl From<reqwest::Error> for ProxyError {
     fn from(err: reqwest::Error) -> Self {
-        ProxyError::ManagerApi(format!("reqwest error: {err}"))
+        Self::ManagerApi(format!("reqwest error: {err}"))
     }
 }
 

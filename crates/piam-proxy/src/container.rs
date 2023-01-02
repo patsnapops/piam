@@ -69,7 +69,7 @@ impl<'a> Display for PolicyFilterParams<'a> {
 }
 
 impl<'a> PolicyFilterParams<'a> {
-    pub fn new_with(account: &'a AwsAccount, target_region: &'a str) -> Self {
+    pub const fn new_with(account: &'a AwsAccount, target_region: &'a str) -> Self {
         Self {
             account,
             target_region,
@@ -79,27 +79,27 @@ impl<'a> PolicyFilterParams<'a> {
         }
     }
 
-    pub fn roles(mut self, roles: &'a Vec<&'a Role>) -> Self {
+    pub const fn roles(mut self, roles: &'a Vec<&'a Role>) -> Self {
         self.roles = Some(roles);
         self
     }
 
-    pub fn user(mut self, user: &'a User) -> Self {
+    pub const fn user(mut self, user: &'a User) -> Self {
         self.user = Some(user);
         self
     }
 
-    pub fn groups(mut self, groups: &'a Vec<&'a Group>) -> Self {
+    pub const fn groups(mut self, groups: &'a Vec<&'a Group>) -> Self {
         self.groups = Some(groups);
         self
     }
 
-    pub fn account(mut self, account: &'a AwsAccount) -> Self {
+    pub const fn account(mut self, account: &'a AwsAccount) -> Self {
         self.account = account;
         self
     }
 
-    pub fn target_region(mut self, target_region: &'a str) -> Self {
+    pub const fn target_region(mut self, target_region: &'a str) -> Self {
         self.target_region = target_region;
         self
     }
@@ -178,7 +178,7 @@ impl<P: Modeled + DeserializeOwned + Send> CoreState<CoreConfig<P>> for IamConta
             }
         }
 
-        Ok(IamContainer {
+        Ok(Self {
             accounts,
             users,
             groups,
@@ -219,13 +219,12 @@ pub mod prefilter {
                 .condition_policies
                 .into_iter()
                 .partition(|(_, policy)| {
-                    policy
-                        .modeled_policy
-                        .iter()
-                        .any(|cp| match &cp.range.proxy {
-                            None => true,
-                            Some(r) => r.matches(&condition),
-                        })
+                    policy.modeled_policy.iter().any(|cp| {
+                        cp.range
+                            .proxy
+                            .as_ref()
+                            .map_or(true, |r| r.matches(&condition))
+                    })
                 });
             let condition_policies: HashMap<PolicyId, Policy<ConditionPolicy>> = keep;
 
@@ -259,12 +258,11 @@ pub mod prefilter {
                 .filter(|(id, _)| !group_ids_to_drop.contains(id))
                 .collect();
 
-            let (keep, drop) = policy_relationships
-                .into_iter()
-                .partition(|r| match &r.group_id {
-                    None => true,
-                    Some(id) => !group_ids_to_drop.contains(id),
-                });
+            let (keep, drop) = policy_relationships.into_iter().partition(|r| {
+                r.group_id
+                    .as_ref()
+                    .map_or(true, |id| !group_ids_to_drop.contains(id))
+            });
             let policy_relationships: Vec<PolicyRelationship> = keep;
 
             let policy_ids_to_drop: Vec<PolicyId> = drop.into_iter().map(|r| r.policy_id).collect();
@@ -381,13 +379,7 @@ impl<P: Modeled> IamContainer<P> {
 
 #[inline]
 fn filter_one(query_param: Option<&str>, record: Option<&str>) -> bool {
-    match query_param {
-        None => true,
-        Some(q) => match record {
-            None => false,
-            Some(r) => equals_or_any(q, r),
-        },
-    }
+    query_param.map_or(true, |q| record.map_or(false, |r| equals_or_any(q, r)))
 }
 
 #[inline]
@@ -395,13 +387,9 @@ fn filter_many<'a>(
     query_params: Option<impl Iterator<Item = &'a str>>,
     record: Option<&str>,
 ) -> bool {
-    match query_params {
-        None => true,
-        Some(mut i) => match record {
-            None => false,
-            Some(r) => i.any(|p| equals_or_any(p, r)),
-        },
-    }
+    query_params.map_or(true, |mut i| {
+        record.map_or(false, |r| i.any(|p| equals_or_any(p, r)))
+    })
 }
 
 #[inline]
@@ -415,6 +403,7 @@ mod test {
 
     use crate::container::{filter_many, filter_one};
 
+    #[clippy::cognitive_complexity = "100"]
     #[test]
     fn test_filter_one() {
         assert!(filter_one(None, None));
@@ -428,6 +417,7 @@ mod test {
         assert!(!filter_one(Some("val"), Some("val2")));
     }
 
+    #[clippy::cognitive_complexity = "100"]
     #[test]
     fn test_filter_many() {
         // TODO: satisfy compiler

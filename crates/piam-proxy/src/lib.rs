@@ -1,3 +1,7 @@
+#![warn(clippy::nursery)]
+// #![feature(custom_inner_attributes)]
+// #![clippy::cognitive_complexity = "10"]
+
 pub mod config;
 pub mod container;
 pub mod error;
