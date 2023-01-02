@@ -100,9 +100,7 @@ fn log_and_panic<E: Display>(err: Option<E>, msg: &str) -> ! {
     };
 
     let info = format!(
-        "this should never happen: {}, context: {}, back_trace: {}",
-        err_msg,
-        msg,
+        "this should never happen: {err_msg}, context: {msg}, back_trace: {}",
         Backtrace::force_capture().to_simple_string()
     );
     error!("{}", info);
