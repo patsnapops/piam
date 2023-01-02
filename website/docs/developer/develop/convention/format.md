@@ -26,8 +26,16 @@ format_macro_matchers = true
 format_macro_bodies = true
 ```
 
-### 每次提交前执行
+### 每次 Commit 前项目根目录执行
 
+1. 基础格式化
 ```bash
 cargo +nightly fmt --all
 ```
+
+2. clippy lint
+```bash
+cargo +nightly clippy --fix -Z unstable-options --allow-dirty --allow-staged --all-features
+```
+
+3. 最后写 commit message
