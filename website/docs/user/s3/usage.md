@@ -125,3 +125,9 @@ aws s3 ls s3://data-pdf-cn-northwest-1/ --endpoint-url=http://local.s3-proxy.pat
    7   │ aws_secret_access_key = anything
 ───────┴─────────────────────────────────────────────────────────────────────
 ```
+
+:::tip 避免手动 --endpoint-url --profile
+
+https://github.com/aws/aws-cli/issues/1270#issuecomment-943587803
+
+:::
