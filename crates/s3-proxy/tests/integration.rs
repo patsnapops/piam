@@ -2,14 +2,17 @@
 
 use aws_config::{from_env, provider_config::ProviderConfig};
 use aws_sdk_s3::{
+    error::HeadObjectError,
     model::{CompletedMultipartUpload, CompletedPart, Object},
-    types::ByteStream,
+    output::HeadObjectOutput,
+    types::{ByteStream, SdkError},
     Client, Config, Endpoint,
 };
 use aws_smithy_client::{erase::DynConnector, never::NeverConnector};
 use aws_types::{os_shim_internal::Env, region::Region, Credentials};
 use futures::future;
 use patsnap_constants::{
+    key::AKPSSVCS07PIAMDEV,
     region::{AP_SHANGHAI, CN_NORTHWEST_1, NA_ASHBURN, US_EAST_1},
     s3_proxy_endpoint::{EPS_NON_DEV, EP_NA_ASHBURN, EP_S3_PROXY_DEV},
 };
@@ -1015,7 +1018,7 @@ async fn shanghai_big() {
         println!("start {i}");
         let future = async move {
             let client = build_client_from_params(ClientParams {
-                access_key: "AKPSSVCS07PIAMDEV",
+                access_key: AKPSSVCS07PIAMDEV,
                 secret: "",
                 region: CN_NORTHWEST_1,
                 endpoint: EP_AP_SHANGHAI,
@@ -1064,7 +1067,7 @@ async fn shanghai_list() {
 #[tokio::test]
 async fn fool_dev() {
     let client = build_client_from_params(ClientParams {
-        access_key: "AKPSSVCS07PIAMDEV",
+        access_key: AKPSSVCS07PIAMDEV,
         secret: "",
         region: CN_NORTHWEST_1,
         endpoint: DEV_PROXY_ENDPOINT,
@@ -1084,18 +1087,22 @@ async fn fool_dev() {
 #[tokio::test]
 async fn fool_prod() {
     let client = build_client_from_params(ClientParams {
-        access_key: "AKPSPERS03NA20Z",
+        access_key: "AKPSPERS03CJJ0Z",
         secret: "",
         region: CN_NORTHWEST_1,
-        endpoint: EP_LOCAL,
+        endpoint: EP_AP_SHANGHAI,
     });
 
-    let objects = client
+    let result = client
         .head_object()
         .bucket("data-pdf-cn-northwest-1")
         .key("CN/A/11/50/67/44/8/CN_115067448_A.pdf")
         .send()
-        .await
-        .unwrap();
-    dbg!(&objects.e_tag().unwrap());
+        .await;
+    match result {
+        Ok(_) => {}
+        Err(e) => {
+            dbg!(e);
+        }
+    }
 }

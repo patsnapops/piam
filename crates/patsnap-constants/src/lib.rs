@@ -130,6 +130,10 @@ pub mod s3_proxy_endpoint {
     ];
 }
 
+pub mod key {
+    pub const AKPSSVCS07PIAMDEV: &str = "AKPSSVCS07PIAMDEV";
+}
+
 pub const ANY: &str = "any";
 
 pub const IP_PROVIDER: &str = "http://cip.cc";

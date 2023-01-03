@@ -5,6 +5,7 @@ use busylib::ANY;
 use patsnap_constants::{
     account::{AWS_DATA_0066, AWS_DEV_9554, AWS_PROD_3977, AWS_PROD_7478, TENCENT_4258},
     env::Env::Prod,
+    key::AKPSSVCS07PIAMDEV,
     policy_model::OBJECT_STORAGE,
     region::{
         Region,
@@ -172,7 +173,7 @@ pub fn user_dev() -> User {
     User {
         id: "28D536B6-35BA-4BC2-9767-7905DEBDFF1E".to_string(),
         name: "user_dev".to_string(),
-        base_access_key: "AKPSSVCS07PIAMDEV".to_string(),
+        base_access_key: AKPSSVCS07PIAMDEV.to_string(),
         secret: "".to_string(),
         kind: UserKind::Service,
     }
