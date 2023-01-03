@@ -109,6 +109,26 @@ pub fn user_3_cjj0() -> User {
     }
 }
 
+pub fn user_3_wwt0() -> User {
+    User {
+        id: "127BEAD6-78BC-4776-AAF9-07C363E6193C".to_string(),
+        name: "吴文涛".to_string(),
+        base_access_key: "AKPSPERS03WWT0Z".to_string(),
+        secret: "".to_string(),
+        kind: Default::default(),
+    }
+}
+
+pub fn user_3_xzd0() -> User {
+    User {
+        id: "9AB183BE-A076-40DE-AA99-0D1FF0039568".to_string(),
+        name: "许张达".to_string(),
+        base_access_key: "AKPSPERS03XZD0Z".to_string(),
+        secret: "".to_string(),
+        kind: Default::default(),
+    }
+}
+
 pub fn user_3_shf0() -> User {
     User {
         id: "56462cb1-4b8b-4a8a-97a2-ac2f5d2c714f".to_string(),
@@ -154,16 +174,6 @@ pub fn user_3_whl0() -> User {
         id: "e1a6a911-9785-49e0-bb81-b25c9914b5d5".to_string(),
         name: "王海龙".to_string(),
         base_access_key: "AKPSPERS03WHL0Z".to_string(),
-        secret: "".to_string(),
-        kind: Default::default(),
-    }
-}
-
-pub fn user_3_wwt0() -> User {
-    User {
-        id: "127BEAD6-78BC-4776-AAF9-07C363E6193C".to_string(),
-        name: "吴文涛".to_string(),
-        base_access_key: "AKPSPERS03WWT0Z".to_string(),
         secret: "".to_string(),
         kind: Default::default(),
     }
@@ -252,13 +262,14 @@ pub fn user_team_data_tmp() -> User {
 pub fn make_users() -> Vec<User> {
     vec![
         user_3_cjj0(),
+        user_3_wwt0(),
+        user_3_xzd0(),
         user_3_msy0(),
         user_3_shf0(),
         user_3_qwt0(),
         user_3_fxd0(),
         user_3_zsz0(),
         user_3_whl0(),
-        user_3_wwt0(),
         user_3_cyy0(),
         user_dev(),
         user_svcs_d_data_rd_processing_batch_qa(),
@@ -629,7 +640,22 @@ pub fn policy_os_7478_us_east00000_1_group_team_sa_dev() -> Policy<ObjectStorage
                 actions: Some(base_s3_actions()),
                 bucket: Bucket {
                     name: Some(Name {
-                        eq: Some(vec!["pdf-patsnap-us-east-1".into()]),
+                        eq: Some(vec![
+                            "aws-athena-query-results-747875099153-us-east-1".into(),
+                            "data-processing-data".into(),
+                            "data-image-cn-northwest-1".into(),
+                            "data-image-us-east-1".into(),
+                            "data-sync-logs-patsnap-us-east-1".into(),
+                            "datalake-internal.patsnap.com".into(),
+                            "rnd-image-test".into(),
+                            "rnd-internal-us-east-1.patsnap.com".into(),
+                            "rnd-internal-us-east-1".into(),
+                            "testpatsnapus".into(),
+                            "patsnap-general-source".into(),
+                            "patsnap-sa-data".into(),
+                            "pdf-patsnap-us-east-1".into(),
+                            "search-us-east-1-prod".into(),
+                        ]),
                         start_with: None,
                     }),
                     tag: None,
@@ -662,7 +688,21 @@ pub fn policy_os_3977_cn_northwest_1_group_team_sa_dev() -> Policy<ObjectStorage
                 actions: Some(base_s3_actions()),
                 bucket: Bucket {
                     name: Some(Name {
-                        eq: Some(vec!["data-pdf-cn-northwest-1".into()]),
+                        eq: Some(vec![
+                            "data-pdf-cn-northwest-1".into(),
+                            "chemical-upload-images-cn-northwest-1".into(),
+                            "data-fulltextimage-cn-northwest-1".into(),
+                            "data-fulltextimage240-cn-northwest-1".into(),
+                            "data-image-cn-northwest-1".into(),
+                            "data-image120-cn-northwest-1".into(),
+                            "data-imagesearch-cn-northwest-1".into(),
+                            "data-page-image-cn-northwest-1".into(),
+                            "data-page-image240-cn-northwest-1".into(),
+                            "data-pdf-images-cn-northwest-1".into(),
+                            "data-trademark-image-cn-northwest-1".into(),
+                            "data-trademarkimage-cn-northwest-1".into(),
+                            "landscape-image-cn-northwest-1".into(),
+                        ]),
                         start_with: None,
                     }),
                     tag: None,
@@ -695,7 +735,11 @@ pub fn policy_os_7478_us_east00000_1_group_team_data_dev() -> Policy<ObjectStora
                 actions: Some(base_s3_actions()),
                 bucket: Bucket {
                     name: Some(Name {
-                        eq: Some(vec![]),
+                        eq: Some(vec![
+                            "data-processing-data".into(),
+                            "datalake-internal.patsnap.com".into(),
+                            "testpatsnapus".into(),
+                        ]),
                         start_with: None,
                     }),
                     effect: Some(Effect::allow()),
@@ -1209,7 +1253,7 @@ pub fn make_user_group_relationships() -> Vec<UserGroupRelationship> {
         group_id: group_team_data_services().id,
     })
     .collect();
-    let group_team_sa_dev: Vec<UserGroupRelationship> = vec![user_3_cjj0(), user_3_wwt0(),user_3_msy0()]
+    let group_team_sa_dev: Vec<UserGroupRelationship> = vec![user_3_cjj0(), user_3_wwt0(),user_3_msy0(), user_3_xzd0()]
         .into_iter()
         .map(|u| UserGroupRelationship {
             id: Uuid::new_v4().to_string(),
