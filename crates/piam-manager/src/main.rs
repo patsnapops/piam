@@ -1,3 +1,5 @@
+//! Management component of piam layer.
+
 // #![allow(unused)]
 
 use std::net::SocketAddr;

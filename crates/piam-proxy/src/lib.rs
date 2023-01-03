@@ -1,3 +1,5 @@
+//! Generic proxy core that work with custom plugins such as [`piam_object_storage`] crate.
+
 #![warn(clippy::nursery)]
 // #![feature(custom_inner_attributes)]
 // #![clippy::cognitive_complexity = "10"]

@@ -1,3 +1,5 @@
+//! piam core types
+
 // #![allow(unused)]
 
 pub mod account;

@@ -28,7 +28,7 @@ pub trait EnhancedUnwrap<T> {
 
 pub trait EnhancedExpect<T, E: Display> {
     /// Equivalent to [`Option::expect`] & [`Result::expect`] with additional logging.
-    /// [`ex`] stands for Expect, Extra(logging), Exception, Enhanced
+    /// [`EnhancedExpect::ex`] stands for Expect, Extra(logging), Exception, Enhanced
     fn ex(self, msg: &str) -> T;
 }
 
