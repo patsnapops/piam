@@ -108,3 +108,20 @@ AmazonS3 s3 = AmazonS3ClientBuilder.standard()
 
 ### Shell `aws` cli
 
+```bash
+aws s3 ls s3://data-pdf-cn-northwest-1/ --endpoint-url=http://local.s3-proxy.patsnap.info --profile=dev_and_test
+```
+
+```bash
+───────┬─────────────────────────────────────────────────────────────────────
+       │ File: ~/.aws/credentials
+───────┼─────────────────────────────────────────────────────────────────────
+   1   │ [default]
+   2   │ aws_access_key_id = AKIA**********Z
+   3   │ aws_secret_access_key = eKk******************jCy
+   4   │
+   5   │ [dev_and_test]
+   6   │ aws_access_key_id = `PIAM Uni Access Key`
+   7   │ aws_secret_access_key = anything
+───────┴─────────────────────────────────────────────────────────────────────
+```
