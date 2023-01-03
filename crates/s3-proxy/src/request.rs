@@ -10,13 +10,13 @@ use crate::{error::from_parser_into_proxy_error, S3Config};
 pub trait S3RequestTransform {
     /// convert path-style-url to virtual hosted style
     /// <https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-bucket-intro.html>
-    fn adapt_path_style(&mut self, path: String, proxy_hosts: &[String]);
+    fn adapt_path_style(&mut self, path: String, proxy_hosts: &[String]) -> ProxyResult<()>;
 
     fn set_actual_host(&mut self, config: &S3Config, actual_host: &str) -> ProxyResult<()>;
 }
 
 impl S3RequestTransform for HttpRequest {
-    fn adapt_path_style(&mut self, path: String, proxy_hosts: &[String]) {
+    fn adapt_path_style(&mut self, path: String, proxy_hosts: &[String]) -> ProxyResult<()> {
         let host = self
             .headers()
             .get(HOST)
@@ -27,16 +27,24 @@ impl S3RequestTransform for HttpRequest {
 
         if proxy_hosts.contains(&host) {
             // get content of path before first '/'
-            let bucket = path.split('/').next().expect("path should start with /");
+            let bucket = path.split('/').next().ok_or_else(|| {
+                ProxyError::MalformedProtocol(format!("path should start with /, but got {path}"))
+            })?;
 
             // remove bucket from uri
             let mut uri_without_bucket = self
                 .uri_mut()
                 .path_and_query()
-                .expect("path_and_query should not be None")
+                .ok_or_else(|| {
+                    ProxyError::MalformedProtocol("path_and_query should not be None".to_string())
+                })?
                 .as_str()
                 .strip_prefix(&format!("/{bucket}"))
-                .expect("uri should start with /{bucket}");
+                .ok_or_else(|| {
+                    ProxyError::MalformedProtocol(format!(
+                        "path_and_query should start with /{bucket}"
+                    ))
+                })?;
             if uri_without_bucket.is_empty() {
                 uri_without_bucket = "/";
             }
@@ -51,6 +59,7 @@ impl S3RequestTransform for HttpRequest {
                 HeaderValue::from_str(format!("{bucket}.{host}").as_str()).unwrap(),
             );
         }
+        Ok(())
     }
 
     fn set_actual_host(&mut self, config: &S3Config, region: &str) -> ProxyResult<()> {

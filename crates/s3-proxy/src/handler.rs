@@ -4,7 +4,10 @@ use axum::{
     extract::{ConnectInfo, Path, Query, State},
     response::IntoResponse,
 };
-use busylib::{logger::change_debug, prelude::EnhancedExpect};
+use busylib::{
+    logger::change_debug,
+    prelude::{EnhancedExpect, EnhancedUnwrap},
+};
 use http::{Response, StatusCode};
 use hyper::Body;
 use log::debug;
@@ -40,10 +43,10 @@ pub async fn manage(
     fn resp(payload: &str) -> HttpResponse {
         Response::builder()
             .body(Body::from(payload.to_string()))
-            .unwrap()
+            .unwp()
     }
     if let Some(debug) = params.get("debug") {
-        let on = change_debug(state.load().log_handle.as_ref().unwrap(), debug.as_str());
+        let on = change_debug(state.load().log_handle.as_ref().unwp(), debug.as_str());
         return if on {
             resp("debug mode on")
         } else {
@@ -53,7 +56,7 @@ pub async fn manage(
     Response::builder()
         .status(StatusCode::BAD_REQUEST)
         .body(Body::from("invalid request"))
-        .unwrap()
+        .unwp()
 }
 
 pub async fn handle_path(
@@ -63,7 +66,7 @@ pub async fn handle_path(
     mut req: HttpRequest,
 ) -> ProxyResult<HttpResponse> {
     let proxy_hosts = &state.load().extended_config.proxy_hosts.domains;
-    req.adapt_path_style(path, proxy_hosts);
+    req.adapt_path_style(path, proxy_hosts)?;
     handle(State(state), ConnectInfo(addr), req).await
 }
 

@@ -1,5 +1,7 @@
 use magic_crypt::{new_magic_crypt, MagicCryptTrait};
 
+use crate::prelude::EnhancedUnwrap;
+
 /// return encrypted string in base64
 pub fn encrypt_by_key(value: String, key: &str) -> String {
     let mc = new_magic_crypt!(key, 256);
@@ -9,7 +11,7 @@ pub fn encrypt_by_key(value: String, key: &str) -> String {
 /// return decrypted string from base64
 pub fn decrypt_by_key(value: String, key: &str) -> String {
     let mc = new_magic_crypt!(key, 256);
-    mc.decrypt_base64_to_string(value).unwrap()
+    mc.decrypt_base64_to_string(value).unwp()
 }
 
 #[cfg(test)]

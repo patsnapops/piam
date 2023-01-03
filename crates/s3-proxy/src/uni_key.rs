@@ -42,7 +42,7 @@ impl UniKeyInfo {
         }
         let bucket = input.bucket();
         let access_info = self.inner.get(bucket).ok_or_else(|| {
-            ProxyError::BadRequest(format!("access info not found for bucket: {bucket}"))
+            ProxyError::ResourceNotFound(format!("access info not found for bucket: {bucket}"))
         })?;
         Ok(access_info)
     }

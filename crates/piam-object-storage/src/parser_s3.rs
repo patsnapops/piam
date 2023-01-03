@@ -1,5 +1,6 @@
 use std::fmt;
 
+use busylib::prelude::EnhancedExpect;
 use http::{header::HOST, Method};
 use piam_core::{input::Input, type_alias::HttpRequest};
 use serde::{Deserialize, Serialize};
@@ -38,6 +39,7 @@ impl S3HostDomains {
 }
 
 pub enum ParserError {
+    MalformedProtocol(String),
     OperationNotSupported(String),
     InvalidEndpoint(String),
     Internal(String),
@@ -46,6 +48,7 @@ pub enum ParserError {
 impl fmt::Display for ParserError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            Self::MalformedProtocol(msg) => write!(f, "MalformedProtocol: {}", msg),
             ParserError::OperationNotSupported(msg) => write!(f, "OperationNotSupported: {msg}"),
             ParserError::InvalidEndpoint(msg) => write!(f, "InvalidEndpoint: {msg}"),
             ParserError::Internal(msg) => write!(f, "Internal: {msg}"),
@@ -63,7 +66,15 @@ impl ObjectStorageInput {
         let path = req.uri().path();
         let method = req.method();
         let headers = req.headers();
-        let host = headers.get(HOST).unwrap().to_str().unwrap();
+        let host = headers
+            .get(HOST)
+            .ok_or_else(|| ParserError::MalformedProtocol("host missing in headers".to_string()))?
+            .to_str()
+            .map_err(|_| {
+                ParserError::MalformedProtocol(
+                    "host must only contains visible ASCII chars".to_string(),
+                )
+            })?;
         let proxy_host = config.find_proxy_host(host)?;
         let bucket = host
             .strip_suffix(&format!(".{proxy_host}"))
@@ -74,7 +85,7 @@ impl ObjectStorageInput {
             })?
             .to_string();
         let query = req.uri().query().unwrap_or_default();
-        let form: Form = serde_urlencoded::from_str(query).unwrap();
+        let form: Form = serde_urlencoded::from_str(query).ex("query to form should work");
 
         let has_list_type = form.list_type.is_some();
         let has_tagging = form.tagging.is_some();
@@ -137,7 +148,15 @@ impl ObjectStorageInput {
                     Method::GET => Ok(GetObject { bucket, key }),
                     Method::PUT => match headers.get("x-amz-copy-source") {
                         Some(value) => {
-                            let copy_source = value.to_str().unwrap().to_string();
+                            let copy_source = value
+                                .to_str()
+                                .map_err(|_| {
+                                    ParserError::MalformedProtocol(
+                                        "copy_source must only contains visible ASCII chars"
+                                            .to_string(),
+                                    )
+                                })?
+                                .to_string();
                             Ok(CopyObject {
                                 bucket,
                                 key,

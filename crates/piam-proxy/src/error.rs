@@ -5,12 +5,14 @@ pub type ProxyResult<T> = Result<T, ProxyError>;
 #[derive(Debug)]
 pub enum ProxyError {
     BadRequest(String),
+    MalformedProtocol(String),
     InvalidEndpoint(String),
     InvalidRegion(String),
     InvalidAuthorizationHeader(String),
     InvalidAccessKey(String),
     ParserError(String),
     OperationNotSupported(String),
+    ResourceNotFound(String),
     UserNotFound(String),
     GroupNotFound(String),
     MissingPolicy(String),
@@ -26,12 +28,14 @@ impl ProxyError {
     pub const fn name(&self) -> &str {
         match self {
             Self::BadRequest(_) => "BadRequest",
+            Self::MalformedProtocol(_) => "MalformedProtocol",
             Self::InvalidEndpoint(_) => "InvalidEndpoint",
             Self::InvalidRegion(_) => "InvalidRegion",
             Self::InvalidAuthorizationHeader(_) => "InvalidAuthorizationHeader",
             Self::InvalidAccessKey(_) => "InvalidAccessKey",
             Self::ParserError(_) => "ParserError",
             Self::OperationNotSupported(_) => "OperationNotSupported",
+            Self::ResourceNotFound(_) => "ResourceNotFound",
             Self::UserNotFound(_) => "UserNotFound",
             Self::GroupNotFound(_) => "GroupNotFound",
             Self::MissingPolicy(_) => "MissingPolicy",
@@ -49,6 +53,7 @@ impl Display for ProxyError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::BadRequest(msg) => write!(f, "BadRequest: {msg}"),
+            Self::MalformedProtocol(msg) => write!(f, "MalformedProtocol: {msg}"),
             Self::InvalidEndpoint(_) => write!(f, "InvalidEndpoint"),
             Self::InvalidRegion(msg) => write!(f, "InvalidRegion: {msg}"),
             Self::InvalidAuthorizationHeader(msg) => {
@@ -57,6 +62,7 @@ impl Display for ProxyError {
             Self::InvalidAccessKey(msg) => write!(f, "InvalidAccessKey: {msg}"),
             Self::ParserError(msg) => write!(f, "ParserError: {msg}"),
             Self::OperationNotSupported(msg) => write!(f, "OperationNotSupported: {msg}"),
+            Self::ResourceNotFound(msg) => write!(f, "ResourceNotFound: {msg}"),
             Self::UserNotFound(msg) => write!(f, "UserNotFound: {msg}"),
             Self::GroupNotFound(msg) => write!(f, "GroupNotFound: {msg}"),
             Self::MissingPolicy(msg) => write!(f, "MissingPolicy: {msg}"),
