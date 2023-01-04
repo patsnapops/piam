@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 use busylib::config::dev_mode;
-use piam_object_storage::{parser_s3::S3HostDomains, policy::ObjectStoragePolicy};
+use piam_object_storage::{config::HostDomains, policy::ObjectStoragePolicy};
 use piam_proxy::{
     config::CoreConfig,
     error::{ProxyError, ProxyResult},
@@ -13,7 +13,7 @@ pub const SERVICE: &str = "s3";
 
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct S3Config {
-    pub proxy_hosts: S3HostDomains,
+    pub proxy_hosts: HostDomains,
     #[cfg(feature = "uni-key")]
     pub uni_key_info: Option<crate::uni_key::UniKeyInfo>,
 }
@@ -72,10 +72,12 @@ pub fn features() -> String {
 
 #[cfg(test)]
 mod test {
+    use piam_object_storage::config::HostDomains;
+
     #[test]
     fn find_proxy_host() {
         let config = crate::config::S3Config {
-            proxy_hosts: piam_object_storage::parser_s3::S3HostDomains {
+            proxy_hosts: HostDomains {
                 domains: vec!["cn-northwest-1.s3-proxy.patsnap.info".into()],
             },
             uni_key_info: None,

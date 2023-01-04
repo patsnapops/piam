@@ -26,7 +26,7 @@ use piam_core::{
     relation_model::{PolicyRelationship, UserGroupRelationship},
 };
 use piam_object_storage::{
-    parser_s3::S3HostDomains,
+    config::HostDomains,
     policy::{Bucket, Key, ObjectStorageInputPolicy, ObjectStoragePolicy},
 };
 use redis::{Client, Commands};
@@ -1253,14 +1253,15 @@ pub fn make_user_group_relationships() -> Vec<UserGroupRelationship> {
         group_id: group_team_data_services().id,
     })
     .collect();
-    let group_team_sa_dev: Vec<UserGroupRelationship> = vec![user_3_cjj0(), user_3_wwt0(),user_3_msy0(), user_3_xzd0()]
-        .into_iter()
-        .map(|u| UserGroupRelationship {
-            id: Uuid::new_v4().to_string(),
-            user_id: u.id,
-            group_id: group_team_sa_dev().id,
-        })
-        .collect();
+    let group_team_sa_dev: Vec<UserGroupRelationship> =
+        vec![user_3_cjj0(), user_3_wwt0(), user_3_msy0(), user_3_xzd0()]
+            .into_iter()
+            .map(|u| UserGroupRelationship {
+                id: Uuid::new_v4().to_string(),
+                user_id: u.id,
+                group_id: group_team_sa_dev().id,
+            })
+            .collect();
     let group_team_data_dev: Vec<UserGroupRelationship> = vec![
         // data
         user_3_cyy0(),
@@ -1627,12 +1628,12 @@ pub fn make_policy_relationships() -> Vec<PolicyRelationship> {
 
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct S3Config {
-    pub proxy_hosts: S3HostDomains,
+    pub proxy_hosts: HostDomains,
 }
 
 pub fn make_s3_config() -> S3Config {
     S3Config {
-        proxy_hosts: S3HostDomains {
+        proxy_hosts: HostDomains {
             domains: vec![
                 "internal.s3-proxy.patsnap.info".into(),
                 "us-east-1.s3-proxy.patsnap.info".into(),

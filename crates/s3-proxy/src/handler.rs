@@ -19,7 +19,10 @@ use piam_proxy::{
     policy::FindEffect,
     request::{forward, HttpRequestExt},
     response::HttpResponseExt,
-    signature::aws::{AwsSigv4, AwsSigv4SignParams},
+    signature::{
+        aws::{AwsSigv4, AwsSigv4SignParams},
+        Extract,
+    },
     state::ArcState,
     type_alias::{HttpRequest, HttpResponse},
 };
@@ -84,14 +87,14 @@ pub async fn handle(
     // Get input structure by parsing the request for specific protocol.
     // Example: getting S3Input with bucket and key as its fields.
     let s3_config = &state.extended_config;
-    let input = ObjectStorageInput::from_s3(&req, &s3_config.proxy_hosts)
+    let input = ObjectStorageInput::from(&req, &s3_config.proxy_hosts)
         .map_err(from_parser_into_proxy_error)?;
 
     let iam_container = &state.iam_container;
 
     // aws sigv4 specific
     #[allow(unused)]
-    let (access_key, region) = req.extract_aws_access_key_and_region()?;
+    let (access_key, region) = req.extract_access_key_and_region()?;
     // When feature uni-key is enabled, base_access_key is aws access_key,
     // otherwise base_access_key + account_code = aws_access_key
     #[cfg(feature = "uni-key")]

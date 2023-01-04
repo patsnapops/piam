@@ -1,16 +1,13 @@
-use std::fmt;
-
 use busylib::prelude::EnhancedExpect;
 use http::{header::HOST, Method};
-use piam_core::{input::Input, type_alias::HttpRequest};
-use serde::{Deserialize, Serialize};
+use piam_core::type_alias::HttpRequest;
+use serde::Deserialize;
 
-use crate::input::ObjectStorageInput;
-
-#[derive(Debug, Default, Serialize, Deserialize)]
-pub struct S3HostDomains {
-    pub domains: Vec<String>,
-}
+use crate::{
+    config::HostDomains,
+    error::{parse_error, ParserError, ParserResult},
+    input::ObjectStorageInput,
+};
 
 #[derive(Debug, Deserialize)]
 struct Form {
@@ -23,45 +20,8 @@ struct Form {
     upload_id: Option<String>,
 }
 
-impl S3HostDomains {
-    pub fn find_proxy_host(&self, host: &str) -> ParserResult<&str> {
-        let s = self
-            .domains
-            .iter()
-            .find(|&v| host.ends_with(v))
-            .ok_or_else(|| {
-                ParserError::InvalidEndpoint(format!(
-                    "'{host}' is not ending with a valid piam s3 proxy endpoint"
-                ))
-            })?;
-        Ok(s)
-    }
-}
-
-pub enum ParserError {
-    MalformedProtocol(String),
-    OperationNotSupported(String),
-    InvalidEndpoint(String),
-    Internal(String),
-}
-
-impl fmt::Display for ParserError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Self::MalformedProtocol(msg) => write!(f, "MalformedProtocol: {}", msg),
-            ParserError::OperationNotSupported(msg) => write!(f, "OperationNotSupported: {msg}"),
-            ParserError::InvalidEndpoint(msg) => write!(f, "InvalidEndpoint: {msg}"),
-            ParserError::Internal(msg) => write!(f, "Internal: {msg}"),
-        }
-    }
-}
-
-pub type ParserResult<T> = Result<T, ParserError>;
-
-impl Input for ObjectStorageInput {}
-
 impl ObjectStorageInput {
-    pub fn from_s3(req: &HttpRequest, config: &S3HostDomains) -> ParserResult<Self> {
+    pub fn from_s3(req: &HttpRequest, config: &HostDomains) -> ParserResult<Self> {
         use ObjectStorageInput::*;
         let path = req.uri().path();
         let method = req.method();
@@ -172,13 +132,4 @@ impl ObjectStorageInput {
             }
         }
     }
-}
-
-fn parse_error(msg: &str, req: &HttpRequest) -> ParserResult<ObjectStorageInput> {
-    let uri = req.uri().to_string();
-    let method = req.method().to_string();
-    let headers = req.headers().to_owned();
-    Err(ParserError::OperationNotSupported(format!(
-        "{msg} uri: {uri} method: {method} headers: {headers:#?} "
-    )))
 }

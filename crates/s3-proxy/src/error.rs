@@ -1,6 +1,6 @@
 #![allow(unused)]
 
-use piam_object_storage::parser_s3::ParserError;
+use piam_object_storage::error::ParserError;
 use piam_proxy::error::ProxyError;
 
 pub type S3ProxyResult<T> = Result<T, S3ProxyError>;

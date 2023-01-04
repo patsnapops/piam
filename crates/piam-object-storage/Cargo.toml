@@ -17,4 +17,4 @@ serde_urlencoded = "0.7.1"
 [features]
 # Special requirement for s3 proxy: Using a unified access key (without account code at the end) to
 # access buckets across multiple accounts for each user
-s3-parser = []
+cos-parser = []

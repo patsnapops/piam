@@ -1,4 +1,36 @@
-use crate::error::ProxyResult;
+use piam_core::type_alias::HttpRequest;
+
+use crate::{
+    error::ProxyResult,
+    signature::{aws::AwsSigv4, tencent::TencentSig},
+};
+
+pub trait Extract {
+    fn extract_access_key_and_region(&self) -> ProxyResult<(&str, &str)>;
+}
+
+impl Extract for HttpRequest {
+    fn extract_access_key_and_region(&self) -> ProxyResult<(&str, &str)> {
+        #[cfg(feature = "tencent-signature")]
+        {
+            let from_tencent_sdk = match self.headers().get(http::header::AUTHORIZATION) {
+                None => false,
+                Some(hv) => hv
+                    .to_str()
+                    .map_err(|_| {
+                        crate::error::ProxyError::MalformedProtocol(
+                            "authorization must only contains visible ASCII chars".to_string(),
+                        )
+                    })?
+                    .starts_with("q-sign-algorithm"),
+            };
+            if from_tencent_sdk {
+                return self.extract_access_key_and_region_from_tencent();
+            }
+        }
+        self.extract_access_key_and_region_from_aws()
+    }
+}
 
 pub mod aws {
     use std::time::SystemTime;
@@ -50,7 +82,7 @@ pub mod aws {
 
     #[async_trait]
     pub trait AwsSigv4 {
-        fn extract_aws_access_key_and_region(&self) -> ProxyResult<(&str, &str)>;
+        fn extract_access_key_and_region_from_aws(&self) -> ProxyResult<(&str, &str)>;
 
         async fn sign_with_aws_sigv4_params(
             self,
@@ -60,7 +92,7 @@ pub mod aws {
 
     #[async_trait]
     impl AwsSigv4 for HttpRequest {
-        fn extract_aws_access_key_and_region(&self) -> ProxyResult<(&str, &str)> {
+        fn extract_access_key_and_region_from_aws(&self) -> ProxyResult<(&str, &str)> {
             let auth = self.headers().get(AUTHORIZATION).ok_or_else(|| {
                 ProxyError::InvalidAuthorizationHeader("Missing authorization header".into())
             })?;
@@ -177,6 +209,21 @@ pub mod aws {
             ).unwrap();
             assert_eq!(key, "AKPSSVCSPROXYDEV");
             assert_eq!(region, "cn-northwest-1");
+        }
+    }
+}
+
+#[cfg(feature = "tencent-signature")]
+pub mod tencent {
+    use crate::{error::ProxyResult, type_alias::HttpRequest};
+
+    pub trait TencentSig {
+        fn extract_access_key_and_region_from_tencent(&self) -> ProxyResult<(&str, &str)>;
+    }
+
+    impl TencentSig for HttpRequest {
+        fn extract_access_key_and_region_from_tencent(&self) -> ProxyResult<(&str, &str)> {
+            todo!("extract access key and region from self (HttpRequest)")
         }
     }
 }

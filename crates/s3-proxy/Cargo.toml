@@ -5,8 +5,8 @@ edition = "2021"
 
 [dependencies]
 piam-core = { path = "../piam-core" }
-piam-proxy = { path = "../piam-proxy", features = ["aws-xml-response", "prefilter"] }
-piam-object-storage = { path = "../piam-object-storage" }
+piam-proxy = { path = "../piam-proxy", features = ["aws-xml-response", "prefilter", "tencent-signature"] }
+piam-object-storage = { path = "../piam-object-storage", features = ["cos-parser"] }
 patsnap-constants = { path = "../patsnap-constants" }
 busylib = { path = "../busylib" }
 axum = { version = "0.6.1", features = ["tokio"] }
