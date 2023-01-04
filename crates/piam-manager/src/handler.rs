@@ -40,7 +40,7 @@ pub async fn get_policies(
         "version: {} api: get_policies policy_model: {}",
         ver, policy_model
     );
-    let r = get_resource_string(&format!("policies:{policy_model}")).await?;
+    let r = get_resource_string(&format!("policies:{}", policy_model)).await?;
     wrap(r)
 }
 
@@ -60,7 +60,7 @@ pub async fn extended_config(
     Path((ver, config_type)): Path<(String, String)>,
 ) -> ManagerResult<String> {
     info!("version: {} api: extended_config: {}", ver, config_type);
-    let r = get_resource_string(&format!("extended_config:{config_type}")).await?;
+    let r = get_resource_string(&format!("extended_config:{}", config_type)).await?;
     wrap(r)
 }
 

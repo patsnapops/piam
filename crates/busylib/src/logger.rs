@@ -38,7 +38,8 @@ pub fn init_logger(
     let (filter, reload_handle) = reload::Layer::new(base_filter.clone());
 
     if debug {
-        let file_appender = tracing_appender::rolling::daily(log_path(), format!("{bin_name}.log"));
+        let file_appender =
+            tracing_appender::rolling::daily(log_path(), format!("{}.log", bin_name));
         let (non_blocking, guard) = tracing_appender::non_blocking(file_appender);
         let file_filter = tracing_subscriber::fmt::layer()
             .with_timer(timer)

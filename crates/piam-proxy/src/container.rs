@@ -346,7 +346,8 @@ impl<P: Modeled> IamContainer<P> {
 
         if relations.is_empty() {
             return Err(ProxyError::MissingPolicy(format!(
-                "access denied by missing policy, PolicyFilterParams: {f}"
+                "access denied by missing policy, PolicyFilterParams: {}",
+                f
             )));
         }
 
@@ -364,7 +365,8 @@ impl<P: Modeled> IamContainer<P> {
                 }
                 other => {
                     return Err(ProxyError::AssertFail(format!(
-                        "unknown policy model found: {other}"
+                        "unknown policy model found: {}",
+                        other
                     )));
                 }
             };

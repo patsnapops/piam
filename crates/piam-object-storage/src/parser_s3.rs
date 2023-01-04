@@ -37,7 +37,7 @@ impl ObjectStorageInput {
             })?;
         let proxy_host = config.find_proxy_host(host)?;
         let bucket = host
-            .strip_suffix(&format!(".{proxy_host}"))
+            .strip_suffix(&format!(".{}", proxy_host))
             .ok_or_else(|| {
                 ParserError::OperationNotSupported(
                     "ListBuckets not supported due to uni-key feature".into(),

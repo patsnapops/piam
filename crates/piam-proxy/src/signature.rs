@@ -99,7 +99,8 @@ pub mod aws {
             let auth_str = auth.to_str().map_err(|_| {
                 ProxyError::InvalidAuthorizationHeader(format!(
                     "Malformed authorization header, only visible ASCII chars allowed. \
-                The authorization header: {auth:#?}"
+                The authorization header: {:#?}",
+                    auth
                 ))
             })?;
             extract_aws_access_key_and_region_from_auth_header(auth_str)
@@ -168,14 +169,16 @@ pub mod aws {
             .ok_or_else(|| {
                 ProxyError::InvalidAuthorizationHeader(format!(
                     "Malformed authorization header found when extract access_key\
-                    (not a valid AMZ sigV4 authorization header): {auth_str}"
+                    (not a valid AMZ sigV4 authorization header): {}",
+                    auth_str
                 ))
             })?
             .1;
         let region = split.nth(1).ok_or_else(|| {
             ProxyError::InvalidAuthorizationHeader(format!(
                 "Malformed authorization header found when extract region\
-                (not a valid AMZ sigV4 authorization header): {auth_str}"
+                (not a valid AMZ sigV4 authorization header): {}",
+                auth_str
             ))
         })?;
         Ok((access_key, region))

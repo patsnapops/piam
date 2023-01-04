@@ -28,7 +28,7 @@ impl S3RequestTransform for HttpRequest {
         if proxy_hosts.contains(&host) {
             // get content of path before first '/'
             let bucket = path.split('/').next().ok_or_else(|| {
-                ProxyError::MalformedProtocol(format!("path should start with /, but got {path}"))
+                ProxyError::MalformedProtocol(format!("path should start with /, but got {}", path))
             })?;
 
             // remove bucket from uri
@@ -39,10 +39,11 @@ impl S3RequestTransform for HttpRequest {
                     ProxyError::MalformedProtocol("path_and_query should not be None".to_string())
                 })?
                 .as_str()
-                .strip_prefix(&format!("/{bucket}"))
+                .strip_prefix(&format!("/{}", bucket))
                 .ok_or_else(|| {
                     ProxyError::MalformedProtocol(format!(
-                        "path_and_query should start with /{bucket}"
+                        "path_and_query should start with /{}",
+                        bucket
                     ))
                 })?;
             if uri_without_bucket.is_empty() {
@@ -56,7 +57,7 @@ impl S3RequestTransform for HttpRequest {
             // add bucket to host
             self.headers_mut().insert(
                 HOST,
-                HeaderValue::from_str(format!("{bucket}.{host}").as_str()).unwrap(),
+                HeaderValue::from_str(format!("{}.{}", bucket, host).as_str()).unwrap(),
             );
         }
         Ok(())
@@ -69,10 +70,10 @@ impl S3RequestTransform for HttpRequest {
             .find_proxy_host(host)
             .map_err(from_parser_into_proxy_error)?;
         let bucket_dot = host.strip_suffix(proxy_host).ok_or_else(|| {
-            ProxyError::InvalidEndpoint(format!("host {host} should end with {proxy_host}"))
+            ProxyError::InvalidEndpoint(format!("host {} should end with {}", host, proxy_host))
         })?;
         let actual_host = from_region_to_host(region)?;
-        let host = format!("{bucket_dot}{actual_host}");
+        let host = format!("{}{}", bucket_dot, actual_host);
         self.headers_mut()
             .insert(HOST, HeaderValue::from_str(&host).unwrap());
 

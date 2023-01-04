@@ -41,7 +41,7 @@ impl HttpResponseExt for HttpResponse {
 impl IntoResponse for ProxyError {
     fn into_response(self) -> axum::response::Response {
         let id = Uuid::new_v4().to_string();
-        let r_t = |resp_fn: fn(&str, &str, &str) -> HttpResponse, msg, err_type| {
+        let response_and_trace = |resp_fn: fn(&str, &str, &str) -> HttpResponse, msg, err_type| {
             let trace_info = format!(
                 "proxy_type: {}, proxy_region_env: {}, \
                 error_type: {}, message: {}, x-patsnap-request-id: {}",
@@ -60,7 +60,7 @@ impl IntoResponse for ProxyError {
             | Self::InvalidEndpoint(msg)
             | Self::InvalidRegion(msg)
             | Self::InvalidAuthorizationHeader(msg) => {
-                let (r, t) = r_t(bad_request, msg, self.name());
+                let (r, t) = response_and_trace(bad_request, msg, self.name());
                 info!("{}", t);
                 r
             }
@@ -70,7 +70,8 @@ impl IntoResponse for ProxyError {
             | Self::GroupNotFound(msg)
             | Self::MissingPolicy(msg)
             | Self::EffectNotFound(msg) => {
-                let (r, t) = r_t(forbidden, msg, self.name());
+                let (r, t) = response_and_trace(forbidden, msg, self.name());
+                dbg!(&t);
                 warn!("{}", t);
                 r
             }
@@ -78,7 +79,7 @@ impl IntoResponse for ProxyError {
             | Self::ManagerApi(msg)
             | Self::Deserialize(msg)
             | Self::UserNotFound(msg) => {
-                let (r, t) = r_t(internal_err, msg, self.name());
+                let (r, t) = response_and_trace(internal_err, msg, self.name());
                 error!("{}", t);
                 r
             }
@@ -149,8 +150,8 @@ pub struct AwsErrorXml {
 #[cfg(feature = "aws-xml-response")]
 fn aws_xml_error_payload(code: &str, message: &str, request_id: &str) -> String {
     let error = AwsErrorXml {
-        code: format!("Piam{code}"),
-        message: format!("PIAM {message}"),
+        code: format!("Piam{}", code),
+        message: format!("PIAM {}", message),
         aws_access_key: "".into(),
         request_id: request_id.into(),
         host_id: "".into(),

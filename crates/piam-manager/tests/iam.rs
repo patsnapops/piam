@@ -1685,7 +1685,7 @@ fn write_all(client: &Client) {
 
 pub fn write(client: &Client, key: &str, value: String) {
     let mut con = client.get_connection().unwrap();
-    let key = format!("piam:{VERSION}:{key}");
+    let key = format!("piam:{}:{}", VERSION, key);
     con.set(key, value).unwrap()
 }
 
@@ -1693,6 +1693,6 @@ pub fn read_last_version(client: &Client, key: &str) -> String {
     let mut con = client.get_connection().unwrap();
     let last_version = VERSION.replace('v', "");
     let last_version = last_version.parse::<i32>().unwrap() - 1;
-    let key = format!("piam:v{last_version}:{key}");
+    let key = format!("piam:v{}:{}", last_version, key);
     con.get(key).unwrap()
 }

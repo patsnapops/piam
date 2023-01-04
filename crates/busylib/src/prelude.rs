@@ -8,7 +8,7 @@ trait DisplayBackTrace {
 
 impl DisplayBackTrace for Backtrace {
     fn to_simple_string(&self) -> String {
-        let full = format!("{self}");
+        let full = format!("{}", self);
         let split = full.split('\n');
         let mut trimmed = String::new();
         for (i, line) in split.enumerate() {
@@ -95,12 +95,14 @@ pub fn some_ctx<T>(option: Option<T>, msg: &str) -> T {
 #[inline]
 fn log_and_panic<E: Display>(err: Option<E>, msg: &str) -> ! {
     let err_msg = match err {
-        Some(e) => format!("{e}"),
+        Some(e) => format!("{}", e),
         None => "".to_string(),
     };
 
     let info = format!(
-        "this should never happen: {err_msg}, context: {msg}, back_trace: {}",
+        "this should never happen: {}, context: {}, back_trace: {}",
+        err_msg,
+        msg,
         Backtrace::force_capture().to_simple_string()
     );
     error!("{}", info);

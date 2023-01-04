@@ -27,7 +27,7 @@ async fn main() {
         .route(&gen_path(USERS), get(handler::get_users))
         .route(&gen_path(GROUPS), get(handler::get_groups))
         .route(
-            &gen_path_with_param(POLICIES, "policy_model"),
+            &gen_path_with_param(POLICIES, "policy_model_placeholder"),
             get(handler::get_policies),
         )
         .route(
@@ -39,7 +39,7 @@ async fn main() {
             get(handler::get_policy_relationships),
         )
         .route(
-            &gen_path_with_param(EXTENDED_CONFIG, "config_type"),
+            &gen_path_with_param(EXTENDED_CONFIG, "config_type_placeholder"),
             get(handler::extended_config),
         );
 
@@ -52,9 +52,9 @@ async fn main() {
 }
 
 fn gen_path(value: &str) -> String {
-    format!("/:v/{value}")
+    format!("/:v/{}", value)
 }
 
 fn gen_path_with_param(value: &str, param: &str) -> String {
-    format!("/:v/{value}/:{param}")
+    format!("/:v/{}/:{}", value, param)
 }
