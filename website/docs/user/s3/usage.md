@@ -128,6 +128,10 @@ aws s3 ls s3://data-pdf-cn-northwest-1/ --endpoint-url=http://local.s3-proxy.pat
 
 :::tip 避免手动 --endpoint-url --profile
 
+方式1:
 https://github.com/aws/aws-cli/issues/1270#issuecomment-943587803
+
+方式2:
+https://pypi.org/project/awscli-plugin-endpoint/
 
 :::
