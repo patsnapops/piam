@@ -8,6 +8,12 @@ sidebar_position: 4
 
 1. 需先阅读或了解方案设计、程序架构等章节。
 2. 打通网络，使 https://crates.io/ 和 Github 能正常访问。
+3. 推荐使用 cargo-watch 进行实时编译，使用 cargo-nextest 进行测试。
+
+```bash
+cargo install cargo-watch
+cargo install cargo-nextest
+```
 
 ## 以 PIAM S3 Proxy 的集成测试流程为例
 
@@ -17,7 +23,7 @@ sidebar_position: 4
 
 1. 编写 `crates/piam-manager/tests/iam.rs` 代码准备调测数据
 2. `cd ./crates/piam-manager/`
-3. `cargo test --all-features -- "write_all" --show-output`
+3. `cargo nextest run --all-features --no-capture write_dev`
 
 ### 2. 启动 PIAM Manager
 
