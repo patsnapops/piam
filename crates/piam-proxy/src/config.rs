@@ -18,7 +18,7 @@ pub static EXTENDED_CONFIG_TYPE: GlobalStaticStr = Lazy::new(|| ArcSwap::from_po
 pub static PROXY_REGION: GlobalString = GlobalString::new(|| env_var_with_default("REGION", UNSET));
 pub static PROXY_ENV: GlobalString = GlobalString::new(|| env_var_with_default("ENV", UNSET));
 pub static PIAM_MANAGER_ADDRESS: GlobalString =
-    GlobalString::new(|| env_var_with_default("PIAM_MANAGER_ADDRESS", UNSET));
+    GlobalString::new(|| env_var_with_default("PIAM_MANAGER_ADDRESS", "http://localhost:8080"));
 
 pub const UNSET: &str = "Unset";
 pub const STATE_UPDATE_INTERVAL: u64 = 10;
@@ -43,9 +43,7 @@ pub fn set_constants(
     POLICY_MODEL.store(Arc::new(policy_model));
     EXTENDED_CONFIG_TYPE.store(Arc::new(extended_config_type));
 
-    if dev_mode() {
-        PIAM_MANAGER_ADDRESS.store(Arc::new("http://localhost:8080".to_string()));
-    } else {
+    if !dev_mode() {
         let required = vec![&PROXY_REGION, &PROXY_ENV, &PIAM_MANAGER_ADDRESS];
         required
             .iter()
