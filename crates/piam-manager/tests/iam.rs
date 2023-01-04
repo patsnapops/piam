@@ -89,6 +89,16 @@ pub fn make_accounts() -> Vec<AwsAccount> {
     ]
 }
 
+pub fn user_3_msy0() -> User {
+    User {
+        id: "7ac9e4c8-4c4f-b32e-b22c-f4016daf7dfd".to_string(),
+        name: "马世耀".to_string(),
+        base_access_key: "AKPSPERS03MSY0Z".to_string(),
+        secret: "".to_string(),
+        kind: Default::default(),
+    }
+}
+
 pub fn user_3_cjj0() -> User {
     User {
         id: "c43e349a-0860-446e-9d2c-5bbc4211df79".to_string(),
@@ -242,6 +252,7 @@ pub fn user_team_data_tmp() -> User {
 pub fn make_users() -> Vec<User> {
     vec![
         user_3_cjj0(),
+        user_3_msy0(),
         user_3_shf0(),
         user_3_qwt0(),
         user_3_fxd0(),
@@ -1198,7 +1209,7 @@ pub fn make_user_group_relationships() -> Vec<UserGroupRelationship> {
         group_id: group_team_data_services().id,
     })
     .collect();
-    let group_team_sa_dev: Vec<UserGroupRelationship> = vec![user_3_cjj0(), user_3_wwt0()]
+    let group_team_sa_dev: Vec<UserGroupRelationship> = vec![user_3_cjj0(), user_3_wwt0(),user_3_msy0()]
         .into_iter()
         .map(|u| UserGroupRelationship {
             id: Uuid::new_v4().to_string(),
