@@ -106,6 +106,7 @@ pub async fn handle(
     };
     #[cfg(not(feature = "uni-key"))]
     let (account, base_access_key) = {
+        use piam_proxy::signature::split_to_base_and_account_code;
         let (base_access_key, code) = split_to_base_and_account_code(access_key)?;
         let account = iam_container.find_account_by_code(code)?;
         (account, base_access_key)

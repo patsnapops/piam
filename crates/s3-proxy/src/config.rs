@@ -88,6 +88,7 @@ mod test {
             proxy_hosts: HostDomains {
                 domains: vec!["cn-northwest-1.s3-proxy.patsnap.info".into()],
             },
+            #[cfg(feature = "uni-key")]
             uni_key_info: None,
         };
         let result = config.proxy_hosts.find_proxy_host(
