@@ -1,5 +1,6 @@
 use std::fmt::Debug;
 
+use busylib::http::ReqwestClient;
 use piam_core::{
     account::aws::AwsAccount,
     crypto::decrypt,
@@ -16,9 +17,17 @@ use crate::{
     error::{deserialize, ProxyResult},
 };
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct ManagerClient {
-    http_client: reqwest::Client,
+    http_client: ReqwestClient,
+}
+
+impl Default for ManagerClient {
+    fn default() -> Self {
+        Self {
+            http_client: busylib::http::default_reqwest_client(),
+        }
+    }
 }
 
 impl ManagerClient {

@@ -10,7 +10,6 @@ piam-core = { path = "../piam-core" }
 busylib = { path = "../busylib" }
 arc-swap = { version = "1.5.1" }
 once_cell = { version = "1.15.0" }
-reqwest = { version = "0.11", default-features = false, features = ["json", "rustls-tls"]}
 aws-sigv4 = { version = "0.52.0" }
 uuid = { version = "1.1.2", features = ["v4", "serde", "fast-rng", "macro-diagnostics"] }
 http = "0.2.8"

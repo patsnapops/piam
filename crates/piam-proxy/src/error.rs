@@ -1,5 +1,7 @@
 use std::{fmt, fmt::Display};
 
+use busylib::http::ReqwestError;
+
 pub type ProxyResult<T> = Result<T, ProxyError>;
 
 #[derive(Debug)]
@@ -76,8 +78,8 @@ impl Display for ProxyError {
     }
 }
 
-impl From<reqwest::Error> for ProxyError {
-    fn from(err: reqwest::Error) -> Self {
+impl From<ReqwestError> for ProxyError {
+    fn from(err: ReqwestError) -> Self {
         Self::ManagerApi(format!("reqwest error: {err}"))
     }
 }

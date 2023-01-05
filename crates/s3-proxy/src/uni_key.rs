@@ -1,11 +1,15 @@
 //! Special requirement for s3 proxy: Using only one access key (without account code at the end) to
 //! access buckets across multiple accounts & regions for each user
 
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::Arc};
 
-use aws_sdk_s3::{Client, Config, Endpoint};
+use aws_sdk_s3::{config::timeout::TimeoutConfig, Client, Config, Endpoint};
+use aws_smithy_async::rt::sleep::TokioSleep;
 use aws_types::{region::Region, Credentials};
-use busylib::prelude::{EnhancedExpect, EnhancedUnwrap};
+use busylib::{
+    http::default_reqwest_client,
+    prelude::{EnhancedExpect, EnhancedUnwrap},
+};
 use patsnap_constants::{
     region::{AP_SHANGHAI, CN_NORTHWEST_1, NA_ASHBURN, US_EAST_1},
     IP_PROVIDER,
@@ -17,6 +21,8 @@ use piam_proxy::{
     request::from_region_to_endpoint,
 };
 use serde::{Deserialize, Serialize};
+
+use crate::config::CONFIG_FETCHING_TIMEOUT;
 
 type BucketToAccessInfo = HashMap<String, AccessInfo>;
 
@@ -82,6 +88,8 @@ impl UniKeyInfo {
             })
             .collect();
 
+        let timeout_seconds = std::time::Duration::from_secs(CONFIG_FETCHING_TIMEOUT);
+
         let access_info_client_vec: ProxyResult<Vec<(AccessInfo, Client)>> = access_info_vec?
             .into_iter()
             .map(|access| {
@@ -97,6 +105,12 @@ impl UniKeyInfo {
                     // TODO: refactor this quick and dirty solution for s3 uni-key feature
                     None => cb.build(),
                     Some(tencent_ep) => cb
+                        .sleep_impl(Arc::new(TokioSleep::default()))
+                        .timeout_config(
+                            TimeoutConfig::builder()
+                                .operation_timeout(timeout_seconds)
+                                .build(),
+                        )
                         .endpoint_resolver(Endpoint::immutable(tencent_ep).unwp())
                         .build(),
                 };
@@ -106,7 +120,7 @@ impl UniKeyInfo {
 
         let mut inner = BucketToAccessInfo::new();
 
-        let ip_info = reqwest::Client::new()
+        let ip_info = default_reqwest_client()
             .get(IP_PROVIDER)
             .header("User-Agent", "curl")
             .send()
