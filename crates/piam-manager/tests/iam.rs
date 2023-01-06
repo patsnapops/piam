@@ -303,6 +303,8 @@ pub fn make_users() -> Vec<User> {
         user_3_msy0(),
         user_3_sth0(),
         user_2_lj0(),
+        user_3_jww0(),
+        user_3_mdw0(),
         user_3_shf0(),
         user_3_qwt0(),
         user_3_fxd0(),
@@ -1696,7 +1698,7 @@ fn write_prod() {
 
 #[test]
 fn write_dev() {
-    write_all(&redis::Client::open("redis://localhost/1").unwrap())
+    write_all(&redis::Client::open("redis://192.168.3.233/1").unwrap())
 }
 
 fn write_all(client: &Client) {
