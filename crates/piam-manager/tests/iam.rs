@@ -98,6 +98,42 @@ pub fn user_3_msy0() -> User {
         kind: Default::default(),
     }
 }
+pub fn user_3_sth0() -> User {
+    User {
+        id: "ce568f1a-4166-4f95-9b71-7efed28fab56".to_string(),
+        name: "沈天豪".to_string(),
+        base_access_key: "AKPSPERS03STH0Z".to_string(),
+        secret: "ohZaesh0".to_string(),
+        kind: Default::default(),
+    }
+}
+pub fn user_2_lj0() -> User {
+    User {
+        id: "e932b520-61ab-4674-8585-a0c039ac6550".to_string(),
+        name: "刘今".to_string(),
+        base_access_key: "AKPSPERS02LJ00Z".to_string(),
+        secret: "Giepu2ki".to_string(),
+        kind: Default::default(),
+    }
+}
+pub fn user_3_jww0() -> User {
+    User {
+        id: "a08cf67c-2354-4424-a700-1b40ec8b7ecf".to_string(),
+        name: "蒋伟伟".to_string(),
+        base_access_key: "AKPSPERS03JWW0Z".to_string(),
+        secret: "Chai6Tho".to_string(),
+        kind: Default::default(),
+    }
+}
+pub fn user_3_mdw0() -> User {
+    User {
+        id: "e932b520-61ab-4674-8585-a0c039ac6550".to_string(),
+        name: "孟冬伟".to_string(),
+        base_access_key: "AKPSPERS03MDW0Z".to_string(),
+        secret: "Ogohb9zi".to_string(),
+        kind: Default::default(),
+    }
+}
 
 pub fn user_3_cjj0() -> User {
     User {
@@ -265,6 +301,8 @@ pub fn make_users() -> Vec<User> {
         user_3_wwt0(),
         user_3_xzd0(),
         user_3_msy0(),
+        user_3_sth0(),
+        user_2_lj0(),
         user_3_shf0(),
         user_3_qwt0(),
         user_3_fxd0(),
@@ -1254,7 +1292,7 @@ pub fn make_user_group_relationships() -> Vec<UserGroupRelationship> {
     })
     .collect();
     let group_team_sa_dev: Vec<UserGroupRelationship> =
-        vec![user_3_cjj0(), user_3_wwt0(), user_3_msy0(), user_3_xzd0()]
+        vec![user_3_cjj0(), user_3_wwt0(), user_3_msy0(),user_2_lj0(),user_3_sth0(), user_3_xzd0(),user_3_jww0(),user_3_mdw0()]
             .into_iter()
             .map(|u| UserGroupRelationship {
                 id: Uuid::new_v4().to_string(),
