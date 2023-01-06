@@ -76,8 +76,6 @@ sidebar_position: 2
 
 ### Golang
 
-to be added
-
 ### Java
 
 ```
