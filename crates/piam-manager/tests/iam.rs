@@ -742,6 +742,7 @@ pub fn policy_os_3977_cn_northwest_1_group_team_sa_dev() -> Policy<ObjectStorage
                             "data-trademark-image-cn-northwest-1".into(),
                             "data-trademarkimage-cn-northwest-1".into(),
                             "landscape-image-cn-northwest-1".into(),
+                            "data-country-source-cn-northwest-1".into(),
                         ]),
                         start_with: None,
                     }),
