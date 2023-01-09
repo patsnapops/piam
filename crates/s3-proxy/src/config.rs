@@ -1,6 +1,5 @@
 use async_trait::async_trait;
 use busylib::config::dev_mode;
-use log::debug;
 use piam_object_storage::{config::HostDomains, policy::ObjectStoragePolicy};
 use piam_proxy::{
     config::CoreConfig,
@@ -38,14 +37,8 @@ impl ExtendedState<S3Config, ObjectStoragePolicy> for S3Config {
     ) -> ProxyResult<Self> {
         #[cfg(feature = "uni-key")]
         {
-            if !dev_mode() {
-                debug!("start fetching uni-key info");
-            }
             self.uni_key_info =
                 Some(crate::uni_key::UniKeyInfo::new_from(&core_config.accounts).await?);
-            if !dev_mode() {
-                debug!("end fetching uni-key info");
-            }
             return Ok(self);
         };
         #[cfg(not(feature = "uni-key"))]

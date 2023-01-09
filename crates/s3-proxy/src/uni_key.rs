@@ -7,9 +7,11 @@ use aws_sdk_s3::{config::timeout::TimeoutConfig, Client, Config, Endpoint};
 use aws_smithy_async::rt::sleep::TokioSleep;
 use aws_types::{region::Region, Credentials};
 use busylib::{
+    config::dev_mode,
     http::default_reqwest_client,
     prelude::{EnhancedExpect, EnhancedUnwrap},
 };
+use log::debug;
 use patsnap_constants::{
     region::{AP_SHANGHAI, CN_NORTHWEST_1, NA_ASHBURN, US_EAST_1},
     IP_PROVIDER,
@@ -120,6 +122,9 @@ impl UniKeyInfo {
 
         let mut inner = BucketToAccessInfo::new();
 
+        if !dev_mode() {
+            debug!("start fetching ip info");
+        }
         let ip_info = default_reqwest_client()
             .get(IP_PROVIDER)
             .header("User-Agent", "curl")
@@ -129,6 +134,9 @@ impl UniKeyInfo {
             .await?
             // 20221222: remove special characters in response of cip.cc (IP_PROVIDER)
             .replace(['\n', '\t'], "");
+        if !dev_mode() {
+            debug!("end fetching ip info");
+        }
 
         for (access_info, client) in access_info_client_vec? {
             let buckets = Self::get_buckets(&access_info, &client)
@@ -152,7 +160,13 @@ impl UniKeyInfo {
         Ok(Self { inner })
     }
 
-    async fn get_buckets(client_conf: &AccessInfo, client: &Client) -> ProxyResult<Vec<String>> {
+    async fn get_buckets(access_info: &AccessInfo, client: &Client) -> ProxyResult<Vec<String>> {
+        if !dev_mode() {
+            debug!(
+                "start fetching uni-key info of account: {} region: {}",
+                access_info.account, access_info.region
+            );
+        }
         let buckets = client
             .list_buckets()
             .send()
@@ -160,7 +174,7 @@ impl UniKeyInfo {
             .map_err(|e| {
                 ProxyError::OtherInternal(format!(
                     "account.access_key: {} failed to list buckets: {}",
-                    client_conf.account.access_key, e
+                    access_info.account.access_key, e
                 ))
             })?
             .buckets
@@ -168,6 +182,12 @@ impl UniKeyInfo {
             .into_iter()
             .map(|b| b.name.ex("bucket must have a name"))
             .collect();
+        if !dev_mode() {
+            debug!(
+                "start fetching uni-key info of account: {} region: {}",
+                access_info.account, access_info.region
+            );
+        }
         Ok(buckets)
     }
 }
