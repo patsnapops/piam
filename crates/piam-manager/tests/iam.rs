@@ -711,11 +711,11 @@ pub fn policy_os_7478_us_east00000_1_group_team_sa_dev() -> Policy<ObjectStorage
                             "rnd-image-test".into(),
                             "rnd-internal-us-east-1.patsnap.com".into(),
                             "rnd-internal-us-east-1".into(),
-                            "testpatsnapus".into(),
                             "patsnap-general-source".into(),
                             "patsnap-sa-data".into(),
                             "pdf-patsnap-us-east-1".into(),
                             "search-us-east-1-prod".into(),
+                            "patsnaprd-cv-prod-us-east-1".into(),
                         ]),
                         start_with: None,
                     }),
@@ -730,6 +730,40 @@ pub fn policy_os_7478_us_east00000_1_group_team_sa_dev() -> Policy<ObjectStorage
                 ..Default::default()
             },
             output_policy: None,
+        }],
+        ..Default::default()
+    }
+}
+
+pub fn policy_os_0066_us_east00000_1_group_team_sa_dev() -> Policy<ObjectStoragePolicy> {
+    Policy {
+        kind: OBJECT_STORAGE.to_string(),
+        version: 1,
+        id: "5fff622c-7c1c-4773-8ee5-07508d2e24d2".to_string(),
+        name: "policy_os_0066_us_east00000_1_group_team_sa_dev".to_string(),
+        modeled_policy: vec![ObjectStoragePolicy {
+            version: 1,
+            id: "94fc1781-f0fc-4660-a9f3-26f73eb8e420".to_string(),
+            input_policy: ObjectStorageInputPolicy {
+                actions: Some(base_s3_actions()),
+                bucket: Bucket {
+                    name: Some(Name {
+                        eq: Some(vec![
+                            "patsnap-country-source".into(),
+                            "testpatsnapus".into(),
+                        ]),
+                        start_with: None,
+                    }),
+                    effect: Some(Effect::allow()),
+                    keys: Some(vec![Key {
+                        effect: Some(Effect::allow()),
+                        ..Default::default()
+                    }]),
+                    ..Default::default()
+                },
+                ..Default::default()
+            },
+            ..Default::default()
         }],
         ..Default::default()
     }
@@ -764,6 +798,7 @@ pub fn policy_os_3977_cn_northwest_1_group_team_sa_dev() -> Policy<ObjectStorage
                             "data-trademarkimage-cn-northwest-1".into(),
                             "landscape-image-cn-northwest-1".into(),
                             "data-country-source-cn-northwest-1".into(),
+                            "patsnaprd-cv-prod-cn-northwest-1".into(),
                         ]),
                         start_with: None,
                     }),
@@ -1278,6 +1313,7 @@ pub fn make_policies_object_storage() -> Vec<Policy<ObjectStoragePolicy>> {
         policy_os_0066_us_group_3_whl0(),
         policy_os_7478_us_east00000_1_group_team_sa_dev(),
         policy_os_3977_cn_northwest_1_group_team_sa_dev(),
+        policy_os_0066_us_east00000_1_group_team_sa_dev(),
         policy_os_7478_us_east00000_1_group_team_data_dev(),
         policy_os_3977_cn_northwest_1_group_team_data_dev(),
         policy_os_0066_us_east00000_1_group_team_data_dev(),
@@ -1548,6 +1584,16 @@ pub fn make_policy_relationships() -> Vec<PolicyRelationship> {
             account_id: AWS_DATA_0066.to_string(),
             region: Region::UsEast1.into(),
             policy_id: policy_os_0066_us_east00000_1_group_team_data_dev().id,
+        },
+        PolicyRelationship {
+            id: "03b25f58-31b9-40f3-81ae-af5d1a1ae7b3".to_string(),
+            policy_model: OBJECT_STORAGE.to_string(),
+            user_id: None,
+            group_id: Some(group_team_sa_dev().id),
+            role_id: None,
+            account_id: AWS_DATA_0066.to_string(),
+            region: Region::UsEast1.into(),
+            policy_id: policy_os_0066_us_east00000_1_group_team_sa_dev().id,
         },
         PolicyRelationship {
             id: "7F838823-BBA1-44BD-AFD0-892738C64B43".to_string(),
