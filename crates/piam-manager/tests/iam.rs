@@ -98,6 +98,15 @@ pub fn user_3_msy0() -> User {
         kind: Default::default(),
     }
 }
+pub fn user_2_cw0() -> User {
+    User {
+        id: "9077b3d9-066d-4dad-80d2-5eb81a363cda".to_string(),
+        name: "程威".to_string(),
+        base_access_key: "AKPSPERS02CW00Z".to_string(),
+        secret: "mi4Aeg3A".to_string(),
+        kind: Default::default(),
+    }
+}
 pub fn user_3_sth0() -> User {
     User {
         id: "ce568f1a-4166-4f95-9b71-7efed28fab56".to_string(),
@@ -302,6 +311,7 @@ pub fn make_users() -> Vec<User> {
         user_3_xzd0(),
         user_3_msy0(),
         user_3_sth0(),
+        user_2_cw0(),
         user_2_lj0(),
         user_3_jww0(),
         user_3_mdw0(),
@@ -1295,7 +1305,7 @@ pub fn make_user_group_relationships() -> Vec<UserGroupRelationship> {
     })
     .collect();
     let group_team_sa_dev: Vec<UserGroupRelationship> =
-        vec![user_3_cjj0(), user_3_wwt0(), user_3_msy0(),user_2_lj0(),user_3_sth0(), user_3_xzd0(),user_3_jww0(),user_3_mdw0()]
+        vec![user_3_cjj0(), user_3_wwt0(), user_3_msy0(),user_2_lj0(),user_3_sth0(),user_2_cw0(), user_3_xzd0(),user_3_jww0(),user_3_mdw0()]
             .into_iter()
             .map(|u| UserGroupRelationship {
                 id: Uuid::new_v4().to_string(),
