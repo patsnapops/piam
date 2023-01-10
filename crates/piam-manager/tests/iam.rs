@@ -99,6 +99,16 @@ pub fn user_3_zje0() -> User {
     }
 }
 
+pub fn user_3_tzx0() -> User {
+    User {
+        id: "dc185b91-4be8-4a05-8afe-4b0844a92021".to_string(),
+        name: "陶智学".to_string(),
+        base_access_key: "AKPSPERS03TZX0Z".to_string(),
+        secret: "Ho0laebe".to_string(),
+        kind: Default::default(),
+    }
+}
+
 pub fn user_3_msy0() -> User {
     User {
         id: "7ac9e4c8-4c4f-b32e-b22c-f4016daf7dfd".to_string(),
@@ -320,6 +330,7 @@ pub fn make_users() -> Vec<User> {
         user_3_wwt0(),
         user_3_xzd0(),
         user_3_msy0(),
+        user_3_tzx0(),
         user_3_zje0(),
         user_3_sth0(),
         user_2_cw0(),
@@ -835,6 +846,9 @@ pub fn policy_os_7478_us_east00000_1_group_team_data_dev() -> Policy<ObjectStora
                         eq: Some(vec![
                             "data-processing-data".into(),
                             "datalake-internal.patsnap.com".into(),
+                            "360-npl-patsnap-us-east-1".into(),
+                            "data-sync-logs-patsnap-us-east-1".into(),
+                            "datalake-internal.patsnap.com".into(),
                             "testpatsnapus".into(),
                         ]),
                         start_with: None,
@@ -867,7 +881,11 @@ pub fn policy_os_3977_cn_northwest_1_group_team_data_dev() -> Policy<ObjectStora
                 actions: Some(base_s3_actions()),
                 bucket: Bucket {
                     name: Some(Name {
-                        eq: Some(vec!["datalake-internal.patsnap.com-cn-northwest-1".into()]),
+                        eq: Some(vec![
+                            "datalake-internal.patsnap.com-cn-northwest-1".into(),
+                            "data-country-source-cn-northwest-1".into(),
+                            "data-oplog-cn-northwest-1".into(),
+                        ]),
                         start_with: None,
                     }),
                     effect: Some(Effect::allow()),
@@ -901,6 +919,7 @@ pub fn policy_os_0066_us_east00000_1_group_team_data_dev() -> Policy<ObjectStora
                         eq: Some(vec![
                             "patsnap-country-source".into(),
                             "testpatsnapus".into(),
+                            "patsnap-general-source".into(),
                         ]),
                         start_with: None,
                     }),
@@ -932,7 +951,14 @@ pub fn policy_os_4258_na_ashburn0000_group_team_data_dev() -> Policy<ObjectStora
                 actions: Some(base_s3_actions()),
                 bucket: Bucket {
                     name: Some(Name {
-                        eq: Some(vec!["patsnap-country-source-1251949819".into()]),
+                        eq: Some(vec![
+                            "patsnap-country-source-1251949819".into(),
+                            "patsnap-general-source-1251949819".into(),
+                            "data-npd-attachment-prod-us-1251949819".into(),
+                            // cn
+                            "npd-1251949819".into(),
+                            "data-npd-attachment-prod-cn-1251949819".into(),
+                        ]),
                         start_with: None,
                     }),
                     effect: Some(Effect::allow()),
@@ -1370,10 +1396,12 @@ pub fn make_user_group_relationships() -> Vec<UserGroupRelationship> {
         group_id: group_team_sa_dev().id,
     })
     .collect();
+    
     let group_team_data_dev: Vec<UserGroupRelationship> = vec![
         // data
         user_3_cyy0(),
         user_3_shf0(),
+        user_3_tzx0(),
         // data qa
         user_3_qwt0(),
         user_3_zsz0(),
@@ -1604,6 +1632,17 @@ pub fn make_policy_relationships() -> Vec<PolicyRelationship> {
             account_id: TENCENT_4258.to_string(),
             region: Region::NaAshburn.into(),
             policy_id: policy_os_4258_na_ashburn0000_group_team_data_dev().id,
+        },
+        PolicyRelationship {
+            id: "bfe4d350-c2f1-4b12-99d7-7de3fdb63ede".to_string(),
+            policy_model: OBJECT_STORAGE.to_string(),
+            user_id: None,
+            group_id: Some(group_team_data_dev().id),
+            role_id: None,
+            account_id: TENCENT_4258.to_string(),
+            region: Region::ApShanghai.into(),
+            policy_id: policy_os_4258_na_ashburn0000_group_team_data_dev().id,
+            ..Default::default()
         },
         // svcs
         PolicyRelationship {
