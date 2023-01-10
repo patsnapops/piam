@@ -465,10 +465,18 @@ pub fn make_groups() -> Vec<Group> {
 fn base_s3_actions() -> Vec<String> {
     vec![
         "ListObjects".into(),
+        "ListParts".into(),
         "HeadObject".into(),
         "GetObject".into(),
         "PutObject".into(),
         "CopyObject".into(),
+        "ListMultiPartUploads".into(),
+        "CreateMultipartUpload".into(),
+        "AbortMultipartUpload".into(),
+        "CompleteMultipartUpload".into(),
+        "UploadPart".into(),
+        "GetBucketTagging".into(),
+        "PutBucketTagging".into(),
     ]
 }
 
@@ -1944,7 +1952,7 @@ fn write_prod() {
 }
 
 #[test]
-fn write_dev() {
+fn write_local() {
     write_all(&redis::Client::open("redis://localhost/1").unwrap())
 }
 
