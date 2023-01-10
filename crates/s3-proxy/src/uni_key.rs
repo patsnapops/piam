@@ -184,7 +184,7 @@ impl UniKeyInfo {
             .collect();
         if !dev_mode() {
             debug!(
-                "start fetching uni-key info of account: {} region: {}",
+                "end fetching uni-key info of account: {} region: {}",
                 access_info.account, access_info.region
             );
         }
