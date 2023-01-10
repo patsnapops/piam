@@ -735,6 +735,7 @@ pub fn policy_os_7478_us_east00000_1_group_team_sa_dev() -> Policy<ObjectStorage
                             "pdf-patsnap-us-east-1".into(),
                             "search-us-east-1-prod".into(),
                             "patsnaprd-cv-prod-us-east-1".into(),
+                            "data-filewrapper-patsnap-us-east-1".into(),
                         ]),
                         start_with: None,
                     }),
