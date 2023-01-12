@@ -109,6 +109,17 @@ pub fn user_3_tzx0() -> User {
     }
 }
 
+// add new user
+pub fn user_3_syy0()-> User {
+    User {
+        id: "a55dfa0d-e492-41e7-b5c6-5144bf60eb6d".to_string(),
+        name: "邵圆圆".to_string(),
+        base_access_key: "AKPSPERS03SYY0Z".to_string(),
+        secret: "ohr1Iesh".to_string(),
+        kind: Default::default(),
+    }
+}
+
 pub fn user_3_msy0() -> User {
     User {
         id: "7ac9e4c8-4c4f-b32e-b22c-f4016daf7dfd".to_string(),
@@ -330,6 +341,7 @@ pub fn make_users() -> Vec<User> {
         user_3_wwt0(),
         user_3_xzd0(),
         user_3_msy0(),
+        user_3_syy0(),
         user_3_tzx0(),
         user_3_zje0(),
         user_3_sth0(),
@@ -1467,6 +1479,7 @@ pub fn make_user_group_relationships() -> Vec<UserGroupRelationship> {
         user_3_cjj0(),
         user_3_wwt0(),
         user_3_msy0(),
+        user_3_syy0(),
         user_3_zje0(),
         user_2_lj0(),
         user_3_sth0(),

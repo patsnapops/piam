@@ -6,6 +6,8 @@ rust_dev:
     TZ: Asia/Shanghai
     REDIS_ADDRESS: redis://192.168.3.233:6379/1
     PIAM_MANAGER_ADDRESS: http://192.168.3.233:8080
+    REGION: local
+    ENV: qa
   ports:
     - '80:80'
     - '8080:8080'
