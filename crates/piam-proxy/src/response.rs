@@ -71,7 +71,6 @@ impl IntoResponse for ProxyError {
             | Self::MissingPolicy(msg)
             | Self::EffectNotFound(msg) => {
                 let (r, t) = response_and_trace(forbidden, msg, self.name());
-                dbg!(&t);
                 warn!("{}", t);
                 r
             }

@@ -9,7 +9,6 @@ use std::{
 use busylib::{prelude::EnhancedUnwrap, ANY};
 use piam_core::{
     account::aws::AwsAccount,
-    condition::input::Condition,
     group::{Group, GroupId},
     manager_api_constant::CONDITION,
     policy::{condition::ConditionPolicy, Modeled, Policy, PolicyId},
@@ -20,7 +19,7 @@ use piam_core::{
 use serde::de::DeserializeOwned;
 
 use crate::{
-    config::{CoreConfig, POLICY_MODEL, PROXY_ENV, PROXY_REGION},
+    config::{CoreConfig, POLICY_MODEL},
     error::{ProxyError, ProxyResult},
     state::CoreState,
 };
@@ -139,6 +138,7 @@ impl<P: Modeled + DeserializeOwned + Send> CoreState<CoreConfig<P>> for IamConta
             .into_iter()
             .map(|policy| (policy.id.clone(), policy))
             .collect();
+        let user_group_relationships = config.user_group_relationships;
         let policy_relationships = config.policy_relationships;
 
         #[cfg(feature = "prefilter")]
@@ -150,15 +150,17 @@ impl<P: Modeled + DeserializeOwned + Send> CoreState<CoreConfig<P>> for IamConta
             user_input_policies,
         } = prefilter::GroupsContent {
             condition_policies,
-            user_group_relationships: config.user_group_relationships,
+            user_group_relationships,
             groups,
             policy_relationships,
             user_input_policies,
         }
-        .filter_by_proxy_condition(Condition::new_with_region_env(
-            &PROXY_REGION.load(),
-            &PROXY_ENV.load(),
-        ));
+        .filter_by_proxy_condition(
+            piam_core::condition::input::Condition::new_with_region_env(
+                &crate::config::PROXY_REGION.load(),
+                &crate::config::PROXY_ENV.load(),
+            ),
+        );
 
         let base_access_key_to_user_id = config
             .users

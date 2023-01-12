@@ -1684,6 +1684,16 @@ pub fn make_policy_relationships() -> Vec<PolicyRelationship> {
             ..Default::default()
         },
         PolicyRelationship {
+            id: "03b25f58-31b9-40f3-81ae-af5d1a1ae7b3".to_string(),
+            policy_model: OBJECT_STORAGE.to_string(),
+            user_id: None,
+            group_id: Some(group_team_sa_dev().id),
+            role_id: None,
+            account_id: AWS_DATA_0066.to_string(),
+            region: Region::UsEast1.into(),
+            policy_id: policy_os_0066_us_east00000_1_group_team_sa_dev().id,
+        },
+        PolicyRelationship {
             id: "61636630-4395-4ACC-8A88-AE47A322AA3E".to_string(),
             policy_model: OBJECT_STORAGE.to_string(),
             user_id: None,
@@ -1712,16 +1722,6 @@ pub fn make_policy_relationships() -> Vec<PolicyRelationship> {
             account_id: AWS_DATA_0066.to_string(),
             region: Region::UsEast1.into(),
             policy_id: policy_os_0066_us_east00000_1_group_team_data_dev().id,
-        },
-        PolicyRelationship {
-            id: "03b25f58-31b9-40f3-81ae-af5d1a1ae7b3".to_string(),
-            policy_model: OBJECT_STORAGE.to_string(),
-            user_id: None,
-            group_id: Some(group_team_sa_dev().id),
-            role_id: None,
-            account_id: AWS_DATA_0066.to_string(),
-            region: Region::UsEast1.into(),
-            policy_id: policy_os_0066_us_east00000_1_group_team_sa_dev().id,
         },
         PolicyRelationship {
             id: "7F838823-BBA1-44BD-AFD0-892738C64B43".to_string(),
@@ -1985,7 +1985,7 @@ fn write_all(client: &Client) {
     let policy_relationships = ser(&make_policy_relationships());
     let s3_config = ser(&make_s3_config());
 
-    write(client, "accounts", read_last_version(client, "accounts"));
+    // write(client, "accounts", read_last_version(client, "accounts"));
     write(client, "users", users);
     write(client, "groups", groups);
     write(client, "policies:ObjectStorage", policies_object_storage);

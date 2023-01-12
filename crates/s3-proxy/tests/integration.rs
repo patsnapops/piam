@@ -1085,6 +1085,26 @@ async fn fool_dev() {
 }
 
 #[tokio::test]
+async fn sj() {
+    let client = build_client_from_params(ClientParams {
+        access_key: "AKPSPERS03ZJE0Z",
+        secret: "",
+        region: CN_NORTHWEST_1,
+        endpoint: EP_S3_PROXY_DEV,
+    });
+
+    let objects = client
+        .list_objects_v2()
+        .bucket("data-country-source-cn-northwest-1")
+        // .key("s3-proxy-test/foo.*")
+        // .body(ByteStream::from(vec![1, 2]))
+        .send()
+        .await
+        .unwrap();
+    dbg!(&objects.contents().unwrap().len());
+}
+
+#[tokio::test]
 async fn fool_prod() {
     let client = build_client_from_params(ClientParams {
         access_key: "AKPSPERS03CJJ0Z",
