@@ -5,7 +5,6 @@ sidebar_position: 4
 # 🚧 使用限制
 
 - 一个 `PIAM Uni Key` 不会具有访问所有资源的权限，如缺，可联系 OPS 添加
-- 未支持对象路径中包含特殊字符
 - 未支持 HTTPS 
 
 - Java SDK PutObject 时未支持分块传输模式
