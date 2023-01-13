@@ -110,7 +110,7 @@ pub fn user_3_tzx0() -> User {
 }
 
 // add new user
-pub fn user_3_syy0()-> User {
+pub fn user_3_syy0() -> User {
     User {
         id: "a55dfa0d-e492-41e7-b5c6-5144bf60eb6d".to_string(),
         name: "邵圆圆".to_string(),
