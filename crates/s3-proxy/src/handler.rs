@@ -101,7 +101,7 @@ pub async fn handle(
     let (account, region, base_access_key) = {
         let access_info = s3_config
             .get_uni_key_info()?
-            .find_access_info_input(&input)?;
+            .find_access_info(&input, region)?;
         (&access_info.account, &access_info.region, access_key)
     };
     #[cfg(not(feature = "uni-key"))]

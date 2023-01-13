@@ -26,7 +26,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::config::CONFIG_FETCHING_TIMEOUT;
 
-type BucketToAccessInfo = HashMap<String, AccessInfo>;
+type BucketToAccessInfo = HashMap<String, Vec<AccessInfo>>;
 
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct UniKeyInfo {
@@ -42,17 +42,36 @@ pub struct AccessInfo {
 }
 
 impl UniKeyInfo {
-    pub fn find_access_info_input(&self, input: &ObjectStorageInput) -> ProxyResult<&AccessInfo> {
+    /// Find the account and region corresponding to the bucket,
+    /// if there are multiple buckets having a same name and region parameter is specified,
+    /// get the account by the specified region.
+    pub fn find_access_info(
+        &self,
+        input: &ObjectStorageInput,
+        region: &str,
+    ) -> ProxyResult<&AccessInfo> {
         if input.action_kind() == ActionKind::ListBuckets {
             return Err(ProxyError::OperationNotSupported(
                 "ListBuckets not supported due to uni-key feature".into(),
             ));
         }
         let bucket = input.bucket();
-        let access_info = self.inner.get(bucket).ok_or_else(|| {
+        let access_info_vec = self.inner.get(bucket).ok_or_else(|| {
             ProxyError::ResourceNotFound(format!("access info not found for bucket: {bucket}"))
         })?;
-        Ok(access_info)
+        if access_info_vec.len() == 1 {
+            return Ok(access_info_vec.first().unwp());
+        } else {
+            Ok(access_info_vec
+                .iter()
+                .find(|access_info| access_info.region == region)
+                .ok_or_else(|| {
+                    ProxyError::ResourceNotFound(format!(
+                        "there are more than one buckets with the same name in multiple regions, \
+                        access info not found for bucket: {bucket} in region: {region}"
+                    ))
+                })?)
+        }
     }
 
     pub async fn new_from(accounts: &[AwsAccount]) -> ProxyResult<Self> {
@@ -153,7 +172,13 @@ impl UniKeyInfo {
                     ))
                 })?;
             buckets.into_iter().for_each(|bucket| {
-                inner.insert(bucket, access_info.clone());
+                let access_info = access_info.clone();
+                match inner.get_mut(&bucket) {
+                    None => {
+                        inner.insert(bucket, vec![access_info]);
+                    }
+                    Some(access_info_vec) => access_info_vec.push(access_info),
+                };
             });
         }
 
