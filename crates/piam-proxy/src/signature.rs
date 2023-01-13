@@ -36,7 +36,9 @@ pub mod aws {
     use std::time::SystemTime;
 
     use async_trait::async_trait;
-    use aws_sigv4::http_request::{sign, SignableRequest, SigningParams, SigningSettings};
+    use aws_sigv4::http_request::{
+        sign, PercentEncodingMode, SignableRequest, SigningParams, SigningSettings,
+    };
     use busylib::prelude::EnhancedExpect;
     use http::{header::AUTHORIZATION, Request};
     use hyper::{body, Body};
@@ -132,7 +134,10 @@ pub mod aws {
             let mut byte_req = Request::from_parts(p, bytes);
 
             // do signing
-            let signing_settings = SigningSettings::default();
+            let mut signing_settings = SigningSettings::default();
+            // for special characters
+            // see https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-keys.html
+            signing_settings.percent_encoding_mode = PercentEncodingMode::Single;
             let signing_params = SigningParams::builder()
                 .access_key(&params.account.access_key)
                 .secret_key(&params.account.secret_key)

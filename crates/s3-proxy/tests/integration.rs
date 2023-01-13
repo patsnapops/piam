@@ -237,6 +237,26 @@ async fn upload_parts() -> (&'static str, &'static str, String, Vec<CompletedPar
 }
 
 #[tokio::test]
+async fn special_characters() {
+    let client = build_client_from_params(ClientParams {
+        access_key: AKPSSVCS07PIAMDEV,
+        secret: "",
+        region: CN_NORTHWEST_1,
+        endpoint: DEV_PROXY_ENDPOINT,
+    });
+
+    let object = client
+        .put_object()
+        .bucket("ops-9554")
+        .key("s3-proxy-test/foo!-_.*'()&$@=;:+ ,?\\{\r\n}^%`[]<>~#|中文|にほんご|Русский язык|")
+        .body(ByteStream::from(vec![1, 2]))
+        .send()
+        .await
+        .unwrap();
+    dbg!(&object.e_tag().unwrap());
+}
+
+#[tokio::test]
 async fn _slow_multipart_upload_big_file() {
     let (bucket, key, upload_id, parts) = upload_parts().await;
     let cmu = CompletedMultipartUpload::builder()
