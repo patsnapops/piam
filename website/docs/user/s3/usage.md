@@ -102,6 +102,23 @@ AmazonS3 s3 = AmazonS3ClientBuilder.standard()
 
 ### Python
 
+```python
+import boto3
+
+s3 = boto3.client(
+    "s3",
+    aws_access_key_id="`PIAM Uni Access Key`",
+    aws_secret_access_key="<Your PIAM Secret Key>",
+    endpoint_url="http://local.s3-proxy.patsnap.info"
+)
+
+s3.put_object(
+    Bucket="data-country-source-cn-northwest-1",
+    Key="innovation-score-service/test/foo.txt",
+    Body="bar"
+)
+```
+
 ### Rust
 
 ### Shell `aws` cli
