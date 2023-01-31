@@ -1,0 +1,54 @@
+[
+    {
+        "id": "8bc9f50f-d3fe-4ff6-950e-e2386ea4f523",
+        "name": "曹金娟"
+    },
+    {
+        "id": "226658af-85ca-45cf-918d-77c44469de84",
+        "name": "宋海峰"
+    },
+    {
+        "id": "b0b5b2f5-5b9f-4b9f-9b9c-5b9c5b9c5b9c",
+        "name": "钱伟涛"
+    },
+    {
+        "id": "6d97ae2c-44f0-43c6-8010-143071b34403",
+        "name": "方晓东"
+    },
+    {
+        "id": "b926ae88-2e75-40e1-b63d-6bc4f05b1c01",
+        "name": "张书宗"
+    },
+    {
+        "id": "82c50056-9346-43a4-917a-f07d20a6ede9",
+        "name": "王海龙"
+    },
+    {
+        "id": "59946274-7B3F-4DE8-9BC5-B18F26E0F224",
+        "name": "group_team_sa_dev"
+    },
+    {
+        "id": "5E0E5F1A-1F9C-4F9D-8F5C-1F9C4F9D8F5C",
+        "name": "group_team_data_dev"
+    },
+    {
+        "id": "374c9ce4-0fca-4520-93c8-0a74529c07c8",
+        "name": "team-data-services"
+    },
+    {
+        "id": "C86974EB-2FB7-4809-8E1C-157CC6C9DD17",
+        "name": "team-data-services-local"
+    },
+    {
+        "id": "c0f5b5f5-5b9f-4b9f-9b1f-1b0b0b0b0b0b",
+        "name": "svcs-opst"
+    },
+    {
+        "id": "40697633-1d79-4c44-ae50-583595d1dc17",
+        "name": "data-tmp"
+    },
+    {
+        "id": "EFF02E70-1879-4B10-A861-65313C61FD7D",
+        "name": "allow_all"
+    }
+]

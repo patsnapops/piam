@@ -1,0 +1,116 @@
+[
+  {
+    "kind": "Condition",
+    "version": 0,
+    "id": "EA70AC12-ACB9-438A-BC3A-904FBCE4DD22",
+    "name": "policy_allow_private_ip",
+    "modeled_policy": [
+      {
+        "version": 0,
+        "id": "A7013E3B-A225-4AF8-8747-A0745B794104",
+        "range": {
+          "group_ids": null,
+          "from": {
+            "ip_cidr": [
+              "10.0.0.0/8",
+              "172.16.0.0/12",
+              "192.168.0.0/16",
+              "127.0.0.1"
+            ],
+            "region": null,
+            "env": null
+          },
+          "proxy": null,
+          "to": null
+        },
+        "allow": {}
+      }
+    ]
+  },
+  {
+    "kind": "Condition",
+    "version": 0,
+    "id": "7CD016F9-C1AE-456D-BA65-4C038E977082",
+    "name": "policy_proxy_prefilter_local_qa",
+    "modeled_policy": [
+      {
+        "version": 0,
+        "id": "0EC23518-E6EE-467D-9518-397580DD84F9",
+        "range": {
+          "group_ids": [
+            "59946274-7B3F-4DE8-9BC5-B18F26E0F224",
+            "5E0E5F1A-1F9C-4F9D-8F5C-1F9C4F9D8F5C",
+            "40697633-1d79-4c44-ae50-583595d1dc17"
+          ],
+          "from": null,
+          "proxy": {
+            "ip_cidr": null,
+            "region": [
+              "local"
+            ],
+            "env": null
+          },
+          "to": null
+        },
+        "allow": {}
+      }
+    ]
+  },
+  {
+    "kind": "Condition",
+    "version": 0,
+    "id": "6B7D5432-5E07-4467-A9C9-61EA71466AD0",
+    "name": "policy_proxy_prefilter_non_local",
+    "modeled_policy": [
+      {
+        "version": 0,
+        "id": "683BC56A-7357-4E8F-A99D-22C6BEEC19D0",
+        "range": {
+          "group_ids": [
+            "374c9ce4-0fca-4520-93c8-0a74529c07c8"
+          ],
+          "from": null,
+          "proxy": {
+            "ip_cidr": null,
+            "region": [
+              "us-east-1",
+              "cn-northwest-1",
+              "na-ashburn",
+              "ap-shanghai"
+            ],
+            "env": null
+          },
+          "to": null
+        },
+        "allow": {}
+      }
+    ]
+  },
+  {
+    "kind": "Condition",
+    "version": 0,
+    "id": "600DBBF0-3A26-4361-8150-F963AAD1CF40",
+    "name": "policy_proxy_prefilter_us_east_1_prod",
+    "modeled_policy": [
+      {
+        "version": 0,
+        "id": "4CC48917-FC70-4383-86CF-A11350CF2CD7",
+        "range": {
+          "group_ids": [],
+          "from": null,
+          "proxy": {
+            "ip_cidr": null,
+            "region": [
+              "UsEast1"
+            ],
+            "env": [
+              "Prod"
+            ]
+          },
+          "to": null
+        },
+        "allow": {}
+      }
+    ]
+  }
+]
