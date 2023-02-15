@@ -89,7 +89,8 @@ pub mod account {
     pub const AWS_PROD_3977: &str = "cn_aws_prod_3977";
     pub const AWS_PROD_7478: &str = "us_aws_prod_7478";
     pub const AWS_DATA_0066: &str = "us_aws_data_0066";
-    pub const TENCENT_4258: &str = "cn_tencent_4258";
+    pub const TENCENT_CN_4258: &str = "cn_tencent_4258";
+    pub const TENCENT_US_4258: &str = "us_tencent_4258";
 
     #[derive(Debug, Default, Eq, Hash, PartialEq, Serialize, Deserialize, Display)]
     pub enum Account {
