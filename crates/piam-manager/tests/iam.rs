@@ -62,7 +62,7 @@ pub fn make_accounts() -> Vec<AwsAccount> {
         secret_key: "".into(),
         comment: "".to_string(),
     };
-    let account_cn_TENCENT_CN_4258 = AwsAccount {
+    let account_cn_tencent_cn_4258 = AwsAccount {
         id: TENCENT_CN_4258.to_string(),
         code: "4258".to_string(),
         access_key: "AKIDlT7kM0dGqOwS1Y4b7fjFkDdCospljYFm".to_string(),
@@ -71,7 +71,7 @@ pub fn make_accounts() -> Vec<AwsAccount> {
             .to_string(),
     };
     // TODO: refactor this quick and dirty solution for s3 uni-key feature
-    let account_us_TENCENT_CN_4258 = AwsAccount {
+    let account_us_tencent_cn_4258 = AwsAccount {
         id: "us_TENCENT_CN_4258".to_string(),
         code: "4258".to_string(),
         access_key: "AKIDlT7kM0dGqOwS1Y4b7fjFkDdCospljYFm".to_string(),
@@ -84,8 +84,8 @@ pub fn make_accounts() -> Vec<AwsAccount> {
         account_cn_aws_prod_3977,
         account_us_aws_prod_7478,
         account_us_aws_data_0066,
-        account_cn_TENCENT_CN_4258,
-        account_us_TENCENT_CN_4258,
+        account_cn_tencent_cn_4258,
+        account_us_tencent_cn_4258,
     ]
 }
 
