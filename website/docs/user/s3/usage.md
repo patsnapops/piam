@@ -72,6 +72,9 @@ sidebar_position: 2
 
 如在本地办公室网络**开发测试**则使用 http://local.s3-proxy.patsnap.info
 
+腾讯云海外非 k8s 环境内网访问:
+- http://s-gateway-dataprod-tencent.patsnap.io/s-ops-s3-proxy
+
 ## 各语言配置方式
 
 ### Golang
