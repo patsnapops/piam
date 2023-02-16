@@ -3,7 +3,7 @@
 
 use busylib::ANY;
 use patsnap_constants::{
-    account::{AWS_DATA_0066, AWS_DEV_9554, AWS_PROD_3977, AWS_PROD_7478, TENCENT_4258},
+    account::{AWS_DATA_0066, AWS_DEV_9554, AWS_PROD_3977, AWS_PROD_7478, TENCENT_CN_4258},
     env::Env::Prod,
     key::AKPSSVCS07PIAMDEV,
     policy_model::OBJECT_STORAGE,
@@ -62,8 +62,8 @@ pub fn make_accounts() -> Vec<AwsAccount> {
         secret_key: "".into(),
         comment: "".to_string(),
     };
-    let account_cn_tencent_4258 = AwsAccount {
-        id: TENCENT_4258.to_string(),
+    let account_cn_TENCENT_CN_4258 = AwsAccount {
+        id: TENCENT_CN_4258.to_string(),
         code: "4258".to_string(),
         access_key: "AKIDlT7kM0dGqOwS1Y4b7fjFkDdCospljYFm".to_string(),
         secret_key: "".to_string(),
@@ -71,8 +71,8 @@ pub fn make_accounts() -> Vec<AwsAccount> {
             .to_string(),
     };
     // TODO: refactor this quick and dirty solution for s3 uni-key feature
-    let account_us_tencent_4258 = AwsAccount {
-        id: "us_tencent_4258".to_string(),
+    let account_us_TENCENT_CN_4258 = AwsAccount {
+        id: "us_TENCENT_CN_4258".to_string(),
         code: "4258".to_string(),
         access_key: "AKIDlT7kM0dGqOwS1Y4b7fjFkDdCospljYFm".to_string(),
         secret_key: "".to_string(),
@@ -84,8 +84,8 @@ pub fn make_accounts() -> Vec<AwsAccount> {
         account_cn_aws_prod_3977,
         account_us_aws_prod_7478,
         account_us_aws_data_0066,
-        account_cn_tencent_4258,
-        account_us_tencent_4258,
+        account_cn_TENCENT_CN_4258,
+        account_us_TENCENT_CN_4258,
     ]
 }
 
@@ -1611,7 +1611,7 @@ pub fn make_policy_relationships() -> Vec<PolicyRelationship> {
             user_id: None,
             group_id: Some(group_3_qwt0().id),
             role_id: None,
-            account_id: "us_tencent_4258".to_string(),
+            account_id: "us_TENCENT_CN_4258".to_string(),
             region: Region::NaAshburn.into(),
             policy_id: policy_os_4258_cn_group_3_qwt0().id,
             ..Default::default()
@@ -1622,7 +1622,7 @@ pub fn make_policy_relationships() -> Vec<PolicyRelationship> {
             user_id: None,
             group_id: Some(group_3_fxd0().id),
             role_id: None,
-            account_id: "us_tencent_4258".to_string(),
+            account_id: "us_TENCENT_CN_4258".to_string(),
             region: Region::NaAshburn.into(),
             policy_id: policy_os_4258_us_group_3_fxd0().id,
             ..Default::default()
@@ -1644,7 +1644,7 @@ pub fn make_policy_relationships() -> Vec<PolicyRelationship> {
             user_id: None,
             group_id: Some(group_3_zsz0().id),
             role_id: None,
-            account_id: "us_tencent_4258".to_string(),
+            account_id: "us_TENCENT_CN_4258".to_string(),
             region: Region::NaAshburn.into(),
             policy_id: policy_os_4258_us_group_3_zsz0().id,
             ..Default::default()
@@ -1729,7 +1729,7 @@ pub fn make_policy_relationships() -> Vec<PolicyRelationship> {
             user_id: None,
             group_id: Some(group_team_data_dev().id),
             role_id: None,
-            account_id: TENCENT_4258.to_string(),
+            account_id: TENCENT_CN_4258.to_string(),
             region: Region::NaAshburn.into(),
             policy_id: policy_os_4258_na_ashburn0000_group_team_data_dev().id,
         },
@@ -1739,7 +1739,7 @@ pub fn make_policy_relationships() -> Vec<PolicyRelationship> {
             user_id: None,
             group_id: Some(group_team_data_dev().id),
             role_id: None,
-            account_id: TENCENT_4258.to_string(),
+            account_id: TENCENT_CN_4258.to_string(),
             region: Region::ApShanghai.into(),
             policy_id: policy_os_4258_na_ashburn0000_group_team_data_dev().id,
             ..Default::default()
@@ -1784,7 +1784,7 @@ pub fn make_policy_relationships() -> Vec<PolicyRelationship> {
             user_id: None,
             group_id: Some(group_team_data_services().id),
             role_id: None,
-            account_id: "us_tencent_4258".to_string(),
+            account_id: "us_TENCENT_CN_4258".to_string(),
             region: Region::NaAshburn.into(),
             policy_id: policy_os_4258_na_ashburn0000_group_team_data_services().id,
             ..Default::default()
@@ -1795,7 +1795,7 @@ pub fn make_policy_relationships() -> Vec<PolicyRelationship> {
             user_id: None,
             group_id: Some(group_team_data_services().id),
             role_id: None,
-            account_id: TENCENT_4258.to_string(),
+            account_id: TENCENT_CN_4258.to_string(),
             region: Region::ApShanghai.into(),
             policy_id: policy_os_4258_na_ashburn0000_group_team_data_services().id,
             ..Default::default()
@@ -1836,7 +1836,7 @@ pub fn make_policy_relationships() -> Vec<PolicyRelationship> {
         //     user_id: None,
         //     group_id: Some(group_team_data_services_local().id),
         //     role_id: None,
-        //     account_id: "us_tencent_4258".to_string(),
+        //     account_id: "us_TENCENT_CN_4258".to_string(),
         //     region: Region::NaAshburn.into(),
         //     policy_id: policy_os_4258_na_ashburn0000_group_team_data_services().id,
         // },
@@ -1846,7 +1846,7 @@ pub fn make_policy_relationships() -> Vec<PolicyRelationship> {
         //     user_id: None,
         //     group_id: Some(group_team_data_services_local().id),
         //     role_id: None,
-        //     account_id: TENCENT_4258.to_string(),
+        //     account_id: TENCENT_CN_4258.to_string(),
         //     region: Region::ApShanghai.into(),
         //     policy_id: policy_os_4258_na_ashburn0000_group_team_data_services().id,
         // },

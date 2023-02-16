@@ -120,6 +120,7 @@ pub mod s3_proxy_endpoint {
     pub const EP_NA_ASHBURN: &str = "http://na-ashburn.s3-proxy.patsnap.info";
     pub const EP_AP_SHANGHAI: &str = "http://ap-shanghai.s3-proxy.patsnap.info";
     pub const EP_LOCAL: &str = "http://local.s3-proxy.patsnap.info";
+    pub const EP_DATA_PROD_GATEWAY: &str = "http://s-gateway-dataprod-tencent.patsnap.io/s-ops-s3-proxy";
     pub const EP_S3_PROXY_DEV: &str = "http://s3-proxy.dev";
 
     pub const EPS_NON_DEV: &[&str] = &[
