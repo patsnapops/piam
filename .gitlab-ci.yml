@@ -89,7 +89,7 @@ deploy_manager_cn_aws_qa:
   tags:
     - aws
     - docker
-  when: manual
+#  when: manual
   variables:
     ENV: qa
     PROJECT_NAME: "piam-manager"
@@ -107,7 +107,7 @@ deploy_s3_proxy_us_aws_prod:
   tags:
     - aws
     - docker
-  when: manual
+#  when: manual
   variables:
     ENV: prod
     PROJECT_NAME: "s3-proxy"
@@ -124,7 +124,7 @@ deploy_s3_proxy_cn_aws_release:
   tags:
     - aws
     - docker
-  when: manual
+#  when: manual
   variables:
     ENV: release
     PROJECT_NAME: "s3-proxy"
@@ -141,7 +141,7 @@ deploy_s3_proxy_cn_aws_qa:
   tags:
     - aws
     - docker
-  when: manual
+#  when: manual
   variables:
     ENV: qa
     PROJECT_NAME: "s3-proxy"
@@ -158,7 +158,7 @@ deploy_s3_proxy_cn_tencent_qa:
   tags:
     - aws
     - docker
-  when: manual
+#  when: manual
   variables:
     ENV: qa
     PROJECT_NAME: "s3-proxy"
@@ -175,7 +175,7 @@ deploy_s3_proxy_us_tencent_data-prod:
   tags:
     - aws
     - docker
-  when: manual
+#  when: manual
   variables:
     ENV: prod
     PROJECT_NAME: "s3-proxy"
@@ -192,7 +192,7 @@ deploy_s3_proxy_local:
   tags:
     - aws
     - docker
-  when: manual
+#  when: manual
   variables:
     ENV: qa
     PROJECT_NAME: "s3-proxy"
