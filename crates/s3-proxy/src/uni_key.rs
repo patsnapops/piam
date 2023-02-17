@@ -1,7 +1,11 @@
 //! Special requirement for s3 proxy: Using only one access key (without account code at the end) to
 //! access buckets across multiple accounts & regions for each user
 
-use std::{collections::HashMap, sync::Arc};
+use std::{
+    collections::{HashMap, HashSet},
+    sync::Arc,
+    time::Duration,
+};
 
 use aws_sdk_s3::{config::timeout::TimeoutConfig, Client, Config, Endpoint};
 use aws_smithy_async::rt::sleep::TokioSleep;
@@ -75,6 +79,48 @@ impl UniKeyInfo {
     }
 
     pub async fn new_from(accounts: &[AwsAccount]) -> ProxyResult<Self> {
+        let access_info_vec = Self::build_access_info_vec(accounts);
+
+        let timeout_seconds = Duration::from_secs(CONFIG_FETCHING_TIMEOUT);
+
+        let access_info_client_vec =
+            Self::build_access_info_client(access_info_vec, timeout_seconds);
+
+        let mut inner = BucketToAccessInfo::new();
+        let ip_info = Self::get_ip_info().await?;
+
+        let mut buckets_na_ashburn: HashSet<String> = HashSet::new();
+        for (access_info, client) in access_info_client_vec? {
+            let mut buckets = Self::get_buckets(&access_info, &client, &ip_info).await?;
+
+            // ? This is a workaround due to an unverified inconsistent behavior of the Tencent COS API.
+            // Drop non-cn buckets for tencent buckets in cn region.
+            // TODO: try remove this
+            if access_info.region == NA_ASHBURN {
+                buckets_na_ashburn = HashSet::from_iter(buckets.iter().cloned());
+            }
+            if access_info.region == AP_SHANGHAI {
+                let mut buckets_ap_shanghai: HashSet<String> =
+                    HashSet::from_iter(buckets.iter().cloned());
+                buckets_ap_shanghai.retain(|bucket| !buckets_na_ashburn.contains(bucket));
+                buckets = Vec::from_iter(buckets_ap_shanghai.iter().cloned());
+            }
+
+            buckets.into_iter().for_each(|bucket| {
+                let access_info = access_info.clone();
+                match inner.get_mut(&bucket) {
+                    None => {
+                        inner.insert(bucket, vec![access_info]);
+                    }
+                    Some(access_info_vec) => access_info_vec.push(access_info),
+                };
+            });
+        }
+
+        Ok(Self { inner })
+    }
+
+    fn build_access_info_vec(accounts: &[AwsAccount]) -> ProxyResult<Vec<AccessInfo>> {
         let access_info_vec: ProxyResult<Vec<AccessInfo>> = accounts
             .iter()
             .map(|account| {
@@ -108,9 +154,13 @@ impl UniKeyInfo {
                 }
             })
             .collect();
+        access_info_vec
+    }
 
-        let timeout_seconds = std::time::Duration::from_secs(CONFIG_FETCHING_TIMEOUT);
-
+    fn build_access_info_client(
+        access_info_vec: ProxyResult<Vec<AccessInfo>>,
+        timeout_seconds: Duration,
+    ) -> ProxyResult<Vec<(AccessInfo, Client)>> {
         let access_info_client_vec: ProxyResult<Vec<(AccessInfo, Client)>> = access_info_vec?
             .into_iter()
             .map(|access| {
@@ -138,9 +188,10 @@ impl UniKeyInfo {
                 Ok((access, Client::from_conf(config)))
             })
             .collect();
+        access_info_client_vec
+    }
 
-        let mut inner = BucketToAccessInfo::new();
-
+    async fn get_ip_info() -> ProxyResult<String> {
         if !dev_mode() {
             debug!("start fetching ip info");
         }
@@ -156,36 +207,14 @@ impl UniKeyInfo {
         if !dev_mode() {
             debug!("end fetching ip info");
         }
-
-        for (access_info, client) in access_info_client_vec? {
-            let buckets = Self::get_buckets(&access_info, &client)
-                .await
-                .map_err(|e| {
-                    ProxyError::OtherInternal(format!(
-                        "failed to get buckets for account: {} access_key: {} region: {} Error: {}, \
-                         normally it is caused by permissions not configured for the account, \
-                         try check the IP whitelist on peer, ip_info: {}",
-                        access_info.account.code,
-                        access_info.account.access_key,
-                        access_info.region,
-                        e, ip_info
-                    ))
-                })?;
-            buckets.into_iter().for_each(|bucket| {
-                let access_info = access_info.clone();
-                match inner.get_mut(&bucket) {
-                    None => {
-                        inner.insert(bucket, vec![access_info]);
-                    }
-                    Some(access_info_vec) => access_info_vec.push(access_info),
-                };
-            });
-        }
-
-        Ok(Self { inner })
+        Ok(ip_info)
     }
 
-    async fn get_buckets(access_info: &AccessInfo, client: &Client) -> ProxyResult<Vec<String>> {
+    async fn get_buckets(
+        access_info: &AccessInfo,
+        client: &Client,
+        ip_info: &str,
+    ) -> ProxyResult<Vec<String>> {
         if !dev_mode() {
             debug!(
                 "start fetching uni-key info of account: {} region: {}",
@@ -198,8 +227,14 @@ impl UniKeyInfo {
             .await
             .map_err(|e| {
                 ProxyError::OtherInternal(format!(
-                    "account.access_key: {} failed to list buckets: {}",
-                    access_info.account.access_key, e
+                    "failed to get buckets for account: {} access_key: {} region: {} Error: {}, \
+                         normally it is caused by permissions not configured for the account, \
+                         try check the IP whitelist on peer, ip_info: {}",
+                    access_info.account.code,
+                    access_info.account.access_key,
+                    access_info.region,
+                    e,
+                    ip_info
                 ))
             })?
             .buckets

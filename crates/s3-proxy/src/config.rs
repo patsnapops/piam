@@ -28,6 +28,7 @@ impl ExtendedState<S3Config, ObjectStoragePolicy> for S3Config {
                 .domains
                 .push(DEV_PROXY_HOST.to_string());
         }
+        // TODO: check HostDomains, any string in the list should not be a substring of others
         Ok(extended_config)
     }
 
