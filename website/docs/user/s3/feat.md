@@ -47,6 +47,7 @@ sidebar_position: 1
 - http://internal.s3-proxy.patsnap.info
 - http://us-east-1.s3-proxy.patsnap.info
 - http://na-ashburn.s3-proxy.patsnap.info
+- http://na-ashburn.lan.s3-proxy.patsnap.info
 - http://cn-northwest-1.s3-proxy.patsnap.info
 - http://ap-shanghai.s3-proxy.patsnap.info
 
