@@ -5,11 +5,16 @@ use crate::{
     signature::{aws::AwsSigv4, tencent::TencentSig},
 };
 
-pub trait Extract {
+pub trait SigHeader {
+    fn validate(&self) -> ProxyResult<()>;
     fn extract_access_key_and_region(&self) -> ProxyResult<(&str, &str)>;
 }
 
-impl Extract for HttpRequest {
+impl SigHeader for HttpRequest {
+    fn validate(&self) -> ProxyResult<()> {
+        self.validate_aws_sigv4()
+    }
+
     fn extract_access_key_and_region(&self) -> ProxyResult<(&str, &str)> {
         #[cfg(feature = "tencent-signature")]
         {
@@ -84,6 +89,8 @@ pub mod aws {
 
     #[async_trait]
     pub trait AwsSigv4 {
+        fn validate_aws_sigv4(&self) -> ProxyResult<()>;
+
         fn extract_access_key_and_region_from_aws(&self) -> ProxyResult<(&str, &str)>;
 
         async fn sign_with_aws_sigv4_params(
@@ -94,6 +101,21 @@ pub mod aws {
 
     #[async_trait]
     impl AwsSigv4 for HttpRequest {
+        fn validate_aws_sigv4(&self) -> ProxyResult<()> {
+            // if the value of header "x-amz-content-sha256" is "STREAMING-AWS4-HMAC-SHA256-PAYLOAD",
+            // then the request is a chunked upload which is not supported currently
+            if let Some(v) = self.headers().get(X_AMZ_CONTENT_SHA_256) {
+                if v == "STREAMING-AWS4-HMAC-SHA256-PAYLOAD" {
+                    return Err(ProxyError::OperationNotSupported(
+                        "chunked upload is not supported currently, troubleshooting: \
+                        http://ida.patsnap.info/piam/docs/user/s3/limitation"
+                            .into(),
+                    ));
+                }
+            }
+            Ok(())
+        }
+
         fn extract_access_key_and_region_from_aws(&self) -> ProxyResult<(&str, &str)> {
             let auth = self.headers().get(AUTHORIZATION).ok_or_else(|| {
                 ProxyError::InvalidAuthorizationHeader("Missing authorization header".into())

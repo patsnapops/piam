@@ -123,20 +123,7 @@ impl ObjectStorageInput {
                                 copy_source,
                             })
                         }
-                        None => {
-                            // if the value of header "expect" is "100-continue",
-                            // then the request is a chunked upload which is not supported currently
-                            if let Some(expect) = headers.get("expect") {
-                                if expect == "100-continue" {
-                                    return parse_error(
-                                        "chunked upload is not supported currently, \
-                                        troubleshooting: http://ida.patsnap.info/piam/docs/user/s3/limitation",
-                                        req,
-                                    );
-                                }
-                            }
-                            Ok(PutObject { bucket, key })
-                        }
+                        None => Ok(PutObject { bucket, key }),
                     },
                     Method::HEAD => Ok(HeadObject { bucket, key }),
                     Method::DELETE => Ok(DeleteObject { bucket, key }),

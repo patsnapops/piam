@@ -21,7 +21,7 @@ use piam_proxy::{
     response::HttpResponseExt,
     signature::{
         aws::{AwsSigv4, AwsSigv4SignParams},
-        Extract,
+        SigHeader,
     },
     state::ArcState,
     type_alias::{HttpRequest, HttpResponse},
@@ -92,6 +92,7 @@ pub async fn handle(
 
     let iam_container = &state.iam_container;
 
+    req.validate()?;
     // aws sigv4 specific
     #[allow(unused)]
     let (access_key, region) = req.extract_access_key_and_region()?;
