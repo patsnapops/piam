@@ -30,6 +30,8 @@ pub fn parse_error(msg: &str, req: &HttpRequest) -> ParserResult<ObjectStorageIn
     let method = req.method().to_string();
     let headers = req.headers().to_owned();
     Err(ParserError::OperationNotSupported(format!(
-        "{msg} uri: {uri} method: {method} headers: {headers:#?} "
+        "{msg}, supported apis: \
+        http://ida.patsnap.info/piam/docs/user/s3/feat#%E6%94%AF%E6%8C%81%E7%9A%84-api \
+        request: uri: {uri} method: {method} headers: {headers:?} "
     )))
 }
