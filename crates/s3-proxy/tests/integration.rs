@@ -29,14 +29,28 @@ const REAL_SECRET_ACCESS_KEY: &str = "";
 // only ListBuckets does not have bucket name in url or host
 #[tokio::test]
 async fn list_buckets() {
-    let output = build_client().await.list_buckets().send().await.unwrap();
+    let output = build_client_from_params(ClientParams {
+        access_key: AKPSSVCS07PIAMDEV,
+        secret: "",
+        region: CN_NORTHWEST_1,
+        endpoint: DEV_PROXY_ENDPOINT,
+    })
+    .list_buckets()
+    .send()
+    .await
+    .unwrap();
     let buckets = output.buckets().unwrap();
     assert!(buckets.len() > 10);
 }
 
 #[tokio::test]
 async fn head_bucket() {
-    let client = build_client().await;
+    let client = build_client_from_params(ClientParams {
+        access_key: AKPSSVCS07PIAMDEV,
+        secret: "",
+        region: CN_NORTHWEST_1,
+        endpoint: DEV_PROXY_ENDPOINT,
+    });
     let output = client.head_bucket().bucket("anniversary").send().await;
     assert!(output.is_ok());
     let output = client
@@ -98,8 +112,13 @@ async fn list_objects_v2() {
 
 #[tokio::test]
 async fn get_object_inside_folder() {
-    let output = build_client()
-        .await
+    let client = build_client_from_params(ClientParams {
+        access_key: AKPSSVCS07PIAMDEV,
+        secret: "",
+        region: CN_NORTHWEST_1,
+        endpoint: DEV_PROXY_ENDPOINT,
+    });
+    let output = client
         .get_object()
         .bucket("anniversary")
         .key("__MACOSX/image/._.DS_Store")
