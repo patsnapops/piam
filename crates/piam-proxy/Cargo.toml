@@ -7,10 +7,10 @@ edition = "2021"
 
 [dependencies]
 piam-core = { path = "../piam-core" }
-busylib = { path = "../busylib" }
+busylib = { git = "https://github.com/patsnapops/busylib.git", version = "0.1.0" }
 arc-swap = { version = "1.5.1" }
 once_cell = { version = "1.15.0" }
-aws-sigv4 = { version = "0.52.0" }
+aws-sigv4 = { version = "0.54.1" }
 uuid = { version = "1.1.2", features = ["v4", "serde", "fast-rng", "macro-diagnostics"] }
 http = "0.2.8"
 hyper = "0.14"

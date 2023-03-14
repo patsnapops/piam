@@ -5,11 +5,8 @@ debug = true
 [workspace]
 
 members = [
-    "crates/patsnap-constants",
-    "crates/busylib",
     "crates/piam-manager",
     "crates/piam-object-storage",
     "crates/piam-core",
     "crates/piam-proxy",
-    "crates/s3-proxy",
 ]

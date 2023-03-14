@@ -5,8 +5,8 @@ edition = "2021"
 
 [dependencies]
 piam-core = { path = "../piam-core" }
-busylib = { path = "../busylib" }
-axum = { version = "0.6.1", features = ["tokio"] }
+busylib = { git = "https://github.com/patsnapops/busylib.git", version = "0.1.0" }
+axum = { version = "0.6.1" }
 hyper = { version = "0.14", features = ["full"] }
 tokio = { version = "1", features = ["full"] }
 log = "0.4.17"
@@ -15,6 +15,6 @@ serde = { version = "1.0", features = ["derive"] }
 
 [dev-dependencies]
 piam-object-storage = { path = "../piam-object-storage" }
-patsnap-constants = { path = "../patsnap-constants" }
+patsnap-constants = { git = "http://git.patsnap.com/devops/patsnap-constants.git" }
 uuid = { version = "1.1.2", features = ["v4", "fast-rng", "macro-diagnostics"] }
 serde_yaml = "0.9"

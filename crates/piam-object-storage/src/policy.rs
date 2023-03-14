@@ -1,6 +1,6 @@
 use piam_core::{
     effect::Effect,
-    policy::{Modeled, Name},
+    policy::{Modeled, StringMatcher},
 };
 use serde::{Deserialize, Serialize};
 
@@ -38,7 +38,7 @@ pub struct Tag {
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct Bucket {
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub name: Option<Name>,
+    pub name: Option<StringMatcher>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tag: Option<Tag>,
     #[serde(flatten)]
@@ -58,7 +58,7 @@ pub struct Control;
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct Key {
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub name: Option<Name>,
+    pub path: Option<StringMatcher>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tag: Option<Tag>,
     #[serde(flatten)]
@@ -128,7 +128,7 @@ impl ObjectStorageMatches for ObjectStorageInputPolicy {
                 }
                 let mut default_for_all_name: Option<&Effect> = None;
                 for key in keys {
-                    match &key.name {
+                    match &key.path {
                         Some(name) => {
                             if name.matches(input.key()) {
                                 return key.effect.as_ref();
@@ -150,7 +150,7 @@ impl ObjectStorageMatches for ObjectStorageInputPolicy {
 mod test {
     use piam_core::{
         effect::{Effect, Modify},
-        policy::Name,
+        policy::StringMatcher,
     };
 
     use crate::{
@@ -192,7 +192,7 @@ mod test {
     #[test]
     fn match_bucket_effect() {
         let mut policy = ObjectStorageInputPolicy::default();
-        policy.bucket.name = Some(Name {
+        policy.bucket.name = Some(StringMatcher {
             eq: Some(vec![String::from("bucket1")]),
             start_with: Some(vec![String::from("start")]),
         });
@@ -219,7 +219,7 @@ mod test {
     #[test]
     fn match_object_effect() {
         let mut policy = ObjectStorageInputPolicy::default();
-        policy.bucket.name = Some(Name {
+        policy.bucket.name = Some(StringMatcher {
             eq: Some(vec![String::from("bucket1")]),
             start_with: Some(vec![String::from("start1")]),
         });
@@ -236,7 +236,7 @@ mod test {
             modify: Some(Modify {}),
         };
         let key1 = Key {
-            name: Some(Name {
+            path: Some(StringMatcher {
                 eq: Some(vec![String::from("key1")]),
                 start_with: Some(vec![String::from("start2")]),
             }),
@@ -245,7 +245,7 @@ mod test {
         };
         let key_effect_2 = Effect::Deny(None);
         let key2 = Key {
-            name: Some(Name {
+            path: Some(StringMatcher {
                 eq: Some(vec![String::from("key2")]),
                 start_with: Some(vec![String::from("start3")]),
             }),
@@ -287,12 +287,12 @@ mod test {
 
         policy.bucket.keys = Some(vec![
             Key {
-                name: None,
+                path: None,
                 tag: None,
                 effect: Some(Effect::allow()),
             },
             Key {
-                name: Some(Name {
+                path: Some(StringMatcher {
                     eq: Some(vec!["key2".to_string()]),
                     start_with: None,
                 }),
@@ -311,12 +311,12 @@ mod test {
 
         policy.bucket.keys = Some(vec![
             Key {
-                name: None,
+                path: None,
                 tag: None,
                 effect: Some(Effect::deny()),
             },
             Key {
-                name: Some(Name {
+                path: Some(StringMatcher {
                     eq: Some(vec!["key2".to_string()]),
                     start_with: None,
                 }),

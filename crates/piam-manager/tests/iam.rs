@@ -20,7 +20,7 @@ use piam_core::{
     manager_api_constant::{CONDITION, VERSION},
     policy::{
         condition::{private_ip_cidr, ConditionPolicy, ConditionRange, Range},
-        Name, Policy,
+        Policy, StringMatcher,
     },
     principal::{User, UserKind},
     relation_model::{PolicyRelationship, UserGroupRelationship},
@@ -511,7 +511,7 @@ pub fn policy_os_7478_us_group_3_cjj0() -> Policy<ObjectStoragePolicy> {
             input_policy: ObjectStorageInputPolicy {
                 actions: Some(base_s3_actions_with_delete()),
                 bucket: Bucket {
-                    name: Some(Name {
+                    name: Some(StringMatcher {
                         eq: Some(vec!["data-processing-data".into()]),
                         start_with: None,
                     }),
@@ -543,7 +543,7 @@ pub fn policy_os_3977_cn_group_3_shf0() -> Policy<ObjectStoragePolicy> {
             input_policy: ObjectStorageInputPolicy {
                 actions: Some(base_s3_actions_with_delete()),
                 bucket: Bucket {
-                    name: Some(Name {
+                    name: Some(StringMatcher {
                         eq: Some(vec!["datalake-internal.patsnap.com-cn-northwest-1".into()]),
                         start_with: None,
                     }),
@@ -575,7 +575,7 @@ pub fn policy_os_4258_cn_group_3_qwt0() -> Policy<ObjectStoragePolicy> {
             input_policy: ObjectStorageInputPolicy {
                 actions: Some(base_s3_actions()),
                 bucket: Bucket {
-                    name: Some(Name {
+                    name: Some(StringMatcher {
                         eq: Some(vec!["patsnap-country-source-1251949819".into()]),
                         start_with: None,
                     }),
@@ -607,7 +607,7 @@ pub fn policy_os_4258_us_group_3_fxd0() -> Policy<ObjectStoragePolicy> {
             input_policy: ObjectStorageInputPolicy {
                 actions: Some(base_s3_actions()),
                 bucket: Bucket {
-                    name: Some(Name {
+                    name: Some(StringMatcher {
                         eq: Some(vec!["patsnap-country-source-1251949819".into()]),
                         start_with: None,
                     }),
@@ -640,7 +640,7 @@ pub fn policy_os_0066_us_group_3_zsz0() -> Policy<ObjectStoragePolicy> {
             input_policy: ObjectStorageInputPolicy {
                 actions: Some(base_s3_actions()),
                 bucket: Bucket {
-                    name: Some(Name {
+                    name: Some(StringMatcher {
                         eq: Some(vec![
                             "patsnap-country-source".into(),
                             "testpatsnapus".into(),
@@ -675,7 +675,7 @@ pub fn policy_os_4258_us_group_3_zsz0() -> Policy<ObjectStoragePolicy> {
             input_policy: ObjectStorageInputPolicy {
                 actions: Some(base_s3_actions()),
                 bucket: Bucket {
-                    name: Some(Name {
+                    name: Some(StringMatcher {
                         eq: Some(vec!["patsnap-country-source-1251949819".into()]),
                         start_with: None,
                     }),
@@ -707,7 +707,7 @@ pub fn policy_os_0066_us_group_3_whl0() -> Policy<ObjectStoragePolicy> {
             input_policy: ObjectStorageInputPolicy {
                 actions: Some(base_s3_actions()),
                 bucket: Bucket {
-                    name: Some(Name {
+                    name: Some(StringMatcher {
                         eq: Some(vec!["testpatsnapus".into()]),
                         start_with: None,
                     }),
@@ -739,7 +739,7 @@ pub fn policy_os_7478_us_east00000_1_group_team_sa_dev() -> Policy<ObjectStorage
             input_policy: ObjectStorageInputPolicy {
                 actions: Some(base_s3_actions()),
                 bucket: Bucket {
-                    name: Some(Name {
+                    name: Some(StringMatcher {
                         eq: Some(vec![
                             "aws-athena-query-results-747875099153-us-east-1".into(),
                             "data-processing-data".into(),
@@ -762,7 +762,7 @@ pub fn policy_os_7478_us_east00000_1_group_team_sa_dev() -> Policy<ObjectStorage
                     tag: None,
                     effect: Some(Effect::allow()),
                     keys: Some(vec![Key {
-                        name: None,
+                        path: None,
                         tag: None,
                         effect: Some(Effect::allow()),
                     }]),
@@ -787,7 +787,7 @@ pub fn policy_os_0066_us_east00000_1_group_team_sa_dev() -> Policy<ObjectStorage
             input_policy: ObjectStorageInputPolicy {
                 actions: Some(base_s3_actions()),
                 bucket: Bucket {
-                    name: Some(Name {
+                    name: Some(StringMatcher {
                         eq: Some(vec![
                             "patsnap-country-source".into(),
                             "testpatsnapus".into(),
@@ -822,7 +822,7 @@ pub fn policy_os_3977_cn_northwest_1_group_team_sa_dev() -> Policy<ObjectStorage
             input_policy: ObjectStorageInputPolicy {
                 actions: Some(base_s3_actions()),
                 bucket: Bucket {
-                    name: Some(Name {
+                    name: Some(StringMatcher {
                         eq: Some(vec![
                             "data-pdf-cn-northwest-1".into(),
                             "chemical-upload-images-cn-northwest-1".into(),
@@ -845,7 +845,7 @@ pub fn policy_os_3977_cn_northwest_1_group_team_sa_dev() -> Policy<ObjectStorage
                     tag: None,
                     effect: Some(Effect::allow()),
                     keys: Some(vec![Key {
-                        name: None,
+                        path: None,
                         tag: None,
                         effect: Some(Effect::allow()),
                     }]),
@@ -871,7 +871,7 @@ pub fn policy_os_7478_us_east00000_1_group_team_data_dev() -> Policy<ObjectStora
             input_policy: ObjectStorageInputPolicy {
                 actions: Some(base_s3_actions()),
                 bucket: Bucket {
-                    name: Some(Name {
+                    name: Some(StringMatcher {
                         eq: Some(vec![
                             "data-processing-data".into(),
                             "datalake-internal.patsnap.com".into(),
@@ -909,7 +909,7 @@ pub fn policy_os_3977_cn_northwest_1_group_team_data_dev() -> Policy<ObjectStora
             input_policy: ObjectStorageInputPolicy {
                 actions: Some(base_s3_actions()),
                 bucket: Bucket {
-                    name: Some(Name {
+                    name: Some(StringMatcher {
                         eq: Some(vec![
                             "datalake-internal.patsnap.com-cn-northwest-1".into(),
                             "data-country-source-cn-northwest-1".into(),
@@ -944,7 +944,7 @@ pub fn policy_os_0066_us_east00000_1_group_team_data_dev() -> Policy<ObjectStora
             input_policy: ObjectStorageInputPolicy {
                 actions: Some(base_s3_actions()),
                 bucket: Bucket {
-                    name: Some(Name {
+                    name: Some(StringMatcher {
                         eq: Some(vec![
                             "patsnap-country-source".into(),
                             "testpatsnapus".into(),
@@ -979,7 +979,7 @@ pub fn policy_os_4258_na_ashburn0000_group_team_data_dev() -> Policy<ObjectStora
             input_policy: ObjectStorageInputPolicy {
                 actions: Some(base_s3_actions()),
                 bucket: Bucket {
-                    name: Some(Name {
+                    name: Some(StringMatcher {
                         eq: Some(vec![
                             "patsnap-country-source-1251949819".into(),
                             "patsnap-general-source-1251949819".into(),
@@ -1019,7 +1019,7 @@ pub fn policy_os_7478_us_east00000_1_group_team_data_services() -> Policy<Object
             input_policy: ObjectStorageInputPolicy {
                 actions: Some(base_s3_actions()),
                 bucket: Bucket {
-                    name: Some(Name {
+                    name: Some(StringMatcher {
                         eq: Some(vec![
                             "discovery-attachment-us-east-1".into(),
                             "datalake-internal.patsnap.com".into(),
@@ -1029,7 +1029,7 @@ pub fn policy_os_7478_us_east00000_1_group_team_data_services() -> Policy<Object
                     tag: None,
                     effect: Some(Effect::allow()),
                     keys: Some(vec![Key {
-                        name: None,
+                        path: None,
                         tag: None,
                         effect: Some(Effect::allow()),
                     }]),
@@ -1055,14 +1055,14 @@ pub fn policy_os_7478_us_east00000_1_group_team_data_services_local() -> Policy<
             input_policy: ObjectStorageInputPolicy {
                 actions: Some(base_s3_actions()),
                 bucket: Bucket {
-                    name: Some(Name {
+                    name: Some(StringMatcher {
                         eq: Some(vec!["datalake-internal.patsnap.com".into()]),
                         start_with: None,
                     }),
                     tag: None,
                     effect: Some(Effect::allow()),
                     keys: Some(vec![Key {
-                        name: None,
+                        path: None,
                         tag: None,
                         effect: Some(Effect::allow()),
                     }]),
@@ -1087,7 +1087,7 @@ pub fn policy_os_3977_cn_northwest_1_group_team_data_services() -> Policy<Object
             input_policy: ObjectStorageInputPolicy {
                 actions: Some(base_s3_actions()),
                 bucket: Bucket {
-                    name: Some(Name {
+                    name: Some(StringMatcher {
                         eq: Some(vec![
                             "data-pdf-cn-northwest-1".into(),
                             "data-page-cn-northwest-1".into(),
@@ -1104,7 +1104,7 @@ pub fn policy_os_3977_cn_northwest_1_group_team_data_services() -> Policy<Object
                     tag: None,
                     effect: Some(Effect::allow()),
                     keys: Some(vec![Key {
-                        name: None,
+                        path: None,
                         tag: None,
                         effect: Some(Effect::allow()),
                     }]),
@@ -1157,7 +1157,7 @@ pub fn policy_os_4258_na_ashburn0000_group_team_data_services() -> Policy<Object
             input_policy: ObjectStorageInputPolicy {
                 actions: Some(base_s3_actions_with_delete()),
                 bucket: Bucket {
-                    name: Some(Name {
+                    name: Some(StringMatcher {
                         eq: Some(vec!["patsnap-country-source-1251949819".into()]),
                         start_with: None,
                     }),

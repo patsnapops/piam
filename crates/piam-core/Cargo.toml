@@ -6,7 +6,7 @@ description = "Patsnap IAM core"
 license = "Apache-2.0 OR MIT"
 
 [dependencies]
-busylib = { path = "../busylib" }
+busylib = { git = "https://github.com/patsnapops/busylib.git", version = "0.1.0" }
 cidr = { version = "0.2.1", features = ["serde"] }
 http = "0.2.8"
 hyper = { version = "0.14", features = ["full"] }

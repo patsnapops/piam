@@ -50,30 +50,30 @@ where
     }
 }
 
-/// Default logical operator would be `or`. Any name matching `eq`,
+/// Default logical operator would be `or`. Any value matching `eq`,
 /// `start_with`, `contains` will be regarded as a successful match.
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
-pub struct Name {
-    /// The list used to do the `Eq` match for the given name
+pub struct StringMatcher {
+    /// The list used to do the `Eq` match for the given value
     #[serde(skip_serializing_if = "Option::is_none")]
     pub eq: Option<Vec<String>>,
-    /// The list used to do the `start_with` match for the given name
+    /// The list used to do the `start_with` match for the given value
     #[serde(skip_serializing_if = "Option::is_none")]
     pub start_with: Option<Vec<String>>,
 }
 
-impl Name {
-    pub fn matches(&self, name: &str) -> bool {
-        // TODO: static analyze Name
+impl StringMatcher {
+    pub fn matches(&self, value: &str) -> bool {
+        // TODO: static analyze
         // should have at least one of eq or start_with
         // should not conflict
         if let Some(eq) = &self.eq {
-            if eq.contains(&name.to_string()) {
+            if eq.contains(&value.to_string()) {
                 return true;
             }
         }
         if let Some(start_with) = &self.start_with {
-            if start_with.iter().any(|prefix| name.starts_with(prefix)) {
+            if start_with.iter().any(|prefix| value.starts_with(prefix)) {
                 return true;
             }
         }

@@ -6,7 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-busylib = { path = "../busylib" }
+busylib = { git = "https://github.com/patsnapops/busylib.git", version = "0.1.0" }
 piam-core = { path = "../piam-core" }
 serde = { version = "1.0", features = ["derive"] }
 strum_macros = "0.24"
