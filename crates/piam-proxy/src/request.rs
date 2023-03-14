@@ -57,6 +57,7 @@ pub fn from_region_to_host(region: &str) -> ProxyResult<&'static str> {
         // aws
         "cn-northwest-1" => Ok("s3.cn-northwest-1.amazonaws.com.cn"),
         "us-east-1" => Ok("s3.us-east-1.amazonaws.com"),
+        "us-east-2" => Ok("s3.us-east-2.amazonaws.com"),
         "eu-central-1" => Ok("s3.eu-central-1.amazonaws.com"),
         // tencent
         "ap-shanghai" => Ok("cos.ap-shanghai.myqcloud.com"),
