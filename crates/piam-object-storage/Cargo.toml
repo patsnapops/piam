@@ -13,6 +13,13 @@ strum_macros = "0.24"
 strum = { version = "0.24", features = ["derive"] }
 http = "0.2.8"
 serde_urlencoded = "0.7.1"
+hyper = "0.14"
+serde-xml-rs = "0.6.0"
+
+[dependencies.tokio]
+version = "1"
+features = ["full"]
+optional = true
 
 [features]
 # Special requirement for s3 proxy: Using a unified access key (without account code at the end) to

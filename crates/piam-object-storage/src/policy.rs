@@ -44,6 +44,7 @@ pub struct Bucket {
     #[serde(flatten)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub effect: Option<Effect>,
+    /// There can only be one item in keys
     #[serde(skip_serializing_if = "Option::is_none")]
     pub keys: Option<Vec<Key>>,
 }
@@ -126,23 +127,39 @@ impl ObjectStorageMatches for ObjectStorageInputPolicy {
                 if keys.is_empty() {
                     return None;
                 }
-                let mut default_for_all_name: Option<&Effect> = None;
-                for key in keys {
-                    match &key.path {
-                        Some(name) => {
-                            if name.matches(input.key()) {
-                                return key.effect.as_ref();
-                            }
-                        }
-                        None => {
-                            // TODO: static analyze, this condition can occur at most once at runtime
-                            default_for_all_name = key.effect.as_ref();
-                        }
-                    }
-                }
-                default_for_all_name
+                self.find_keys_effect(input, keys)
             }
         }
+    }
+}
+
+impl ObjectStorageInputPolicy {
+    fn find_keys_effect<'a>(
+        &'a self,
+        input: &ObjectStorageInput,
+        keys: &'a Vec<Key>,
+    ) -> Option<&Effect> {
+        let mut default_for_all_matcher: Option<&Effect> = None;
+        for key in keys {
+            match &key.path {
+                Some(matcher) => {
+                    if let ObjectStorageInput::DeleteObjects { bucket: _, keys } = input {
+                        return match keys.iter().any(|key| !matcher.matches(key)) {
+                            true => None,
+                            false => key.effect.as_ref(),
+                        };
+                    };
+                    if matcher.matches(input.key()) {
+                        return key.effect.as_ref();
+                    }
+                }
+                None => {
+                    // TODO: static analyze, this condition can occur at most once at runtime
+                    default_for_all_matcher = key.effect.as_ref();
+                }
+            }
+        }
+        default_for_all_matcher
     }
 }
 
@@ -335,5 +352,101 @@ mod test {
 
         policy.bucket.keys = Some(vec![]);
         assert_eq!(policy.find_object_effect(&get_object_1), None);
+    }
+
+    #[test]
+    fn match_delete_objects_effect() {
+        let mut policy = ObjectStorageInputPolicy::default();
+        policy.bucket.name = Some(StringMatcher {
+            eq: Some(vec![String::from("bucket1")]),
+            start_with: None,
+        });
+        policy.bucket.effect = Some(Effect::allow());
+
+        let allow = Effect::allow();
+        let deny = Effect::deny();
+        let key1 = Key {
+            path: Some(StringMatcher {
+                eq: None,
+                start_with: Some(vec![String::from("start1")]),
+            }),
+            effect: Some(allow.clone()),
+            ..Default::default()
+        };
+        let key2 = Key {
+            path: Some(StringMatcher {
+                eq: None,
+                start_with: Some(vec![String::from("/start2")]),
+            }),
+            effect: Some(deny.clone()),
+            ..Default::default()
+        };
+
+        policy.bucket.keys = Some(vec![key1]);
+        assert_eq!(
+            policy.find_object_effect(&ObjectStorageInput::DeleteObjects {
+                bucket: "bucket1".to_string(),
+                keys: vec!["start1".to_string()],
+            }),
+            Some(&allow)
+        );
+        assert_eq!(
+            policy.find_object_effect(&ObjectStorageInput::DeleteObjects {
+                bucket: "bucket1".to_string(),
+                keys: vec!["start1/".to_string(), "start1/foo".to_string()],
+            }),
+            Some(&allow)
+        );
+        assert_eq!(
+            policy.find_object_effect(&ObjectStorageInput::DeleteObjects {
+                bucket: "bucket2".to_string(),
+                keys: vec!["start1".to_string()],
+            }),
+            None
+        );
+        assert_eq!(
+            policy.find_object_effect(&ObjectStorageInput::DeleteObjects {
+                bucket: "bucket1".to_string(),
+                keys: vec!["key1".to_string(), "key2".to_string()],
+            }),
+            None
+        );
+        assert_eq!(
+            policy.find_object_effect(&ObjectStorageInput::DeleteObjects {
+                bucket: "bucket1".to_string(),
+                keys: vec!["start1".to_string(), "key2".to_string()],
+            }),
+            None
+        );
+        assert_eq!(
+            policy.find_object_effect(&ObjectStorageInput::DeleteObjects {
+                bucket: "bucket1".to_string(),
+                keys: vec!["start2".to_string()],
+            }),
+            None
+        );
+
+        policy.bucket.keys = Some(vec![key2]);
+        assert_eq!(
+            policy.find_object_effect(&ObjectStorageInput::DeleteObjects {
+                bucket: "bucket1".to_string(),
+                keys: vec!["/start2".to_string()],
+            }),
+            Some(&deny)
+        );
+        assert_eq!(
+            policy.find_object_effect(&ObjectStorageInput::DeleteObjects {
+                bucket: "bucket1".to_string(),
+                keys: vec!["start2/foo".to_string()],
+            }),
+            None
+        );
+        assert_eq!(
+            policy.find_object_effect(&ObjectStorageInput::DeleteObjects {
+                bucket: "bucket1".to_string(),
+                keys: vec!["/start2".to_string(), "start2/foo".to_string()],
+            }),
+            None
+        );
     }
 }

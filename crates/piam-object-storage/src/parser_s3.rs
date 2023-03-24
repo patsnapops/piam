@@ -1,12 +1,12 @@
 use busylib::prelude::EnhancedExpect;
 use http::{header::HOST, Method};
-use piam_core::type_alias::HttpRequest;
+use piam_core::{input::InputAndRequest, type_alias::HttpRequest};
 use serde::Deserialize;
 
 use crate::{
     config::HostDomains,
     error::{parse_error, ParserError, ParserResult},
-    input::ObjectStorageInput,
+    input::{ObjectStorageInput, ObjectStorageInput::DeleteObjects},
 };
 
 #[derive(Debug, Deserialize)]
@@ -18,6 +18,7 @@ struct Query {
     uploads: Option<String>,
     #[serde(rename = "uploadId")]
     upload_id: Option<String>,
+    delete: Option<String>,
 }
 
 impl Query {
@@ -40,10 +41,17 @@ impl Query {
     fn has_notification(&self) -> bool {
         self.notification.is_some()
     }
+
+    fn has_delete(&self) -> bool {
+        self.delete.is_some()
+    }
 }
 
 impl ObjectStorageInput {
-    pub fn from_s3(req: &HttpRequest, config: &HostDomains) -> ParserResult<Self> {
+    pub async fn parse_s3(
+        req: HttpRequest,
+        config: &HostDomains,
+    ) -> ParserResult<InputAndRequest<ObjectStorageInput>> {
         let host = req
             .headers()
             .get(HOST)
@@ -57,17 +65,17 @@ impl ObjectStorageInput {
         let proxy_host = config.find_proxy_host(host)?;
 
         if host == proxy_host && *req.method() == Method::GET {
-            return Ok(ObjectStorageInput::ListBuckets);
+            return Ok(InputAndRequest::new(ObjectStorageInput::ListBuckets, req));
         }
 
         let bucket = Self::get_bucket_name(host, proxy_host)?;
-        let query = serde_urlencoded::from_str(req.uri().query().unwrap_or_default())
+        let query: Query = serde_urlencoded::from_str(req.uri().query().unwrap_or_default())
             .ex("query to form should work");
 
-        if req.uri().path() == "/" {
+        if req.uri().path() == "/" && !query.has_delete() {
             Self::parse_bucket_operations(req, bucket, &query)
         } else {
-            Self::parse_object_operations(req, bucket, &query)
+            Self::parse_object_operations(req, bucket, &query).await
         }
     }
 
@@ -82,30 +90,30 @@ impl ObjectStorageInput {
     }
 
     fn parse_bucket_operations(
-        req: &HttpRequest,
+        req: HttpRequest,
         bucket: String,
         query: &Query,
-    ) -> Result<ObjectStorageInput, ParserError> {
+    ) -> Result<InputAndRequest<ObjectStorageInput>, ParserError> {
         use ObjectStorageInput::*;
-        if query.has_list_type() && req.method() == Method::GET {
+        let input = if query.has_list_type() && req.method() == Method::GET {
             Ok(ListObjects { bucket })
         } else if query.has_tagging() {
             match *req.method() {
                 Method::GET => Ok(GetBucketTagging { bucket }),
                 Method::PUT => Ok(PutBucketTagging { bucket }),
                 Method::DELETE => Ok(DeleteBucketTagging { bucket }),
-                _ => parse_error("unknown bucket tagging operation", req),
+                _ => parse_error("unknown bucket tagging operation", &req),
             }
         } else if query.has_tagging() {
             match *req.method() {
                 Method::GET => Ok(ListMultiPartUploads { bucket }),
-                _ => parse_error("unknown bucket uploads operation", req),
+                _ => parse_error("unknown bucket uploads operation", &req),
             }
         } else if query.has_notification() {
             match *req.method() {
                 Method::GET => Ok(GetBucketNotificationConfiguration { bucket }),
                 Method::PUT => Ok(PutBucketNotificationConfiguration { bucket }),
-                _ => parse_error("unknown bucket notification operation", req),
+                _ => parse_error("unknown bucket notification operation", &req),
             }
         } else {
             match *req.method() {
@@ -114,22 +122,23 @@ impl ObjectStorageInput {
                 Method::PUT => Ok(CreateBucket { bucket }),
                 Method::HEAD => Ok(HeadBucket { bucket }),
                 Method::DELETE => Ok(DeleteBucket { bucket }),
-                _ => parse_error("unknown bucket operation", req),
+                _ => parse_error("unknown bucket operation", &req),
             }
-        }
+        }?;
+        Ok(InputAndRequest::new(input, req))
     }
 
-    fn parse_object_operations(
-        req: &HttpRequest,
+    async fn parse_object_operations(
+        req: HttpRequest,
         bucket: String,
         query: &Query,
-    ) -> Result<ObjectStorageInput, ParserError> {
+    ) -> Result<InputAndRequest<ObjectStorageInput>, ParserError> {
         use ObjectStorageInput::*;
         let key = req.uri().path()[1..].to_string();
-        if query.has_uploads() {
+        let input = if query.has_uploads() {
             match *req.method() {
                 Method::POST => Ok(CreateMultipartUpload { bucket, key }),
-                _ => parse_error("unknown object upload operation", req),
+                _ => parse_error("unknown object upload operation", &req),
             }
         } else if query.has_upload_id() {
             match *req.method() {
@@ -137,7 +146,14 @@ impl ObjectStorageInput {
                 Method::PUT => Ok(UploadPart { bucket, key }),
                 Method::POST => Ok(CompleteMultipartUpload { bucket, key }),
                 Method::DELETE => Ok(AbortMultipartUpload { bucket, key }),
-                _ => parse_error("unknown object upload operation", req),
+                _ => parse_error("unknown object upload operation", &req),
+            }
+        } else if query.has_delete() {
+            match *req.method() {
+                Method::POST => {
+                    return Self::parse_delete_objects(bucket, req).await;
+                }
+                _ => parse_error("unknown bucket delete operation", &req),
             }
         } else {
             match *req.method() {
@@ -163,8 +179,48 @@ impl ObjectStorageInput {
                 },
                 Method::HEAD => Ok(HeadObject { bucket, key }),
                 Method::DELETE => Ok(DeleteObject { bucket, key }),
-                _ => parse_error("unknown object operation", req),
+                _ => parse_error("unknown object operation", &req),
             }
+        }?;
+        Ok(InputAndRequest::new(input, req))
+    }
+
+    async fn parse_delete_objects(
+        bucket: String,
+        req: HttpRequest,
+    ) -> Result<InputAndRequest<ObjectStorageInput>, ParserError> {
+        #[derive(Debug, Deserialize)]
+        struct S3DeleteObjects {
+            #[serde(rename = "Object")]
+            objects: Vec<S3Object>,
+            #[allow(dead_code)]
+            #[serde(rename = "VersionId")]
+            version_id: Option<String>,
+            #[allow(dead_code)]
+            #[serde(rename = "Quiet")]
+            quiet: Option<bool>,
         }
+        #[derive(Debug, Deserialize)]
+        struct S3Object {
+            #[serde(rename = "Key")]
+            key: String,
+        }
+
+        let (parts, body) = req.into_parts();
+        let bytes = hyper::body::to_bytes(body)
+            .await
+            .map_err(|e| ParserError::Internal(format!("failed to read body of request: {}", e)))?;
+        let xml = String::from_utf8(bytes.to_vec())
+            .map_err(|_| ParserError::MalformedProtocol("body must be valid UTF-8".to_string()))?;
+        let to_del: S3DeleteObjects = serde_xml_rs::from_str(&xml)
+            .map_err(|e| ParserError::MalformedProtocol(format!("failed to parse xml: {}", e)))?;
+
+        Ok(InputAndRequest::new(
+            DeleteObjects {
+                bucket,
+                keys: to_del.objects.into_iter().map(|o| o.key).collect(),
+            },
+            HttpRequest::from_parts(parts, hyper::Body::from(bytes)),
+        ))
     }
 }

@@ -1,11 +1,17 @@
-use piam_core::{input::Input, type_alias::HttpRequest};
+use piam_core::{
+    input::{Input, InputAndRequest},
+    type_alias::HttpRequest,
+};
 
 use crate::{config::HostDomains, error::ParserResult, input::ObjectStorageInput};
 
 impl Input for ObjectStorageInput {}
 
 impl ObjectStorageInput {
-    pub fn from(req: &HttpRequest, config: &HostDomains) -> ParserResult<Self> {
+    pub async fn parse(
+        req: HttpRequest,
+        config: &HostDomains,
+    ) -> ParserResult<InputAndRequest<ObjectStorageInput>> {
         #[cfg(feature = "cos-parser")]
         {
             // sample: "user-agent": "aws-sdk-rust/0.52.0 os/macos lang/rust/1.66.0"
@@ -22,9 +28,9 @@ impl ObjectStorageInput {
                     .starts_with("cos"),
             };
             if from_cos_sdk {
-                return Self::from_cos(req, config);
+                return Self::parse_cos(req, config).await;
             }
         }
-        Self::from_s3(req, config)
+        Self::parse_s3(req, config).await
     }
 }

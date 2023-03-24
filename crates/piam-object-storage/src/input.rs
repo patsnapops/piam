@@ -50,6 +50,10 @@ pub enum ObjectStorageInput {
         bucket: String,
         key: String,
     },
+    DeleteObjects {
+        bucket: String,
+        keys: Vec<String>,
+    },
     CopyObject {
         bucket: String,
         key: String,
@@ -111,6 +115,7 @@ impl ObjectStorageInput {
             Self::PutObject { .. } => Object,
             Self::HeadObject { .. } => Object,
             Self::DeleteObject { .. } => Object,
+            Self::DeleteObjects { .. } => Object,
             Self::CopyObject { .. } => Object,
             Self::CreateMultipartUpload { .. } => Object,
             Self::UploadPart { .. } => Object,
@@ -139,6 +144,7 @@ impl ObjectStorageInput {
             Self::PutObject { bucket, .. } => bucket,
             Self::HeadObject { bucket, .. } => bucket,
             Self::DeleteObject { bucket, .. } => bucket,
+            Self::DeleteObjects { bucket, .. } => bucket,
             Self::CopyObject { bucket, .. } => bucket,
             Self::CreateMultipartUpload { bucket, .. } => bucket,
             Self::UploadPart { bucket, .. } => bucket,
