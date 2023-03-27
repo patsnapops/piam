@@ -21,6 +21,9 @@ pub struct ObjectStorageInputPolicy {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub actions: Option<Vec<String>>,
     pub bucket: Bucket,
+    /// There can only be one item in keys
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub keys: Option<Vec<Key>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub control: Option<Control>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -44,9 +47,6 @@ pub struct Bucket {
     #[serde(flatten)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub effect: Option<Effect>,
-    /// There can only be one item in keys
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub keys: Option<Vec<Key>>,
 }
 
 #[derive(Debug, Default, Serialize, Deserialize)]
@@ -121,7 +121,7 @@ impl ObjectStorageMatches for ObjectStorageInputPolicy {
     fn find_object_effect(&self, input: &ObjectStorageInput) -> Option<&Effect> {
         // TODO: reduce indentation
         self.find_bucket_effect(input)?;
-        match &self.bucket.keys {
+        match &self.keys {
             None => None,
             Some(keys) => {
                 if keys.is_empty() {
@@ -269,7 +269,7 @@ mod test {
             effect: Some(key_effect_2.clone()),
             ..Default::default()
         };
-        policy.bucket.keys = Some(vec![key1, key2]);
+        policy.keys = Some(vec![key1, key2]);
 
         let get_object_1 = ObjectStorageInput::GetObject {
             bucket: "bucket1".to_string(),
@@ -299,10 +299,10 @@ mod test {
         assert_eq!(policy.find_object_effect(&get_object_3), None);
         assert_eq!(policy.find_object_effect(&get_object_4), None);
 
-        policy.bucket.keys = None;
+        policy.keys = None;
         assert_eq!(policy.find_object_effect(&get_object_1), None);
 
-        policy.bucket.keys = Some(vec![
+        policy.keys = Some(vec![
             Key {
                 path: None,
                 tag: None,
@@ -326,7 +326,7 @@ mod test {
             Some(&Effect::deny())
         );
 
-        policy.bucket.keys = Some(vec![
+        policy.keys = Some(vec![
             Key {
                 path: None,
                 tag: None,
@@ -350,7 +350,7 @@ mod test {
             Some(&Effect::allow())
         );
 
-        policy.bucket.keys = Some(vec![]);
+        policy.keys = Some(vec![]);
         assert_eq!(policy.find_object_effect(&get_object_1), None);
     }
 
@@ -382,7 +382,7 @@ mod test {
             ..Default::default()
         };
 
-        policy.bucket.keys = Some(vec![key1]);
+        policy.keys = Some(vec![key1]);
         assert_eq!(
             policy.find_object_effect(&ObjectStorageInput::DeleteObjects {
                 bucket: "bucket1".to_string(),
@@ -426,7 +426,7 @@ mod test {
             None
         );
 
-        policy.bucket.keys = Some(vec![key2]);
+        policy.keys = Some(vec![key2]);
         assert_eq!(
             policy.find_object_effect(&ObjectStorageInput::DeleteObjects {
                 bucket: "bucket1".to_string(),
