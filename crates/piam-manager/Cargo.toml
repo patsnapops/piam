@@ -15,6 +15,9 @@ serde = { version = "1.0", features = ["derive"] }
 
 [dev-dependencies]
 piam-object-storage = { path = "../piam-object-storage" }
-patsnap-constants = { git = "http://git.patsnap.com/devops/patsnap-constants.git" }
 uuid = { version = "1.1.2", features = ["v4", "fast-rng", "macro-diagnostics"] }
 serde_yaml = "0.9"
+
+[dev-dependencies.patsnap-constants]
+git = "http://git.patsnap.com/devops/patsnap-constants.git"
+version = "0.1.1"
