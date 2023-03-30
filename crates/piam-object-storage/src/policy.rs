@@ -119,7 +119,6 @@ impl ObjectStorageMatches for ObjectStorageInputPolicy {
     }
 
     fn find_object_effect(&self, input: &ObjectStorageInput) -> Option<&Effect> {
-        // TODO: reduce indentation
         self.find_bucket_effect(input)?;
         match &self.keys {
             None => None,
@@ -134,32 +133,39 @@ impl ObjectStorageMatches for ObjectStorageInputPolicy {
 }
 
 impl ObjectStorageInputPolicy {
+    /// find the first key policy that matches the input, return the effect
+    /// assume that key policy in keys are not conflicting
     fn find_keys_effect<'a>(
         &'a self,
         input: &ObjectStorageInput,
-        keys: &'a Vec<Key>,
+        policies: &'a [Key],
     ) -> Option<&Effect> {
-        let mut default_for_all_matcher: Option<&Effect> = None;
-        for key in keys {
-            match &key.path {
-                Some(matcher) => {
-                    if let ObjectStorageInput::DeleteObjects { bucket: _, keys } = input {
-                        return match keys.iter().any(|key| !matcher.matches(key)) {
-                            true => None,
-                            false => key.effect.as_ref(),
-                        };
-                    };
-                    if matcher.matches(input.key()) {
-                        return key.effect.as_ref();
+        // TODO: static analysis to make sure that key policy in keys are not conflicting
+        let mut default_effect = None;
+        for policy in policies {
+            if let Some(path) = &policy.path {
+                if let ObjectStorageInput::DeleteObjects { bucket, keys } = input {
+                    if Self::match_delete_objects(bucket, keys, path) {
+                        return policy.effect.as_ref();
                     }
+                } else if path.matches(&Self::full_path(input.bucket(), input.key())) {
+                    return policy.effect.as_ref();
                 }
-                None => {
-                    // TODO: static analyze, this condition can occur at most once at runtime
-                    default_for_all_matcher = key.effect.as_ref();
-                }
+            } else {
+                default_effect = policy.effect.as_ref();
             }
         }
-        default_for_all_matcher
+        default_effect
+    }
+
+    fn match_delete_objects(bucket: &str, keys: &[String], matcher: &StringMatcher) -> bool {
+        keys.iter()
+            .map(|key| Self::full_path(bucket, key))
+            .all(|full_path| matcher.matches(&full_path))
+    }
+
+    fn full_path(bucket: &str, key: &str) -> String {
+        format!("{}/{}", bucket, key)
     }
 }
 
@@ -254,8 +260,8 @@ mod test {
         };
         let key1 = Key {
             path: Some(StringMatcher {
-                eq: Some(vec![String::from("key1")]),
-                start_with: Some(vec![String::from("start2")]),
+                eq: Some(vec![String::from("bucket1/key1")]),
+                start_with: Some(vec![String::from("bucket1/start2")]),
             }),
             effect: Some(key_effect_1.clone()),
             ..Default::default()
@@ -263,7 +269,7 @@ mod test {
         let key_effect_2 = Effect::Deny(None);
         let key2 = Key {
             path: Some(StringMatcher {
-                eq: Some(vec![String::from("key2")]),
+                eq: Some(vec![String::from("bucket1/key2")]),
                 start_with: Some(vec![String::from("start3")]),
             }),
             effect: Some(key_effect_2.clone()),
@@ -283,10 +289,6 @@ mod test {
             bucket: "bucket1".to_string(),
             key: "key3".to_string(),
         };
-        let get_object_4 = ObjectStorageInput::GetObject {
-            bucket: "bucket2".to_string(),
-            key: "key1".to_string(),
-        };
 
         assert_eq!(
             policy.find_object_effect(&get_object_1),
@@ -297,7 +299,6 @@ mod test {
             Some(&key_effect_2)
         );
         assert_eq!(policy.find_object_effect(&get_object_3), None);
-        assert_eq!(policy.find_object_effect(&get_object_4), None);
 
         policy.keys = None;
         assert_eq!(policy.find_object_effect(&get_object_1), None);
@@ -310,7 +311,7 @@ mod test {
             },
             Key {
                 path: Some(StringMatcher {
-                    eq: Some(vec!["key2".to_string()]),
+                    eq: Some(vec!["bucket1/key2".to_string()]),
                     start_with: None,
                 }),
                 tag: None,
@@ -334,7 +335,7 @@ mod test {
             },
             Key {
                 path: Some(StringMatcher {
-                    eq: Some(vec!["key2".to_string()]),
+                    eq: Some(vec!["bucket1/key2".to_string()]),
                     start_with: None,
                 }),
                 tag: None,
@@ -368,7 +369,7 @@ mod test {
         let key1 = Key {
             path: Some(StringMatcher {
                 eq: None,
-                start_with: Some(vec![String::from("start1")]),
+                start_with: Some(vec![String::from("bucket1/start1")]),
             }),
             effect: Some(allow.clone()),
             ..Default::default()
@@ -376,13 +377,13 @@ mod test {
         let key2 = Key {
             path: Some(StringMatcher {
                 eq: None,
-                start_with: Some(vec![String::from("/start2")]),
+                start_with: Some(vec![String::from("bucket1/start2")]),
             }),
             effect: Some(deny.clone()),
             ..Default::default()
         };
 
-        policy.keys = Some(vec![key1]);
+        policy.keys = Some(vec![key1, key2]);
         assert_eq!(
             policy.find_object_effect(&ObjectStorageInput::DeleteObjects {
                 bucket: "bucket1".to_string(),
@@ -407,14 +408,17 @@ mod test {
         assert_eq!(
             policy.find_object_effect(&ObjectStorageInput::DeleteObjects {
                 bucket: "bucket1".to_string(),
-                keys: vec!["key1".to_string(), "key2".to_string()],
+                keys: vec![
+                    "key_not_in_policy".to_string(),
+                    "key2_not_in_policy".to_string()
+                ],
             }),
             None
         );
         assert_eq!(
             policy.find_object_effect(&ObjectStorageInput::DeleteObjects {
                 bucket: "bucket1".to_string(),
-                keys: vec!["start1".to_string(), "key2".to_string()],
+                keys: vec!["start1".to_string(), "key_not_in_policy".to_string()],
             }),
             None
         );
@@ -423,14 +427,13 @@ mod test {
                 bucket: "bucket1".to_string(),
                 keys: vec!["start2".to_string()],
             }),
-            None
+            Some(&deny)
         );
 
-        policy.keys = Some(vec![key2]);
         assert_eq!(
             policy.find_object_effect(&ObjectStorageInput::DeleteObjects {
                 bucket: "bucket1".to_string(),
-                keys: vec!["/start2".to_string()],
+                keys: vec!["start2".to_string()],
             }),
             Some(&deny)
         );
@@ -439,12 +442,12 @@ mod test {
                 bucket: "bucket1".to_string(),
                 keys: vec!["start2/foo".to_string()],
             }),
-            None
+            Some(&deny)
         );
         assert_eq!(
             policy.find_object_effect(&ObjectStorageInput::DeleteObjects {
                 bucket: "bucket1".to_string(),
-                keys: vec!["/start2".to_string(), "start2/foo".to_string()],
+                keys: vec!["start2".to_string(), "not_in_policy".to_string()],
             }),
             None
         );
