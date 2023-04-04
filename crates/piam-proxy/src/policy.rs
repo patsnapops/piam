@@ -21,6 +21,11 @@ where
     I: Input,
 {
     fn find_effects(&self, input: &I) -> ProxyResult<Vec<&Effect>> {
-        Ok(self.iter().flat_map(|p| p.find_effects(input)).collect())
+        let mut effects = Vec::new();
+        for policy in self {
+            let effect = policy.find_effects(input)?;
+            effects.extend(effect);
+        }
+        Ok(effects)
     }
 }

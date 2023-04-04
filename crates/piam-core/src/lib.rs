@@ -7,6 +7,7 @@ pub mod condition;
 pub mod config;
 pub mod crypto;
 pub mod effect;
+pub mod error;
 pub mod group;
 pub mod input;
 pub mod manager_api_constant;

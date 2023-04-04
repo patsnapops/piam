@@ -1,5 +1,6 @@
 use piam_core::{
     effect::Effect,
+    error::PiamResult,
     policy::{Modeled, StringMatcher},
 };
 use serde::{Deserialize, Serialize};
@@ -78,10 +79,10 @@ impl Modeled for ObjectStoragePolicy {
         self.id.clone()
     }
 
-    fn find_effect_by_input(&self, input: &Self::Input) -> Option<&Effect> {
+    fn find_effect_by_input(&self, input: &Self::Input) -> PiamResult<Option<&Effect>> {
         let input_policy = &self.input_policy;
         if !input_policy.match_action(input) {
-            return None;
+            return Ok(None);
         }
         match input.action_kind() {
             ActionKind::ListBuckets | ActionKind::Bucket => input_policy.find_bucket_effect(input),
@@ -93,8 +94,8 @@ impl Modeled for ObjectStoragePolicy {
 /// Modeling for ObjectStoragePolicy
 trait ObjectStorageMatches {
     fn match_action(&self, input: &ObjectStorageInput) -> bool;
-    fn find_bucket_effect(&self, input: &ObjectStorageInput) -> Option<&Effect>;
-    fn find_object_effect(&self, input: &ObjectStorageInput) -> Option<&Effect>;
+    fn find_bucket_effect(&self, input: &ObjectStorageInput) -> PiamResult<Option<&Effect>>;
+    fn find_object_effect(&self, input: &ObjectStorageInput) -> PiamResult<Option<&Effect>>;
 }
 
 impl ObjectStorageMatches for ObjectStorageInputPolicy {
@@ -107,24 +108,24 @@ impl ObjectStorageMatches for ObjectStorageInputPolicy {
         }
     }
 
-    fn find_bucket_effect(&self, input: &ObjectStorageInput) -> Option<&Effect> {
+    fn find_bucket_effect(&self, input: &ObjectStorageInput) -> PiamResult<Option<&Effect>> {
         let bucket = &self.bucket;
-        match &bucket.name {
+        Ok(match &bucket.name {
             None => bucket.effect.as_ref(),
             Some(name) => match name.matches(input.bucket()) {
                 true => bucket.effect.as_ref(),
                 false => None,
             },
-        }
+        })
     }
 
-    fn find_object_effect(&self, input: &ObjectStorageInput) -> Option<&Effect> {
+    fn find_object_effect(&self, input: &ObjectStorageInput) -> PiamResult<Option<&Effect>> {
         self.find_bucket_effect(input)?;
         match &self.keys {
-            None => None,
+            None => Ok(None),
             Some(keys) => {
                 if keys.is_empty() {
-                    return None;
+                    return Ok(None);
                 }
                 self.find_keys_effect(input, keys)
             }
@@ -139,23 +140,30 @@ impl ObjectStorageInputPolicy {
         &'a self,
         input: &ObjectStorageInput,
         policies: &'a [Key],
-    ) -> Option<&Effect> {
+    ) -> PiamResult<Option<&Effect>> {
         // TODO: static analysis to make sure that key policy in keys are not conflicting
+
+        let path_matchers = policies
+            .iter()
+            .map(|policy| policy.path.as_ref())
+            .collect::<Vec<_>>();
+        StringMatcher::check_conflict(&path_matchers)?;
+
         let mut default_effect = None;
         for policy in policies {
             if let Some(path) = &policy.path {
                 if let ObjectStorageInput::DeleteObjects { bucket, keys } = input {
                     if Self::match_delete_objects(bucket, keys, path) {
-                        return policy.effect.as_ref();
+                        return Ok(policy.effect.as_ref());
                     }
                 } else if path.matches(&Self::full_path(input.bucket(), input.key())) {
-                    return policy.effect.as_ref();
+                    return Ok(policy.effect.as_ref());
                 }
             } else {
                 default_effect = policy.effect.as_ref();
             }
         }
-        default_effect
+        Ok(default_effect)
     }
 
     fn match_delete_objects(bucket: &str, keys: &[String], matcher: &StringMatcher) -> bool {
@@ -231,12 +239,24 @@ mod test {
             bucket: "start_bucket".to_string(),
         };
 
-        assert!(policy.find_bucket_effect(&create_bucket_1).is_some());
-        assert!(policy.find_bucket_effect(&create_bucket_2).is_none());
-        assert!(policy.find_bucket_effect(&create_bucket_3).is_some());
+        assert!(policy
+            .find_bucket_effect(&create_bucket_1)
+            .unwrap()
+            .is_some());
+        assert!(policy
+            .find_bucket_effect(&create_bucket_2)
+            .unwrap()
+            .is_none());
+        assert!(policy
+            .find_bucket_effect(&create_bucket_3)
+            .unwrap()
+            .is_some());
 
         policy.bucket.name = None;
-        assert!(policy.find_bucket_effect(&create_bucket_1).is_some());
+        assert!(policy
+            .find_bucket_effect(&create_bucket_1)
+            .unwrap()
+            .is_some());
     }
 
     #[test]
@@ -291,17 +311,17 @@ mod test {
         };
 
         assert_eq!(
-            policy.find_object_effect(&get_object_1),
+            policy.find_object_effect(&get_object_1).unwrap(),
             Some(&key_effect_1)
         );
         assert_eq!(
-            policy.find_object_effect(&get_object_2),
+            policy.find_object_effect(&get_object_2).unwrap(),
             Some(&key_effect_2)
         );
-        assert_eq!(policy.find_object_effect(&get_object_3), None);
+        assert_eq!(policy.find_object_effect(&get_object_3).unwrap(), None);
 
         policy.keys = None;
-        assert_eq!(policy.find_object_effect(&get_object_1), None);
+        assert_eq!(policy.find_object_effect(&get_object_1).unwrap(), None);
 
         policy.keys = Some(vec![
             Key {
@@ -319,11 +339,11 @@ mod test {
             },
         ]);
         assert_eq!(
-            policy.find_object_effect(&get_object_1),
+            policy.find_object_effect(&get_object_1).unwrap(),
             Some(&Effect::allow())
         );
         assert_eq!(
-            policy.find_object_effect(&get_object_2),
+            policy.find_object_effect(&get_object_2).unwrap(),
             Some(&Effect::deny())
         );
 
@@ -343,16 +363,16 @@ mod test {
             },
         ]);
         assert_eq!(
-            policy.find_object_effect(&get_object_1),
+            policy.find_object_effect(&get_object_1).unwrap(),
             Some(&Effect::deny())
         );
         assert_eq!(
-            policy.find_object_effect(&get_object_2),
+            policy.find_object_effect(&get_object_2).unwrap(),
             Some(&Effect::allow())
         );
 
         policy.keys = Some(vec![]);
-        assert_eq!(policy.find_object_effect(&get_object_1), None);
+        assert_eq!(policy.find_object_effect(&get_object_1).unwrap(), None);
     }
 
     #[test]
@@ -385,70 +405,88 @@ mod test {
 
         policy.keys = Some(vec![key1, key2]);
         assert_eq!(
-            policy.find_object_effect(&ObjectStorageInput::DeleteObjects {
-                bucket: "bucket1".to_string(),
-                keys: vec!["start1".to_string()],
-            }),
+            policy
+                .find_object_effect(&ObjectStorageInput::DeleteObjects {
+                    bucket: "bucket1".to_string(),
+                    keys: vec!["start1".to_string()],
+                })
+                .unwrap(),
             Some(&allow)
         );
         assert_eq!(
-            policy.find_object_effect(&ObjectStorageInput::DeleteObjects {
-                bucket: "bucket1".to_string(),
-                keys: vec!["start1/".to_string(), "start1/foo".to_string()],
-            }),
+            policy
+                .find_object_effect(&ObjectStorageInput::DeleteObjects {
+                    bucket: "bucket1".to_string(),
+                    keys: vec!["start1/".to_string(), "start1/foo".to_string()],
+                })
+                .unwrap(),
             Some(&allow)
         );
         assert_eq!(
-            policy.find_object_effect(&ObjectStorageInput::DeleteObjects {
-                bucket: "bucket2".to_string(),
-                keys: vec!["start1".to_string()],
-            }),
+            policy
+                .find_object_effect(&ObjectStorageInput::DeleteObjects {
+                    bucket: "bucket2".to_string(),
+                    keys: vec!["start1".to_string()],
+                })
+                .unwrap(),
             None
         );
         assert_eq!(
-            policy.find_object_effect(&ObjectStorageInput::DeleteObjects {
-                bucket: "bucket1".to_string(),
-                keys: vec![
-                    "key_not_in_policy".to_string(),
-                    "key2_not_in_policy".to_string()
-                ],
-            }),
+            policy
+                .find_object_effect(&ObjectStorageInput::DeleteObjects {
+                    bucket: "bucket1".to_string(),
+                    keys: vec![
+                        "key_not_in_policy".to_string(),
+                        "key2_not_in_policy".to_string()
+                    ],
+                })
+                .unwrap(),
             None
         );
         assert_eq!(
-            policy.find_object_effect(&ObjectStorageInput::DeleteObjects {
-                bucket: "bucket1".to_string(),
-                keys: vec!["start1".to_string(), "key_not_in_policy".to_string()],
-            }),
+            policy
+                .find_object_effect(&ObjectStorageInput::DeleteObjects {
+                    bucket: "bucket1".to_string(),
+                    keys: vec!["start1".to_string(), "key_not_in_policy".to_string()],
+                })
+                .unwrap(),
             None
         );
         assert_eq!(
-            policy.find_object_effect(&ObjectStorageInput::DeleteObjects {
-                bucket: "bucket1".to_string(),
-                keys: vec!["start2".to_string()],
-            }),
+            policy
+                .find_object_effect(&ObjectStorageInput::DeleteObjects {
+                    bucket: "bucket1".to_string(),
+                    keys: vec!["start2".to_string()],
+                })
+                .unwrap(),
             Some(&deny)
         );
 
         assert_eq!(
-            policy.find_object_effect(&ObjectStorageInput::DeleteObjects {
-                bucket: "bucket1".to_string(),
-                keys: vec!["start2".to_string()],
-            }),
+            policy
+                .find_object_effect(&ObjectStorageInput::DeleteObjects {
+                    bucket: "bucket1".to_string(),
+                    keys: vec!["start2".to_string()],
+                })
+                .unwrap(),
             Some(&deny)
         );
         assert_eq!(
-            policy.find_object_effect(&ObjectStorageInput::DeleteObjects {
-                bucket: "bucket1".to_string(),
-                keys: vec!["start2/foo".to_string()],
-            }),
+            policy
+                .find_object_effect(&ObjectStorageInput::DeleteObjects {
+                    bucket: "bucket1".to_string(),
+                    keys: vec!["start2/foo".to_string()],
+                })
+                .unwrap(),
             Some(&deny)
         );
         assert_eq!(
-            policy.find_object_effect(&ObjectStorageInput::DeleteObjects {
-                bucket: "bucket1".to_string(),
-                keys: vec!["start2".to_string(), "not_in_policy".to_string()],
-            }),
+            policy
+                .find_object_effect(&ObjectStorageInput::DeleteObjects {
+                    bucket: "bucket1".to_string(),
+                    keys: vec!["start2".to_string(), "not_in_policy".to_string()],
+                })
+                .unwrap(),
             None
         );
     }

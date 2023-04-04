@@ -1,6 +1,7 @@
 use std::{fmt, fmt::Display};
 
 use busylib::http::ReqwestError;
+use piam_core::error::PiamError;
 
 pub type ProxyResult<T> = Result<T, ProxyError>;
 
@@ -81,6 +82,14 @@ impl Display for ProxyError {
 impl From<ReqwestError> for ProxyError {
     fn from(err: ReqwestError) -> Self {
         Self::ManagerApi(format!("reqwest error: {err}"))
+    }
+}
+
+impl From<PiamError> for ProxyError {
+    fn from(err: PiamError) -> Self {
+        match err {
+            PiamError::Conflict(msg) => Self::AssertFail(msg),
+        }
     }
 }
 

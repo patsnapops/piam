@@ -1,10 +1,16 @@
 //! Policy is an abstraction of a resource model specific policy such as `ObjectStoragePolicy`.
 
-use std::fmt::Debug;
+use std::{collections::HashSet, fmt::Debug};
 
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
-use crate::{effect::Effect, input::Input, type_alias::IamEntityIdType, IamIdentity};
+use crate::{
+    effect::Effect,
+    error::{PiamError, PiamResult},
+    input::Input,
+    type_alias::IamEntityIdType,
+    IamIdentity,
+};
 
 pub type PolicyId = IamEntityIdType;
 
@@ -27,7 +33,7 @@ pub trait Modeled: Debug {
 
     fn id(&self) -> String;
 
-    fn find_effect_by_input(&self, input: &Self::Input) -> Option<&Effect>;
+    fn find_effect_by_input(&self, input: &Self::Input) -> PiamResult<Option<&Effect>>;
 }
 
 impl<P: Modeled> IamIdentity for Policy<P> {
@@ -42,14 +48,18 @@ where
     I: Input,
 {
     #[allow(dead_code)]
-    pub fn find_effects(&self, input: &I) -> Vec<&Effect> {
-        self.modeled_policy
-            .iter()
-            .filter_map(|policy| policy.find_effect_by_input(input))
-            .collect()
+    pub fn find_effects(&self, input: &I) -> PiamResult<Vec<&Effect>> {
+        let mut effects = HashSet::new();
+        for modeled in &self.modeled_policy {
+            if let Some(effect) = modeled.find_effect_by_input(input)? {
+                effects.insert(effect);
+            }
+        }
+        Ok(effects.into_iter().collect())
     }
 }
 
+// TODO: change inner type to HashSet to avoid duplicate
 /// Default logical operator would be `or`. Any value matching `eq`,
 /// `start_with`, `contains` will be regarded as a successful match.
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
@@ -79,6 +89,146 @@ impl StringMatcher {
         }
         false
     }
+
+    pub fn check_conflict(matchers: &[Option<&StringMatcher>]) -> PiamResult<()> {
+        let mut none_exists = false;
+        for i in 0..matchers.len() {
+            if matchers[i].is_none() {
+                if none_exists {
+                    return Err(PiamError::Conflict(
+                        "None StringMatcher already exists".to_string(),
+                    ));
+                } else {
+                    none_exists = true;
+                }
+            }
+            for j in i + 1..matchers.len() {
+                if let (Some(a), Some(b)) = (matchers[i], matchers[j]) {
+                    if let Some(conflict) = a.conflict_with(b) {
+                        return Err(PiamError::Conflict(format!(
+                            "conflicting matcher found: {}",
+                            conflict
+                        )));
+                    }
+                }
+            }
+        }
+        Ok(())
+    }
+
+    /// check if there are any conflicts between the two matchers
+    /// if there are conflicts, return the first conflicting value in Some
+    /// if there are no conflicts, return None
+    pub fn conflict_with(&self, other: &Self) -> Option<String> {
+        if let Some(eq) = &self.eq {
+            if let Some(other_eq) = &other.eq {
+                return Self::get_first_same(eq, other_eq);
+            }
+        } else if other.eq.is_none() {
+            return None;
+        }
+
+        if let Some(start_with) = &self.start_with {
+            if let Some(other_start_with) = &other.start_with {
+                return Self::get_first_same(start_with, other_start_with);
+            }
+        }
+        None
+    }
+
+    fn get_first_same(a: &[String], b: &[String]) -> Option<String> {
+        let set_a: HashSet<&String> = a.iter().collect();
+        let set_b: HashSet<&String> = b.iter().collect();
+        let intersection: HashSet<&String> = set_a.intersection(&set_b).cloned().collect();
+        intersection.iter().next().map(|item| item.to_string())
+    }
+}
+
+#[cfg(test)]
+mod test {
+    #[test]
+    fn check_conflict() {
+        use super::{PiamError, StringMatcher};
+
+        assert_eq!(
+            StringMatcher::check_conflict(&[None, None]),
+            Err(PiamError::Conflict(
+                "None StringMatcher already exists".to_string()
+            )),
+        );
+
+        assert_eq!(
+            StringMatcher::check_conflict(&[
+                Some(&StringMatcher {
+                    eq: None,
+                    start_with: None,
+                }),
+                Some(&StringMatcher {
+                    eq: None,
+                    start_with: None,
+                })
+            ]),
+            Ok(()),
+        );
+
+        assert_eq!(
+            StringMatcher::check_conflict(&[
+                Some(&StringMatcher {
+                    eq: Some(vec!["a".to_string()]),
+                    start_with: None,
+                }),
+                Some(&StringMatcher {
+                    eq: Some(vec!["b".to_string()]),
+                    start_with: None,
+                })
+            ]),
+            Ok(()),
+        );
+
+        assert_eq!(
+            StringMatcher::check_conflict(&[
+                Some(&StringMatcher {
+                    eq: Some(vec!["a".to_string()]),
+                    start_with: None,
+                }),
+                Some(&StringMatcher {
+                    eq: Some(vec!["a".to_string()]),
+                    start_with: None,
+                })
+            ]),
+            Err(PiamError::Conflict(
+                "conflicting matcher found: a".to_string()
+            )),
+        );
+
+        assert_eq!(
+            StringMatcher::check_conflict(&[
+                Some(&StringMatcher {
+                    eq: Some(vec!["a".to_string()]),
+                    start_with: None,
+                }),
+                Some(&StringMatcher {
+                    eq: None,
+                    start_with: Some(vec!["a".to_string()]),
+                })
+            ]),
+            Ok(()),
+        );
+
+        assert_eq!(
+            StringMatcher::check_conflict(&[
+                Some(&StringMatcher {
+                    eq: Some(vec!["a".to_string()]),
+                    start_with: None,
+                }),
+                Some(&StringMatcher {
+                    eq: None,
+                    start_with: Some(vec!["b".to_string()]),
+                })
+            ]),
+            Ok(()),
+        );
+    }
 }
 
 pub mod condition {
@@ -91,6 +241,7 @@ pub mod condition {
     use crate::{
         condition::input::{Condition, ConditionCtx},
         effect::Effect,
+        error::PiamResult,
         group::GroupId,
         policy::Modeled,
     };
@@ -141,11 +292,11 @@ pub mod condition {
             self.id.clone()
         }
 
-        fn find_effect_by_input(&self, condition_ctx: &Self::Input) -> Option<&Effect> {
-            match self.range.matches(condition_ctx) {
+        fn find_effect_by_input(&self, condition_ctx: &Self::Input) -> PiamResult<Option<&Effect>> {
+            Ok(match self.range.matches(condition_ctx) {
                 false => None,
                 true => Some(&self.effect),
-            }
+            })
         }
     }
 
