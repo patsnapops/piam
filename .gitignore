@@ -25,7 +25,3 @@ Cargo.lock
 piamvenv
 
 *.log.*
-
-/website/node_modules/
-/website/build/
-/website/.docusaurus/
