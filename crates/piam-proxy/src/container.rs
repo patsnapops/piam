@@ -358,6 +358,7 @@ impl<P: Modeled> IamContainer<P> {
         for relation in relations {
             match relation.policy_model.as_str() {
                 CONDITION => {
+                    // TODO: return error instead, to indicate that the policy configuration is incorrect
                     let p = self.condition_policies.get(&relation.policy_id).unwp();
                     condition.push(p);
                 }
