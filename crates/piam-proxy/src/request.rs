@@ -1,10 +1,16 @@
 use log::debug;
-use piam_core::effect::Effect;
+use piam_core::{account::aws::AwsAccount, effect::Effect};
 
 use crate::{
     error::{ProxyError, ProxyResult},
     type_alias::{HttpClient, HttpRequest, HttpResponse},
 };
+
+#[allow(dead_code)]
+pub struct AccessTarget {
+    pub account: AwsAccount,
+    pub region: String,
+}
 
 pub trait HttpRequestExt {
     fn apply_effects(self, effect: Vec<&Effect>) -> ProxyResult<HttpRequest>;

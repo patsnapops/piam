@@ -47,7 +47,6 @@ where
     P: Modeled<Input = I> + DeserializeOwned,
     I: Input,
 {
-    #[allow(dead_code)]
     pub fn find_effects(&self, input: &I) -> PiamResult<Vec<&Effect>> {
         let mut effects = HashSet::new();
         for modeled in &self.modeled_policy {
