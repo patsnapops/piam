@@ -1,6 +1,6 @@
 [package]
 name = "piam-core"
-version = "0.20.3"
+version = "0.21.0"
 edition = "2021"
 description = "Patsnap IAM core"
 license = "Apache-2.0 OR MIT"
