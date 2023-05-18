@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v0.21.1] - 2023-05-18
+
+### Bug Fixes
+
+- PIAM Manager get_resource_string issue
+
+## [v0.21.0] - 2023-05-04
+
+### Features
+
+- Add struct AccessTarget
+
 ## [v0.20.2] - 2023-04-13
 
 ### Features
