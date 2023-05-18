@@ -14,7 +14,7 @@ use serde::de::DeserializeOwned;
 
 use crate::{
     config::{CoreConfig, PIAM_MANAGER_ADDRESS, POLICY_MODEL},
-    error::{deserialize, ProxyResult, ProxyError},
+    error::{deserialize, ProxyError, ProxyResult},
 };
 
 #[derive(Debug)]
@@ -103,18 +103,17 @@ impl ManagerClient {
         // default-features = false, features = ["rustls-tls"] for reqwest should be set in Cargo.toml,
         // otherwise Segmentation fault (core dumped) may occur when creating a new reqwest client.
         let client = &self.http_client;
-        let response = client.get(&url).send().await?;
         // response is not Error, but the response body may be an error message without encrypted,
         // and this message will be decrypted later by get_resource function,
         // that will cause an unwrapped error in get_resource function,
         // which in turn leads to a panic in configuration fetching loop, and the loop will exit.
         // So we need to check the response status here.
-        let success = response.status().is_success();
-        let resource = response.text().await?;
-        if success {
-            Ok(resource)
-        } else {
-            Err(ProxyError::OtherInternal(resource))
-        }
+        let response = client
+            .get(&url)
+            .send()
+            .await?
+            .error_for_status()
+            .map_err(|e| ProxyError::OtherInternal(e.to_string()))?;
+        Ok(response.text().await?)
     }
 }
