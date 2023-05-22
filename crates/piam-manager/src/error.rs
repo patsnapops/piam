@@ -1,4 +1,5 @@
 use std::fmt;
+use busylib::http::ReqwestError;
 
 pub type ManagerResult<T> = Result<T, ManagerError>;
 
@@ -14,5 +15,11 @@ impl fmt::Display for ManagerError {
             ManagerError::BadRequest(msg) => write!(f, "BadRequest: {msg}"),
             ManagerError::Internal(msg) => write!(f, "Internal: {msg}"),
         }
+    }
+}
+
+impl From<ReqwestError> for ManagerError {
+    fn from(err: ReqwestError) -> Self {
+        Self::Internal(format!("reqwest error: {err}"))
     }
 }
