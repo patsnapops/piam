@@ -8,7 +8,7 @@ use log::{info, warn};
 use std::option::Option;
 
 use crate::{
-    config::{REDIS_ADDRESS, PORTAL_ADDRESS, PORTAL_API_VERSION, PORTAL_API_PATH},
+    config::{REDIS_ADDRESS, PIAM_HTTP_RESOURCE_URL_PREFIX, PIAM_HTTP_PATH_REDIS_KEY_MAPPER},
     error::{ManagerError, ManagerResult},
 };
 
@@ -34,7 +34,8 @@ impl ManagerResourceClient {
     }
 
     pub async fn get_resource_string(&self, key: &str) -> Result<String, ManagerError> {
-        match self.get_resource_from_portal(key).await {
+        info!("try to get resource key: {}", key);
+        match self.get_resource_from_http(key).await {
             Ok(result) => Ok(result),
             Err(err) => {
                 warn!("failed to get resource from portal: {}", err);
@@ -65,12 +66,13 @@ impl ManagerResourceClient {
         string.ok_or_else(|| ManagerError::BadRequest(key.to_owned()))
     }
 
-    async fn get_resource_from_portal(&self, key: &str) -> Result<String, ManagerError> {
-        let path = PORTAL_API_PATH.get(key).ok_or_else(|| {
+    // TODO: portal auth check
+    async fn get_resource_from_http(&self, key: &str) -> Result<String, ManagerError> {
+        let path = PIAM_HTTP_PATH_REDIS_KEY_MAPPER.get(key).ok_or_else(|| {
             ManagerError::BadRequest(format!("failed to get resource from portal, key: {}", key))
         })?;
 
-        let url = format!("{}/{}/piam/{}", PORTAL_ADDRESS.load(), PORTAL_API_VERSION.load(), path);
+        let url = format!("{}/{}", PIAM_HTTP_RESOURCE_URL_PREFIX.load(), path);
         let client = self.http_client.as_ref().ok_or_else(|| {
             ManagerError::Internal("http client is not initialized".to_owned())
         })?;
