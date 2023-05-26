@@ -1,6 +1,7 @@
 use std::fmt::Debug;
 
 use busylib::http::ReqwestClient;
+use log::{info, warn};
 use piam_core::{
     account::aws::AwsAccount,
     crypto::decrypt,
@@ -92,8 +93,14 @@ impl ManagerClient {
     async fn get_resource<T: DeserializeOwned>(&self, path: &str) -> ProxyResult<T> {
         // manually decrypt for HTTP
         let resource_string = decrypt(self.get_resource_string(path).await?);
-        let resource = serde_yaml::from_str(&resource_string)
-            .map_err(|e| deserialize(path, resource_string, e))?;
+        let resource = if let Ok(data) = serde_json::from_str(&resource_string) {
+            data
+        } else if let Ok(data) = serde_yaml::from_str(&resource_string) {
+            data
+        } else {
+            warn!("Failed to parse resource: {}", path);
+            return Err(ProxyError::OtherInternal(format!("Failed to parse resource: {}", path)));
+        };
         Ok(resource)
     }
 

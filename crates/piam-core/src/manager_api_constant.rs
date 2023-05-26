@@ -15,6 +15,11 @@ pub const USER_GROUP_RELATIONSHIPS: &str = "user_group_relationships";
 pub const POLICY_RELATIONSHIPS: &str = "policy_relationships";
 
 pub const EXTENDED_CONFIG: &str = "extended_config";
+
+pub const S3: &str = "s3";
+
+pub const OBJECT_STORAGE: &str = "ObjectStorage";
+
 /// for manager use only
 pub const CONFIG_TYPE: &str = "config_type";
 

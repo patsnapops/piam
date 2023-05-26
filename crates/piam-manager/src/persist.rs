@@ -4,7 +4,7 @@ use busylib::http::{
     default_reqwest_client,
     ReqwestClient,
 };
-use log::{info, warn};
+use log::warn;
 use std::option::Option;
 
 use crate::{
@@ -34,12 +34,9 @@ impl ManagerResourceClient {
     }
 
     pub async fn get_resource_string(&self, key: &str) -> Result<String, ManagerError> {
-        info!("try to get resource key: {}", key);
         match self.get_resource_from_http(key).await {
             Ok(result) => Ok(result),
-            Err(err) => {
-                warn!("failed to get resource from portal: {}", err);
-                info!("try to get resource from redis");
+            Err(_) => {
                 match self.get_resource_from_redis(key).await {
                     Ok(result) => Ok(result),
                     Err(err) => {
@@ -66,10 +63,9 @@ impl ManagerResourceClient {
         string.ok_or_else(|| ManagerError::BadRequest(key.to_owned()))
     }
 
-    // TODO: portal auth check
     async fn get_resource_from_http(&self, key: &str) -> Result<String, ManagerError> {
         let path = PIAM_HTTP_PATH_REDIS_KEY_MAPPER.get(key).ok_or_else(|| {
-            ManagerError::BadRequest(format!("failed to get resource from portal, key: {}", key))
+            ManagerError::BadRequest(format!("http route not found, route: {}", key))
         })?;
 
         let url = format!("{}/{}", PIAM_HTTP_RESOURCE_URL_PREFIX.load(), path);
@@ -80,12 +76,12 @@ impl ManagerResourceClient {
             .get(&url)
             .send()
             .await
-            .map_err(|e| ManagerError::Internal(format!("failed to get portal resource: {}", e)))?
+            .map_err(|e| ManagerError::Internal(format!("failed to get http resource: {}", e)))?
             .error_for_status()
-            .map_err(|e| ManagerError::Internal(format!("failed to get portal resource: {}", e)))?
+            .map_err(|e| ManagerError::Internal(format!("failed to get http resource: {}", e)))?
             .text()
             .await
-            .map_err(|e| ManagerError::Internal(format!("failed to get portal resource: {}", e)))?;
+            .map_err(|e| ManagerError::Internal(format!("failed to get http resource: {}", e)))?;
 
         Ok(response)
     }

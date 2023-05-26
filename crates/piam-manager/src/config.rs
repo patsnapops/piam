@@ -14,7 +14,7 @@ pub fn port() -> u16 {
 }
 
 pub static PIAM_HTTP_RESOURCE_ADDRESS: GlobalString =
-    GlobalString::new(|| env_var_with_default("PIAM_HTTP_RESOURCE_ADDRESS", "http://localhost:80"));
+    GlobalString::new(|| env_var_with_default("PIAM_HTTP_RESOURCE_ADDRESS", "http://localhost:8080"));
 
 pub static PIAM_HTTP_RESOURCE_API_VERSION: GlobalString =
     GlobalString::new(|| env_var_with_default("PIAM_HTTP_RESOURCE_API_VERSION", "v2023-03"));
@@ -28,14 +28,23 @@ pub static PIAM_HTTP_RESOURCE_URL_PREFIX: GlobalString =
 lazy_static! {
     pub static ref PIAM_HTTP_PATH_REDIS_KEY_MAPPER: HashMap<&'static str, &'static str> = {
         let mut map = HashMap::new();
-        map.insert(ACCOUNTS, "accounts");
         map.insert(USERS, "users");
         map.insert(GROUPS, "groups");
-        map.insert(Box::leak(format!("{}:{}", POLICIES, "ObjectStorage").into_boxed_str()), "policies/kind/ObjectStorage");
-        map.insert(Box::leak(format!("{}:{}", POLICIES, CONDITION).into_boxed_str()), "policies/kind/Condition");
-        map.insert(USER_GROUP_RELATIONSHIPS, "relationships/user_group");
+        map.insert(ACCOUNTS, "accounts");
         map.insert(POLICY_RELATIONSHIPS, "relationships/policy");
-        map.insert(EXTENDED_CONFIG, "extended_config");
+        map.insert(USER_GROUP_RELATIONSHIPS, "relationships/user_group");
+        map.insert(
+            Box::leak(format!("{}:{}", POLICIES, CONDITION).into_boxed_str()),
+            "policies/kind/Condition"
+        );
+        map.insert(
+            Box::leak(format!("{}:{}", EXTENDED_CONFIG, S3).into_boxed_str()),
+            "extended_configurations"
+        );
+        map.insert(
+            Box::leak(format!("{}:{}", POLICIES, OBJECT_STORAGE).into_boxed_str()),
+            "policies/kind/ObjectStorage"
+        );
         map
     };
 }
