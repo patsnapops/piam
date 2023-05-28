@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [v0.22.0] - 2023-05-29
+### Features
+
+- Support http method to get manager configurations
+
 ## [v0.21.1] - 2023-05-18
 
 ### Bug Fixes
