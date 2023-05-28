@@ -1,7 +1,7 @@
 use std::fmt::Debug;
 
 use busylib::http::ReqwestClient;
-use log::{info, warn};
+use log::warn;
 use piam_core::{
     account::aws::AwsAccount,
     crypto::decrypt,
@@ -15,7 +15,7 @@ use serde::de::DeserializeOwned;
 
 use crate::{
     config::{CoreConfig, PIAM_MANAGER_ADDRESS, POLICY_MODEL},
-    error::{deserialize, ProxyError, ProxyResult},
+    error::{ProxyError, ProxyResult},
 };
 
 #[derive(Debug)]

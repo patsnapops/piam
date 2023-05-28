@@ -13,7 +13,7 @@ use crate::{
 };
 
 pub async fn get_resource_string(key: &str) -> ManagerResult<String> {
-    let string = ManagerResourceClient::new().get_resource_string(key).await.map_err(|e| {
+    let string = ManagerResourceClient::default().get_resource_string(key).await.map_err(|e| {
         warn!("failed to get resource configurations, error: {}", e);
         e
     })?;
@@ -25,14 +25,16 @@ pub struct ManagerResourceClient {
     redis_client: Option<Client>,
 }
 
-impl ManagerResourceClient {
-    pub fn new() -> Self {
+impl Default for ManagerResourceClient {
+    fn default() -> Self {
         Self {
             http_client: Some(default_reqwest_client()),
             redis_client: Client::open(REDIS_ADDRESS.load().as_str()).ok(),
         }
     }
+}
 
+impl ManagerResourceClient {
     pub async fn get_resource_string(&self, key: &str) -> Result<String, ManagerError> {
         match self.get_resource_from_http(key).await {
             Ok(result) => Ok(result),
