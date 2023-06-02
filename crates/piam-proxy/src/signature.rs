@@ -107,9 +107,7 @@ pub mod aws {
             if let Some(v) = self.headers().get(X_AMZ_CONTENT_SHA_256) {
                 if v == "STREAMING-AWS4-HMAC-SHA256-PAYLOAD" {
                     return Err(ProxyError::OperationNotSupported(
-                        "chunked upload is not supported currently, troubleshooting: \
-                        http://ida.patsnap.info/piam/docs/user/s3/limitation"
-                            .into(),
+                        "chunked upload is not supported currently".into(),
                     ));
                 }
             }
@@ -147,7 +145,7 @@ pub mod aws {
             self.headers_mut().remove(X_AMZ_SECURITY_TOKEN);
             self.headers_mut().remove(AUTHORIZATION);
             // x-forwarded-for causes SignatureDoesNotMatch(from aws),
-            // it is usually added by gateways like kong, which used by patsnap
+            // it is usually added by gateways like kong
             self.headers_mut().remove("x-forwarded-for");
 
             // convert body to bytes for signing
@@ -225,20 +223,6 @@ pub mod aws {
                 service,
                 region,
             }
-        }
-    }
-
-    #[cfg(test)]
-    mod test {
-        use crate::signature::aws::extract_aws_access_key_and_region_from_auth_header;
-
-        #[test]
-        fn test_extract_aws_access_key_and_region_from_auth_header() {
-            let (key, region) = extract_aws_access_key_and_region_from_auth_header(
-                "AWS4-HMAC-SHA256 Credential=AKPSSVCSPROXYDEV/20221012/cn-northwest-1/s3/aws4_request ..."
-            ).unwrap();
-            assert_eq!(key, "AKPSSVCSPROXYDEV");
-            assert_eq!(region, "cn-northwest-1");
         }
     }
 }
